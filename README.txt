@@ -416,6 +416,12 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — Modal bottom spacing
+
+- Added consistent bottom padding to scrollable modal bodies so content-only modals do not end flush against the sheet edge.
+- Preserved compact spacing for modals whose final row is an action footer.
+- **Verification:** CSS source inspection.
+
 ### 2026-10-13 — Transaction list display
 
 - Replaced inline transaction descriptions in list rows with a compact clickable `Note` badge and popover.

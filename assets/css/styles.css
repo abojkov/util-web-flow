@@ -1183,9 +1183,14 @@
   .modal-body {
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 18px 25px 0;
+    padding: 18px 25px 25px;
     min-height: 0;
     overscroll-behavior: contain
+  }
+
+  .modal-body:has(> form > .modal-footer:last-child),
+  .modal-body:has(> .modal-footer:last-child) {
+    padding-bottom: 0
   }
 
   .modal-body > form {
@@ -1597,7 +1602,12 @@
     }
 
     .modal-body {
-      padding: 15px 19px 0
+      padding: 15px 19px calc(19px + env(safe-area-inset-bottom))
+    }
+
+    .modal-body:has(> form > .modal-footer:last-child),
+    .modal-body:has(> .modal-footer:last-child) {
+      padding-bottom: 0
     }
 
     .modal-footer {
