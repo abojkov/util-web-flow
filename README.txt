@@ -418,8 +418,8 @@ Before treating any feature as complete, ask Codex:
 ### 2026-10-13 — Modal mobile layout
 
 - Reduced excess modal header spacing on mobile and desktop.
-- Kept modal action buttons sticky at the bottom of the modal body so save/cancel controls remain visible while long forms scroll.
-- Added mobile footer separation and safe-area padding for bottom-sheet modals.
+- Kept modal action buttons inside the scrollable form content with mobile safe-area padding.
+- Normalized form control sizing and iOS native date/time/select appearance so transaction fields align consistently in Safari.
 - **Verification:** JavaScript syntax checks passed; browser automation was unavailable in this environment, so visual verification was limited to source inspection.
 
 ### 2026-10-13 — Transaction detail fields
