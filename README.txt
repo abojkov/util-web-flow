@@ -416,6 +416,13 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — Multiline transaction descriptions
+
+- Changed transaction descriptions to a multiline textarea.
+- Preserved description line breaks in transaction list details.
+- Normalized generated import JSON descriptions with readable line breaks for known imported note patterns.
+- **Verification:** JavaScript syntax checks and JSON import validation.
+
 ### 2026-10-13 — Compact exchange-rate snapshots
 
 - Changed transaction exchange-rate snapshots to store only the currencies involved in that transaction plus the base currency.
