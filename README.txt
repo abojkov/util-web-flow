@@ -416,6 +416,12 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — App logo
+
+- Added the local `logo.png` asset to the sidebar and mobile header brand mark.
+- Added `logo.png` as the browser favicon and Apple touch icon.
+- **Verification:** Source inspection and referenced file checks.
+
 ### 2026-10-13 — Hidden form rows
 
 - Fixed hidden modal fields so CSS form layout does not override the `hidden` attribute.
