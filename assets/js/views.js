@@ -86,7 +86,7 @@ async function reload() {
         descriptionOpen = state.activeTxDescription === t.id,
         descriptionBadge = description ? `<button class="tx-note-badge ${descriptionOpen ? 'open' : ''}" type="button" data-tx-description="${t.id}" aria-expanded="${descriptionOpen ? 'true' : 'false'}">Note</button>` : '',
         descriptionPopover = description && descriptionOpen ? `<div class="tx-note-popover">${escapeHtml(description)}</div>` : '';
-      return `<div class="transaction"><div class="tx-icon">${t.type === 'transfer' ? '⇄' : c?.icon || '◈'}</div><div class="tx-main"><b><span>${escapeHtml(label)}</span>${descriptionBadge}</b><small>${escapeHtml(detail)}</small>${descriptionPopover}</div><div class="tx-amount ${t.type}">${t.type === 'expense' ? '−' : t.type === 'income' ? '+' : ''}${fmt(t.amount, currency)}</div><div class="tx-actions"><button class="mini-btn" data-edit-tx="${t.id}" title="Edit">✎</button><button class="mini-btn" data-delete-tx="${t.id}" title="Delete">×</button></div></div>`
+      return `<div class="transaction"><div class="tx-icon">${t.type === 'transfer' ? '⇄' : c?.icon || '◈'}</div><div class="tx-main"><b><span>${escapeHtml(label)}</span>${descriptionBadge}</b><small>${escapeHtml(detail)}</small>${descriptionPopover}</div><div class="tx-amount ${t.type}">${t.type === 'expense' ? '−' : t.type === 'income' ? '+' : ''}${fmt(t.amount, currency)}</div><div class="tx-actions"><button class="mini-btn" data-edit-tx="${t.id}" title="Edit">✎</button></div></div>`
     }).join('')
   }
 
@@ -308,18 +308,6 @@ async function reload() {
       })
     });
     document.querySelectorAll('[data-edit-tx]').forEach(b => b.onclick = () => transactionModal(state.transactions.find(t => t.id === b.dataset.editTx)));
-    document.querySelectorAll('[data-delete-tx]').forEach(b => b.onclick = async () => {
-      confirmAction({
-        title: 'Delete transaction',
-        message: 'Delete this transaction? This cannot be undone.',
-        confirmText: 'Delete transaction',
-        onConfirm: async () => {
-          await del('transactions', b.dataset.deleteTx);
-          closeModal();
-          await reload()
-        }
-      })
-    });
     $('#open-categories')?.addEventListener('click', categoriesModal);
     $('#open-budgets')?.addEventListener('click', budgetsModal);
     $('#budget-quick')?.addEventListener('click', budgetsModal);

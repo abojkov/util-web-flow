@@ -416,6 +416,12 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — Transaction deletion placement
+
+- Removed the delete action from transaction list rows.
+- Added transaction deletion to the edit transaction modal so deletion requires opening the record first.
+- **Verification:** JavaScript syntax checks and source inspection.
+
 ### 2026-10-13 — Modal bottom spacing
 
 - Added consistent bottom padding to scrollable modal bodies so content-only modals do not end flush against the sheet edge.

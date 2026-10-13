@@ -140,7 +140,7 @@ function modal(title, body) {
     }
     const type = t?.type || initial;
     const accountOpts = (sel) => active.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${escapeHtml(a.name)} (${a.currency})</option>`).join('');
-    modal(t ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label>Amount</label><input id="tx-amount" type="number" name="amount" min="0.01" step="0.01" value="${t?.amount ?? ''}" required placeholder="0.00"></div><div class="field"><label>Date</label><input type="date" name="date" value="${t?.date || today()}" required></div></div><div class="field-row"><div class="field"><label>Time</label><input type="time" name="time" value="${t?.time || currentTime()}" required></div><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="number" min="0.000001" step="0.000001"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn" type="submit">Save transaction</button></div></form>`);
+    modal(t ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label>Amount</label><input id="tx-amount" type="number" name="amount" min="0.01" step="0.01" value="${t?.amount ?? ''}" required placeholder="0.00"></div><div class="field"><label>Date</label><input type="date" name="date" value="${t?.date || today()}" required></div></div><div class="field-row"><div class="field"><label>Time</label><input type="time" name="time" value="${t?.time || currentTime()}" required></div><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="number" min="0.000001" step="0.000001"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer">${t ? '<button type="button" class="btn danger" id="delete-tx">Delete transaction</button>' : ''}<button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn" type="submit">Save transaction</button></div></form>`);
     bindPayeeAutocomplete('tx-payee');
     let chosen = type;
     let lastRateCurrency = '';
@@ -205,6 +205,19 @@ function modal(title, body) {
       extra()
     });
     $('#cancel').onclick = closeModal;
+    $('#delete-tx')?.addEventListener('click', () => {
+      confirmAction({
+        title: 'Delete transaction',
+        message: 'Delete this transaction? This cannot be undone.',
+        confirmText: 'Delete transaction',
+        onCancel: () => transactionModal(t),
+        onConfirm: async () => {
+          await del('transactions', t.id);
+          closeModal();
+          await reload()
+        }
+      })
+    });
     $('#tx-amount')?.addEventListener('input', updateConversionPreview);
     $('#tx-account')?.addEventListener('change', updateConversionPreview);
     $('#tx-rate')?.addEventListener('input', updateConversionPreview);

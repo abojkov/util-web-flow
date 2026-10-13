@@ -1220,6 +1220,10 @@
     z-index: 2
   }
 
+  .modal-footer .btn.danger:first-child {
+    margin-right: auto
+  }
+
   .segmented {
     display: flex;
     background: #f1f5fb;
