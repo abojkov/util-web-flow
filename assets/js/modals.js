@@ -231,8 +231,7 @@ function modal(title, body) {
   }
 
   function shiftBudget(n) {
-    const [y, m] = state.month.split('-').map(Number);
-    state.month = new Date(y, m - 1 + n, 1).toISOString().slice(0, 7);
+    state.month = shiftMonth(state.month, n);
     render();
     budgetsModal()
   }

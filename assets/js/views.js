@@ -24,9 +24,7 @@ async function reload() {
 
   function bindMonth() {
     const shift = d => {
-      const [y, m] = state.month.split('-').map(Number);
-      const dt = new Date(y, m - 1 + d, 1);
-      state.month = dt.toISOString().slice(0, 7);
+      state.month = shiftMonth(state.month, d);
       render()
     };
     $('#prev-month')?.addEventListener('click', () => shift(-1));

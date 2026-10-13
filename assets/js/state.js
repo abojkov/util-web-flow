@@ -39,6 +39,11 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
   }).format(n || 0);
   const fmt = (n, c) => money(n, c);
   const amount = x => Math.round((Number(x) || 0) * 100) / 100;
+  const monthKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  const shiftMonth = (month, delta) => {
+    const [year, monthNumber] = month.split('-').map(Number);
+    return monthKey(new Date(year, monthNumber - 1 + delta, 1, 12))
+  };
   const monthLabel = m => new Date(m + '-01T12:00:00').toLocaleDateString('en-GB', {month: 'long', year: 'numeric'});
   const account = id => state.accounts.find(a => a.id === id);
   const cat = id => state.categories.find(c => c.id === id);
