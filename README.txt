@@ -385,7 +385,7 @@ Before treating any feature as complete, ask Codex:
 
 | Decision | Choice |
 | --- | --- |
-| App name | Flow Money Manager |
+| App name | Flow |
 | Design | Blue and white, light only |
 | Runtime | Direct-open local HTML, no server |
 | Stack | Vanilla HTML/CSS/JS + IndexedDB |
@@ -415,6 +415,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-13 — App install name
+
+- Changed the document title and install metadata to use `Flow`.
+- **Verification:** Source inspection.
 
 ### 2026-10-13 — Search filter contrast
 
