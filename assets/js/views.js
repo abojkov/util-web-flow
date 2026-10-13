@@ -133,17 +133,29 @@ async function reload() {
     document.querySelectorAll('[data-delete-account]').forEach(b => b.onclick = async () => {
       const a = account(b.dataset.deleteAccount);
       if (state.transactions.some(t => t.accountId === a.id || t.toAccountId === a.id)) return toast('Account has transactions. Archive it instead.');
-      if (confirm(`Delete ${a.name}?`)) {
-        await del('accounts', a.id);
-        await reload()
-      }
+      confirmAction({
+        title: 'Delete account',
+        message: `Delete ${a.name}? This cannot be undone.`,
+        confirmText: 'Delete account',
+        onConfirm: async () => {
+          await del('accounts', a.id);
+          closeModal();
+          await reload()
+        }
+      })
     });
     document.querySelectorAll('[data-edit-tx]').forEach(b => b.onclick = () => transactionModal(state.transactions.find(t => t.id === b.dataset.editTx)));
     document.querySelectorAll('[data-delete-tx]').forEach(b => b.onclick = async () => {
-      if (confirm('Delete this transaction?')) {
-        await del('transactions', b.dataset.deleteTx);
-        await reload()
-      }
+      confirmAction({
+        title: 'Delete transaction',
+        message: 'Delete this transaction? This cannot be undone.',
+        confirmText: 'Delete transaction',
+        onConfirm: async () => {
+          await del('transactions', b.dataset.deleteTx);
+          closeModal();
+          await reload()
+        }
+      })
     });
     $('#open-categories')?.addEventListener('click', categoriesModal);
     $('#open-budgets')?.addEventListener('click', budgetsModal);

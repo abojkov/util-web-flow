@@ -10,6 +10,14 @@ function modal(title, body) {
     $('#modal-root').innerHTML = ''
   }
 
+  function confirmAction({title, message, confirmText = 'Confirm', onConfirm, onCancel = closeModal}) {
+    modal(title, `<p class="notice">${escapeHtml(message)}</p><div class="modal-footer"><button type="button" class="btn ghost" id="confirm-cancel">Cancel</button><button type="button" class="btn danger" id="confirm-ok">${escapeHtml(confirmText)}</button></div>`);
+    $('#confirm-cancel').onclick = onCancel;
+    $('#confirm-ok').onclick = async () => {
+      await onConfirm();
+    }
+  }
+
   function toast(s) {
     $('#toast-root').innerHTML = `<div class="toast">${escapeHtml(s)}</div>`;
     setTimeout(() => {
@@ -131,11 +139,17 @@ function modal(title, body) {
     document.querySelectorAll('[data-edit-category]').forEach(b => b.onclick = () => categoryEdit(cat(b.dataset.editCategory)));
     document.querySelectorAll('[data-remove-category]').forEach(b => b.onclick = async () => {
       if (state.transactions.some(t => t.categoryId === b.dataset.removeCategory || t.splits?.some(s => s.categoryId === b.dataset.removeCategory))) return toast('Category is in use');
-      if (confirm('Delete category?')) {
-        await del('categories', b.dataset.removeCategory);
-        await reload();
-        categoriesModal()
-      }
+      confirmAction({
+        title: 'Delete category',
+        message: 'Delete this category? This cannot be undone.',
+        confirmText: 'Delete category',
+        onCancel: categoriesModal,
+        onConfirm: async () => {
+          await del('categories', b.dataset.removeCategory);
+          await reload();
+          categoriesModal()
+        }
+      })
     })
   }
 
@@ -205,11 +219,17 @@ function modal(title, body) {
       recurringModal()
     });
     document.querySelectorAll('[data-remove-recurring]').forEach(b => b.onclick = async () => {
-      if (confirm('Remove schedule? Existing transactions stay intact.')) {
-        await del('recurring', b.dataset.removeRecurring);
-        await reload();
-        recurringModal()
-      }
+      confirmAction({
+        title: 'Remove schedule',
+        message: 'Remove this recurring schedule? Existing transactions stay intact.',
+        confirmText: 'Remove schedule',
+        onCancel: recurringModal,
+        onConfirm: async () => {
+          await del('recurring', b.dataset.removeRecurring);
+          await reload();
+          recurringModal()
+        }
+      })
     })
   }
 
@@ -315,11 +335,18 @@ function modal(title, body) {
       try {
         const data = JSON.parse(await file.text());
         if (data.format !== 'flow-backup' || data.version !== 1 || !storeNames.every(s => Array.isArray(data[s]))) throw Error('Unsupported backup format');
-        if (!confirm('Replace ALL current data with this backup?')) return;
-        await replaceAll(data);
-        closeModal();
-        await reload();
-        toast('Backup restored')
+        confirmAction({
+          title: 'Replace all data',
+          message: 'Replace all current data with this backup? Export a backup first if you need to keep the current data.',
+          confirmText: 'Replace data',
+          onCancel: settingsModal,
+          onConfirm: async () => {
+            await replaceAll(data);
+            closeModal();
+            await reload();
+            toast('Backup restored')
+          }
+        })
       } catch (err) {
         toast('Import failed: ' + err.message)
       }
