@@ -77,6 +77,23 @@ function modal(title, body) {
     input.form?.addEventListener('submit', hide)
   }
 
+  function categoryChoiceValue(categoryId, subcategoryId = '') {
+    return subcategoryId ? `sub:${categoryId}:${subcategoryId}` : `cat:${categoryId}`
+  }
+
+  function parseCategoryChoice(value) {
+    const [kind, categoryId, subcategoryId] = String(value || '').split(':');
+    return kind === 'sub' ? {categoryId, subcategoryId} : {categoryId: categoryId || value, subcategoryId: ''}
+  }
+
+  function categoryOptions(type, selectedCategoryId = '', selectedSubcategoryId = '') {
+    return state.categories.filter(c => c.type === type).map(c => {
+      const selected = c.id === selectedCategoryId && !selectedSubcategoryId ? 'selected' : '';
+      const children = (c.subcategories || []).map(s => `<option value="${categoryChoiceValue(c.id, s.id)}" ${c.id === selectedCategoryId && s.id === selectedSubcategoryId ? 'selected' : ''}>${escapeHtml('  ' + (s.icon || c.icon || '◦') + ' ' + c.name + ' / ' + s.name)}</option>`).join('');
+      return `<option value="${categoryChoiceValue(c.id)}" ${selected}>${escapeHtml((c.icon || '◈') + ' ' + c.name)}</option>${children}`
+    }).join('')
+  }
+
   function accountModal(a) {
     modal(a ? 'Edit account' : 'New account', `<form id="account-form"><div class="field"><label>Account name</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="e.g. Main bank account"></div><div class="field-row"><div class="field"><label>Account type</label><select name="type">${['Bank', 'Cash', 'Savings', 'Investment', 'Loan', 'Other'].map(x => `<option ${a?.type === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div><div class="field"><label>Currency</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>Opening balance</label><input type="number" step="0.01" name="opening" value="${a?.opening ?? 0}" required></div><div class="notice">Opening balances are used to calculate your balance. Currency cannot be changed after account creation.</div><div class="modal-footer"><button class="btn ghost" type="button" id="cancel">Cancel</button><button class="btn" type="submit">Save account</button></div></form>`);
     $('#cancel').onclick = closeModal;
@@ -137,8 +154,8 @@ function modal(title, body) {
       box.hidden = false
     };
     const extra = () => {
-      const options = state.categories.filter(c => c.type === chosen).map(c => `<option value="${c.id}" ${c.id === t?.categoryId ? 'selected' : ''}>${escapeHtml(c.icon + ' ' + c.name)}</option>`).join('');
-      $('#tx-extra').innerHTML = chosen === 'transfer' ? `<div class="field"><label>Destination account</label><select name="toAccountId" id="tx-to">${accountOpts(t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}</select></div><div class="field"><label>Amount received (destination currency)</label><input type="number" name="received" min="0.01" step="0.01" value="${t?.received ?? ''}" required placeholder="0.00"></div><p class="form-hint">For same-currency transfers, enter the same amount. For different currencies, enter the actual received amount.</p>` : `<div class="field"><label>Category</label><select name="categoryId">${options}</select></div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
+      const options = categoryOptions(chosen, t?.categoryId, t?.subcategoryId);
+      $('#tx-extra').innerHTML = chosen === 'transfer' ? `<div class="field"><label>Destination account</label><select name="toAccountId" id="tx-to">${accountOpts(t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}</select></div><div class="field"><label>Amount received (destination currency)</label><input type="number" name="received" min="0.01" step="0.01" value="${t?.received ?? ''}" required placeholder="0.00"></div><p class="form-hint">For same-currency transfers, enter the same amount. For different currencies, enter the actual received amount.</p>` : `<div class="field"><label>Category or subcategory</label><select name="categoryChoice">${options}</select></div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
       if (chosen !== 'transfer') {
         const toggle = $('#enable-splits'), container = $('#split-fields');
         const draw = () => {
@@ -146,12 +163,13 @@ function modal(title, body) {
           if (toggle.checked) {
             let rows = t?.splits?.length ? t.splits : [{
               categoryId: state.categories.find(c => c.type === chosen)?.id,
+              subcategoryId: '',
               amount: ''
-            }, {categoryId: state.categories.find(c => c.type === chosen)?.id, amount: ''}];
+            }, {categoryId: state.categories.find(c => c.type === chosen)?.id, subcategoryId: '', amount: ''}];
             const addRow = s => {
               const el = document.createElement('div');
               el.className = 'field-row split-row';
-              el.innerHTML = `<div class="field"><label>Category</label><select class="split-cat">${state.categories.filter(c => c.type === chosen).map(c => `<option value="${c.id}" ${c.id === s.categoryId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}</select></div><div class="field"><label>Amount</label><input class="split-amount" type="number" min="0.01" step="0.01" value="${s.amount ?? ''}" required></div>`;
+              el.innerHTML = `<div class="field"><label>Category or subcategory</label><select class="split-cat">${categoryOptions(chosen, s.categoryId, s.subcategoryId)}</select></div><div class="field"><label>Amount</label><input class="split-amount" type="number" min="0.01" step="0.01" value="${s.amount ?? ''}" required></div>`;
               $('#split-rows').append(el)
             };
             rows.forEach(addRow);
@@ -203,14 +221,21 @@ function modal(title, body) {
         record.received = amount(f.get('received'));
         if (record.received <= 0) return toast('Enter the amount received')
       } else {
-        record.categoryId = f.get('categoryId');
+        const selectedCategory = parseCategoryChoice(f.get('categoryChoice'));
+        record.categoryId = selectedCategory.categoryId;
+        record.subcategoryId = selectedCategory.subcategoryId || null;
         if ($('#enable-splits')?.checked) {
-          record.splits = [...document.querySelectorAll('.split-row')].map(row => ({
-            categoryId: row.querySelector('.split-cat').value,
-            amount: amount(row.querySelector('.split-amount').value)
-          }));
+          record.splits = [...document.querySelectorAll('.split-row')].map(row => {
+            const selected = parseCategoryChoice(row.querySelector('.split-cat').value);
+            return {
+              categoryId: selected.categoryId,
+              subcategoryId: selected.subcategoryId || null,
+              amount: amount(row.querySelector('.split-amount').value)
+            }
+          });
           if (Math.round(record.splits.reduce((s, x) => s + x.amount, 0) * 100) !== Math.round(v * 100)) return toast('Split amounts must equal the total');
-          record.categoryId = null
+          record.categoryId = null;
+          record.subcategoryId = null
         }
       }
       await put('transactions', record);
@@ -221,7 +246,7 @@ function modal(title, body) {
   }
 
   function categoriesModal() {
-    const categoryRow = c => `<div class="transaction"><div class="tx-icon" style="background:${c.color}20;color:${c.color}">${escapeHtml(c.icon)}</div><div class="tx-main"><b>${escapeHtml(c.name)}</b><small>${c.type}</small></div><button class="mini-btn" data-edit-category="${c.id}" title="Edit category">✎</button><button class="mini-btn" data-remove-category="${c.id}" title="Delete category">×</button></div>`;
+    const categoryRow = c => `<div class="category-item"><div class="transaction"><div class="tx-icon" style="background:${c.color}20;color:${c.color}">${escapeHtml(c.icon)}</div><div class="tx-main"><b>${escapeHtml(c.name)}</b><small>${c.type}${c.subcategories?.length ? ` · ${c.subcategories.length} subcategories` : ''}</small></div><button class="mini-btn" data-edit-category="${c.id}" title="Edit category">✎</button><button class="mini-btn" data-remove-category="${c.id}" title="Delete category">×</button></div>${c.subcategories?.length ? `<div class="subcategory-list">${c.subcategories.map(s => `<span class="subcategory-chip">${escapeHtml((s.icon || '◦') + ' ' + s.name)}</span>`).join('')}</div>` : ''}</div>`;
     const categorySection = (type, title, description) => {
       const items = state.categories.filter(c => c.type === type);
       return `<section class="category-group"><div class="category-group-head"><div><h3>${title}</h3><p>${description}</p></div><button class="btn secondary" data-new-category="${type}">+ New</button></div><div class="table-list">${items.length ? items.map(categoryRow).join('') : empty(`No ${type} categories`, `Create a ${type} category to organize transactions.`, type === 'expense' ? '↗' : '↙')}</div></section>`
@@ -247,17 +272,42 @@ function modal(title, body) {
 
   function categoryEdit(c, initialType = 'expense') {
     const selectedType = c?.type || initialType;
-    modal(c ? 'Edit category' : 'New category', `<form id="category-form"><div class="field"><label>Name</label><input name="name" required maxlength="45" value="${escapeHtml(c?.name || '')}"></div><div class="field-row"><div class="field"><label>Type</label><select name="type" ${c ? 'disabled' : ''}><option value="expense" ${selectedType === 'expense' ? 'selected' : ''}>Expense</option><option value="income" ${selectedType === 'income' ? 'selected' : ''}>Income</option></select></div><div class="field"><label>Icon (emoji or symbol)</label><input name="icon" maxlength="4" value="${escapeHtml(c?.icon || '◈')}"></div></div><div class="field"><label>Color</label><input name="color" type="color" value="${c?.color || '#3b82f6'}" style="height:48px"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Save category</button></div></form>`);
+    const subcategoryRows = (c?.subcategories || []).map(s => `<div class="field-row subcategory-row" data-subcategory-id="${s.id}"><div class="field"><label>Subcategory name</label><input class="subcategory-name" maxlength="45" value="${escapeHtml(s.name || '')}"></div><div class="field"><label>Icon</label><div class="inline-field"><input class="subcategory-icon" maxlength="4" value="${escapeHtml(s.icon || '')}" placeholder="◦"><button type="button" class="mini-btn" data-remove-subcategory>×</button></div></div></div>`).join('');
+    modal(c ? 'Edit category' : 'New category', `<form id="category-form"><div class="field"><label>Name</label><input name="name" required maxlength="45" value="${escapeHtml(c?.name || '')}"></div><div class="field-row"><div class="field"><label>Type</label><select name="type" ${c ? 'disabled' : ''}><option value="expense" ${selectedType === 'expense' ? 'selected' : ''}>Expense</option><option value="income" ${selectedType === 'income' ? 'selected' : ''}>Income</option></select></div><div class="field"><label>Icon (emoji or symbol)</label><input name="icon" maxlength="4" value="${escapeHtml(c?.icon || '◈')}"></div></div><div class="field"><label>Color</label><input name="color" type="color" value="${c?.color || '#3b82f6'}" style="height:48px"></div><div class="field"><label>Subcategories</label><div id="subcategory-rows">${subcategoryRows}</div><button type="button" class="btn secondary" id="add-subcategory">+ Add subcategory</button><p class="form-hint">Transactions can use either the parent category or one of its subcategories.</p></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Save category</button></div></form>`);
     $('#cancel').onclick = categoriesModal;
+    const addSubcategoryRow = (item = {}) => {
+      const row = document.createElement('div');
+      row.className = 'field-row subcategory-row';
+      row.dataset.subcategoryId = item.id || '';
+      row.innerHTML = `<div class="field"><label>Subcategory name</label><input class="subcategory-name" maxlength="45" value="${escapeHtml(item.name || '')}"></div><div class="field"><label>Icon</label><div class="inline-field"><input class="subcategory-icon" maxlength="4" value="${escapeHtml(item.icon || '')}" placeholder="◦"><button type="button" class="mini-btn" data-remove-subcategory>×</button></div></div>`;
+      $('#subcategory-rows').append(row)
+    };
+    $('#add-subcategory').onclick = () => addSubcategoryRow();
+    $('#subcategory-rows').onclick = e => {
+      const remove = e.target.closest('[data-remove-subcategory]');
+      if (remove) remove.closest('.subcategory-row')?.remove()
+    };
     $('#category-form').onsubmit = async e => {
       e.preventDefault();
       const f = new FormData(e.target);
+      const usedSubcategoryIds = new Set(state.transactions.flatMap(t => [
+        t.categoryId === c?.id && t.subcategoryId,
+        ...(t.splits || []).filter(s => s.categoryId === c?.id).map(s => s.subcategoryId)
+      ]).filter(Boolean));
+      const subcategories = [...document.querySelectorAll('.subcategory-row')].map(row => ({
+        id: row.dataset.subcategoryId || uid(),
+        name: row.querySelector('.subcategory-name').value.trim(),
+        icon: row.querySelector('.subcategory-icon').value.trim()
+      })).filter(s => s.name);
+      const keptIds = new Set(subcategories.map(s => s.id));
+      if ((c?.subcategories || []).some(s => usedSubcategoryIds.has(s.id) && !keptIds.has(s.id))) return toast('Subcategory is in use');
       await put('categories', {
         id: c?.id || uid(),
         name: f.get('name').trim(),
         type: c?.type || f.get('type'),
         icon: f.get('icon') || '◈',
-        color: f.get('color')
+        color: f.get('color'),
+        subcategories
       });
       await reload();
       categoriesModal()
@@ -448,8 +498,8 @@ function modal(title, body) {
       toast('Backup exported')
     };
     $('#export-csv').onclick = () => {
-      const fields = ['date', 'time', 'type', 'account', 'currency', 'amount', 'category', 'payee', 'description', 'exchange_rate_from', 'exchange_rate_to', 'exchange_rate', 'destination', 'received'];
-      const csv = [fields, ...state.transactions.map(t => [t.date, t.time || '', t.type, account(t.accountId)?.name || '', account(t.accountId)?.currency || '', t.amount, cat(t.categoryId)?.name || '', t.payee ?? t.place ?? '', t.description ?? t.note ?? '', t.exchangeRateFrom || '', t.exchangeRateTo || '', t.exchangeRate || '', account(t.toAccountId)?.name || '', t.received || ''])].map(row => row.map(x => '"' + String(x ?? '').replaceAll('"', '""') + '"').join(',')).join('\r\n');
+      const fields = ['date', 'time', 'type', 'account', 'currency', 'amount', 'category', 'subcategory', 'payee', 'description', 'exchange_rate_from', 'exchange_rate_to', 'exchange_rate', 'destination', 'received'];
+      const csv = [fields, ...state.transactions.map(t => [t.date, t.time || '', t.type, account(t.accountId)?.name || '', account(t.accountId)?.currency || '', t.amount, cat(t.categoryId)?.name || '', subcat(t.categoryId, t.subcategoryId)?.name || '', t.payee ?? t.place ?? '', t.description ?? t.note ?? '', t.exchangeRateFrom || '', t.exchangeRateTo || '', t.exchangeRate || '', account(t.toAccountId)?.name || '', t.received || ''])].map(row => row.map(x => '"' + String(x ?? '').replaceAll('"', '""') + '"').join(',')).join('\r\n');
       download('\ufeff' + csv, 'flow-transactions-' + today() + '.csv', 'text/csv;charset=utf-8');
       toast('CSV exported')
     };

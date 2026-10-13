@@ -41,10 +41,11 @@ async function reload() {
       const a = account(t.accountId), c = cat(t.categoryId),
         description = t.description ?? t.note ?? '',
         payee = t.payee ?? t.place ?? '',
-        label = t.type === 'transfer' ? `Transfer to ${account(t.toAccountId)?.name || 'account'}` : (payee || description || c?.name || t.type),
+        categoryName = t.categoryId ? categoryLabel(t.categoryId, t.subcategoryId) : '',
+        label = t.type === 'transfer' ? `Transfer to ${account(t.toAccountId)?.name || 'account'}` : (payee || description || categoryName || t.type),
         currency = a?.currency || 'EUR',
         equivalent = currency !== base() ? money(convertedTransactionAmount(t), base()) : '',
-        detail = [a?.name || 'Unknown account', t.date, t.time, equivalent && `${equivalent} ${base()} equivalent`, description && payee ? description : ''].filter(Boolean).join(' · ');
+        detail = [a?.name || 'Unknown account', categoryName, t.date, t.time, equivalent && `${equivalent} ${base()} equivalent`, description && payee ? description : ''].filter(Boolean).join(' · ');
       return `<div class="transaction"><div class="tx-icon">${t.type === 'transfer' ? '⇄' : c?.icon || '◈'}</div><div class="tx-main"><b>${escapeHtml(label)}</b><small>${escapeHtml(detail)}</small></div><div class="tx-amount ${t.type}">${t.type === 'expense' ? '−' : t.type === 'income' ? '+' : ''}${fmt(t.amount, currency)}</div><div class="tx-actions"><button class="mini-btn" data-edit-tx="${t.id}" title="Edit">✎</button><button class="mini-btn" data-delete-tx="${t.id}" title="Delete">×</button></div></div>`
     }).join('')
   }
@@ -52,17 +53,21 @@ async function reload() {
   function spendingByCategory(items) {
     const map = new Map();
     for (const t of items.filter(t => t.type === 'expense')) {
-      const splits = t.splits?.length ? t.splits : [{categoryId: t.categoryId, amount: t.amount}];
+      const splits = t.splits?.length ? t.splits : [{categoryId: t.categoryId, subcategoryId: t.subcategoryId, amount: t.amount}];
       for (const s of splits) {
-        const id = s.categoryId || 'other';
+        const id = s.subcategoryId ? `${s.categoryId}:${s.subcategoryId}` : s.categoryId || 'other';
         map.set(id, (map.get(id) || 0) + convertedTransactionAmount(t, s.amount, account(t.accountId)?.currency || 'EUR'))
       }
     }
-    return [...map].map(([id, value]) => ({
-      name: cat(id)?.name || 'Other',
-      value,
-      color: cat(id)?.color || '#94a3b8'
-    })).sort((a, b) => b.value - a.value)
+    return [...map].map(([id, value]) => {
+      const [categoryId, subcategoryId] = id.split(':');
+      const c = cat(categoryId), s = subcat(categoryId, subcategoryId);
+      return {
+        name: categoryId === 'other' ? 'Other' : categoryLabel(categoryId, subcategoryId),
+        value,
+        color: s?.color || c?.color || '#94a3b8'
+      }
+    }).sort((a, b) => b.value - a.value)
   }
 
   function donut(items) {

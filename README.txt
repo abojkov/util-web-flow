@@ -202,12 +202,13 @@ accounts
 transactions
   id, type, amount, currency, date, time, accountId,
   destinationAccountId?, receivedAmount?, exchangeRate?, fee?,
-  exchangeRateFrom?, exchangeRateTo?, exchangeRates?,
+  exchangeRateFrom?, exchangeRateTo?, exchangeRates?, categoryId?, subcategoryId?,
   payee?, description?, recurringRuleId?, occurrenceKey?, createdAt, updatedAt
 transactionSplits
   id, transactionId, categoryId, subcategoryId?, amount, description?
 categories
-  id, name, type, parentId?, icon, color, sortOrder, archived?
+  id, name, type, icon, color, sortOrder, archived?,
+  subcategories?: [{ id, name, icon, color?, sortOrder? }]
 budgets
   id, categoryId?, year, month, limit, currency
 recurringRules
@@ -312,7 +313,7 @@ Explicitly excluded unless the product owner changes the requirements:
 | F10 | Transactions | Income, expenses, transfers CRUD | Planned | CRUD and totals tested |
 | F11 | Transactions | Split transactions | Planned | Exact allocation sums |
 | F12 | Transactions | History, calendar, search and filters | Planned | Date/filter edge cases |
-| F13 | Categories | Custom categories, subcategories, icons, colors | Planned | Reference safety |
+| F13 | Categories | Custom categories, subcategories, icons, colors | In progress | Reference safety |
 | F14 | Budgets | Overall and category monthly budgets | Planned | No carry-over |
 | F15 | Recurring | Recurring income and expenses | Planned | Idempotent catch-up |
 | F16 | Statistics | Donut, bar, trends, drilldowns | Planned | Reconcile with ledger |
@@ -414,6 +415,15 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-13 — Subcategories in transactions
+
+- Added one-level subcategories stored under income and expense categories.
+- Updated transaction and split forms so users can select either a parent category or a subcategory.
+- Display category/subcategory paths in transaction history and expense statistics.
+- Prevent removing subcategories that are already referenced by transactions or splits.
+- Added subcategory data to JSON backups through the existing category records and added a CSV subcategory column for ordinary transactions.
+- **Verification:** JavaScript syntax checks.
 
 ### 2026-10-13 — Category management grouping
 

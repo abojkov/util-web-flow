@@ -47,6 +47,11 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
   const monthLabel = m => new Date(m + '-01T12:00:00').toLocaleDateString('en-GB', {month: 'long', year: 'numeric'});
   const account = id => state.accounts.find(a => a.id === id);
   const cat = id => state.categories.find(c => c.id === id);
+  const subcat = (categoryId, subcategoryId) => cat(categoryId)?.subcategories?.find(s => s.id === subcategoryId);
+  const categoryLabel = (categoryId, subcategoryId) => {
+    const c = cat(categoryId), s = subcat(categoryId, subcategoryId);
+    return [c?.name, s?.name].filter(Boolean).join(' / ') || 'Other'
+  };
   const defaultRates = {EUR: 1, USD: 1.09, GBP: .86, MKD: 61.5, CHF: .94, SEK: 11.2};
 
   function exchangeRates() {
