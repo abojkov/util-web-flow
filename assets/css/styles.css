@@ -710,6 +710,36 @@
     padding: 10px 22px
   }
 
+  .category-manager {
+    display: grid;
+    gap: 18px
+  }
+
+  .category-group {
+    display: grid;
+    gap: 10px
+  }
+
+  .category-group-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 14px
+  }
+
+  .category-group-head h3 {
+    margin: 0;
+    font: 800 16px 'Plus Jakarta Sans', sans-serif;
+    color: #233653
+  }
+
+  .category-group-head p {
+    margin: 4px 0 0;
+    color: #8c9bb2;
+    font-size: 12px;
+    line-height: 1.4
+  }
+
   .pill {
     display: inline-block;
     background: #edf4ff;
@@ -1230,6 +1260,14 @@
 
     .toolbar h2 {
       font-size: 17px
+    }
+
+    .category-group-head {
+      align-items: flex-start
+    }
+
+    .category-group-head .btn {
+      flex: 0 0 auto
     }
 
     .field-row {

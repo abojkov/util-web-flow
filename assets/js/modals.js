@@ -215,8 +215,13 @@ function modal(title, body) {
   }
 
   function categoriesModal() {
-    modal('Manage categories', `<div class="toolbar"><span class="muted">Organize your income and expenses</span><button class="btn" id="new-category">+ New</button></div><div class="table-list">${state.categories.map(c => `<div class="transaction"><div class="tx-icon" style="background:${c.color}20;color:${c.color}">${escapeHtml(c.icon)}</div><div class="tx-main"><b>${escapeHtml(c.name)}</b><small>${c.type}</small></div><button class="mini-btn" data-edit-category="${c.id}">✎</button><button class="mini-btn" data-remove-category="${c.id}">×</button></div>`).join('')}</div>`);
-    $('#new-category').onclick = () => categoryEdit();
+    const categoryRow = c => `<div class="transaction"><div class="tx-icon" style="background:${c.color}20;color:${c.color}">${escapeHtml(c.icon)}</div><div class="tx-main"><b>${escapeHtml(c.name)}</b><small>${c.type}</small></div><button class="mini-btn" data-edit-category="${c.id}" title="Edit category">✎</button><button class="mini-btn" data-remove-category="${c.id}" title="Delete category">×</button></div>`;
+    const categorySection = (type, title, description) => {
+      const items = state.categories.filter(c => c.type === type);
+      return `<section class="category-group"><div class="category-group-head"><div><h3>${title}</h3><p>${description}</p></div><button class="btn secondary" data-new-category="${type}">+ New</button></div><div class="table-list">${items.length ? items.map(categoryRow).join('') : empty(`No ${type} categories`, `Create a ${type} category to organize transactions.`, type === 'expense' ? '↗' : '↙')}</div></section>`
+    };
+    modal('Manage categories', `<div class="category-manager">${categorySection('expense', 'Expense categories', 'Used for spending, budgets, and expense reports.')}${categorySection('income', 'Income categories', 'Used for salary, gifts, interest, and income reports.')}</div>`);
+    document.querySelectorAll('[data-new-category]').forEach(b => b.onclick = () => categoryEdit(null, b.dataset.newCategory));
     document.querySelectorAll('[data-edit-category]').forEach(b => b.onclick = () => categoryEdit(cat(b.dataset.editCategory)));
     document.querySelectorAll('[data-remove-category]').forEach(b => b.onclick = async () => {
       if (state.transactions.some(t => t.categoryId === b.dataset.removeCategory || t.splits?.some(s => s.categoryId === b.dataset.removeCategory))) return toast('Category is in use');
@@ -234,8 +239,9 @@ function modal(title, body) {
     })
   }
 
-  function categoryEdit(c) {
-    modal(c ? 'Edit category' : 'New category', `<form id="category-form"><div class="field"><label>Name</label><input name="name" required maxlength="45" value="${escapeHtml(c?.name || '')}"></div><div class="field-row"><div class="field"><label>Type</label><select name="type" ${c ? 'disabled' : ''}><option value="expense" ${c?.type === 'expense' ? 'selected' : ''}>Expense</option><option value="income" ${c?.type === 'income' ? 'selected' : ''}>Income</option></select></div><div class="field"><label>Icon (emoji or symbol)</label><input name="icon" maxlength="4" value="${escapeHtml(c?.icon || '◈')}"></div></div><div class="field"><label>Color</label><input name="color" type="color" value="${c?.color || '#3b82f6'}" style="height:48px"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Save category</button></div></form>`);
+  function categoryEdit(c, initialType = 'expense') {
+    const selectedType = c?.type || initialType;
+    modal(c ? 'Edit category' : 'New category', `<form id="category-form"><div class="field"><label>Name</label><input name="name" required maxlength="45" value="${escapeHtml(c?.name || '')}"></div><div class="field-row"><div class="field"><label>Type</label><select name="type" ${c ? 'disabled' : ''}><option value="expense" ${selectedType === 'expense' ? 'selected' : ''}>Expense</option><option value="income" ${selectedType === 'income' ? 'selected' : ''}>Income</option></select></div><div class="field"><label>Icon (emoji or symbol)</label><input name="icon" maxlength="4" value="${escapeHtml(c?.icon || '◈')}"></div></div><div class="field"><label>Color</label><input name="color" type="color" value="${c?.color || '#3b82f6'}" style="height:48px"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Save category</button></div></form>`);
     $('#cancel').onclick = categoriesModal;
     $('#category-form').onsubmit = async e => {
       e.preventDefault();
