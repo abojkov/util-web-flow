@@ -392,7 +392,28 @@ Do not implement these unless the user explicitly changes the requirements:
 - Cloud synchronization.
 - External analytics or tracking.
 
-## 20. Codex Working Instructions
+##20. Documentation Maintenance
+
+Treat README.md as the living product specification
+and source of truth for application functionality.
+
+Whenever you implement a feature, modify existing
+functionality, change the database schema, or fix
+a bug affecting documented behavior:
+
+- Update the relevant README.md sections.
+- Update feature implementation statuses.
+- Document new functionality and business rules.
+- Update acceptance criteria when necessary.
+- Add an entry to the changelog.
+- Keep documentation consistent with actual code.
+- Never mark a feature as implemented unless verified.
+- Do not remove planned features without approval.
+
+Documentation updates are part of completing a task,
+not a separate optional step.
+
+## 21. Codex Working Instructions
 
 For every task:
 

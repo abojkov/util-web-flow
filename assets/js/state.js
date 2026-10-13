@@ -1,5 +1,6 @@
 const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
-    today = () => new Date().toLocaleDateString('en-CA');
+    today = () => new Date().toLocaleDateString('en-CA'),
+    currentTime = () => new Date().toTimeString().slice(0, 5);
   const icons = {home: '⌂', transactions: '≡', statistics: '◉', accounts: '▣', more: '☷'};
   const names = {
     home: 'Overview',
