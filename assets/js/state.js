@@ -1,6 +1,7 @@
 const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     today = () => new Date().toLocaleDateString('en-CA'),
     currentTime = () => new Date().toTimeString().slice(0, 5);
+  let txSearchTimer;
   const icons = {home: '⌂', transactions: '≡', statistics: '◉', accounts: '▣', more: '☷'};
   const names = {
     home: 'Overview',
@@ -20,6 +21,8 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     settings: [],
     month: today().slice(0, 7),
     accountFilter: 'all',
+    txSearch: '',
+    txSearchPeriod: 'month',
     txType: 'expense',
     statsPeriod: 'month',
     statsAccount: 'all'

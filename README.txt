@@ -107,7 +107,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Create, edit, delete, list, search, filter, and inspect transaction details.
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
 - Support daily/calendar, weekly, monthly, and chronological review.
-- Filter by date range, account, type, category, and search text.
+- Filter by date range, account, type, category, and search text. Transaction search starts at 2 characters and resets when the search field is blank.
 - Validate positive amounts, valid account/category references, dates, and transfer endpoints.
 - Changes must consistently update all dependent balances, charts, and budgets.
 - Deletions must be intentional and confirmable.
@@ -415,6 +415,15 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-13 — Transaction search
+
+- Added transaction search on the Transactions page.
+- Search matches payee/place and description/note text within the selected period and account filter.
+- Added search period filters for monthly, weekly, yearly, and all-history search.
+- Kept the search term in local UI state and preserved cursor position while filtering.
+- Updated search behavior so filtering starts at 2 characters, one-character input does not narrow results, and blank input clears the search state.
+- **Verification:** JavaScript syntax checks.
 
 ### 2026-10-13 — Multiline transaction descriptions
 

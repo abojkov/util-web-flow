@@ -37,7 +37,7 @@ async function reload() {
 
   function txList(items) {
     if (!items.length) return empty('No transactions yet', 'Your financial activity will appear here.', '↗');
-    return items.slice().sort((a, b) => b.date.localeCompare(a.date) || String(b.time || '').localeCompare(String(a.time || '')) || b.createdAt.localeCompare(a.createdAt)).map(t => {
+    return items.map(t => {
       const a = account(t.accountId), c = cat(t.categoryId),
         description = t.description ?? t.note ?? '',
         payee = t.payee ?? t.place ?? '',
@@ -93,8 +93,22 @@ async function reload() {
   }
 
   function transactions() {
-    const items = txs();
-    return `<div class="toolbar"><div><h2>Transaction history</h2><p class="muted">Every movement, all in one place.</p></div><button class="btn" data-add="transaction">+ New transaction</button></div><div class="toolbar">${monthControl()}${accountSelect()}</div><section class="table-list">${txList(items)}</section>`
+    const rawSearch = state.txSearch.trim();
+    const query = rawSearch.length >= 2 ? rawSearch.toLocaleLowerCase() : '';
+    const searchPeriodOptions = [['month', 'Monthly'], ['week', 'Weekly'], ['year', 'Yearly'], ['all', 'All history']];
+    const startOfWeek = date => {
+      const d = new Date(date);
+      d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+      return d.toISOString().slice(0, 10)
+    };
+    const todayKey = today(), weekStart = startOfWeek(todayKey), yearKey = state.month.slice(0, 4);
+    const inSearchPeriod = t => state.txSearchPeriod === 'all' || (state.txSearchPeriod === 'year' ? t.date?.startsWith(yearKey) : state.txSearchPeriod === 'week' ? t.date >= weekStart && t.date <= todayKey : t.date?.startsWith(state.month));
+    const baseItems = state.transactions.filter(t => inSearchPeriod(t) && (state.accountFilter === 'all' || t.accountId === state.accountFilter || t.toAccountId === state.accountFilter));
+    const matchedItems = query ? baseItems.filter(t => [t.payee, t.place, t.description, t.note].some(value => String(value || '').toLocaleLowerCase().includes(query))) : baseItems;
+    const items = state.txSearchPeriod === 'all' && !query ? matchedItems.slice().sort((a, b) => b.date.localeCompare(a.date) || String(b.time || '').localeCompare(String(a.time || '')) || b.createdAt.localeCompare(a.createdAt)).slice(0, 250) : matchedItems;
+    const periodLabel = searchPeriodOptions.find(([value]) => value === state.txSearchPeriod)?.[1] || 'Monthly';
+    const resultText = query ? `${matchedItems.length} matching transactions · ${periodLabel}` : rawSearch ? `Type at least 2 characters to search · ${periodLabel}` : state.txSearchPeriod === 'all' ? `Showing latest ${items.length} of ${matchedItems.length} transactions · type to search all history` : `${periodLabel} transactions`;
+    return `<div class="toolbar"><div><h2>Transaction history</h2><p class="muted">Every movement, all in one place.</p></div><button class="btn" data-add="transaction">+ New transaction</button></div><div class="toolbar"><div class="filter-row">${monthControl()}${accountSelect()}</div><div class="filter-row"><label class="search-field"><span>Search</span><input id="tx-search" type="search" value="${escapeHtml(state.txSearch)}" placeholder="Payee or description"></label><label class="search-field search-period"><span>Period</span><select id="tx-search-period">${searchPeriodOptions.map(([value, label]) => `<option value="${value}" ${state.txSearchPeriod === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label></div></div><p class="form-hint">${escapeHtml(resultText)}</p><section class="table-list">${txList(items)}</section>`
   }
 
   function statistics() {
@@ -124,6 +138,27 @@ async function reload() {
     bindMonth();
     $('#account-filter')?.addEventListener('change', e => {
       state.accountFilter = e.target.value;
+      render()
+    });
+    $('#tx-search')?.addEventListener('input', e => {
+      const value = e.target.value, cursor = e.target.selectionStart;
+      clearTimeout(txSearchTimer);
+      if (!value.trim()) {
+        state.txSearch = '';
+        render();
+        $('#tx-search')?.focus({preventScroll: true});
+        return
+      }
+      txSearchTimer = setTimeout(() => {
+        state.txSearch = value;
+        render();
+        const next = $('#tx-search');
+        next?.focus({preventScroll: true});
+        next?.setSelectionRange(cursor, cursor)
+      }, 180)
+    });
+    $('#tx-search-period')?.addEventListener('change', e => {
+      state.txSearchPeriod = e.target.value;
       render()
     });
     document.querySelectorAll('[data-page]').forEach(b => b.onclick = () => {
