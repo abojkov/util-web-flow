@@ -105,6 +105,7 @@ Three types:
 Core fields: ID, type, amount, date, time, source account, optional destination account and received amount, category/subcategory where applicable, payee, description, optional attachment references, created/updated timestamps.
 
 - Create, edit, delete, list, search, filter, and inspect transaction details.
+- Payee inputs should suggest previously used payees as the user types.
 - Support daily/calendar, weekly, monthly, and chronological review.
 - Filter by date range, account, type, category, and search text.
 - Validate positive amounts, valid account/category references, dates, and transfer endpoints.
@@ -411,6 +412,7 @@ Before treating any feature as complete, ask Codex:
 ### 2026-10-13 — Transaction detail fields
 
 - Added transaction time, payee, and description fields to the implementation and documented transaction model.
+- Added payee reuse suggestions from existing transaction and recurring payees.
 - Renamed the previous note behavior to description while preserving existing `note` values as legacy fallback data.
 - **Verification:** JavaScript syntax checks and source search for updated transaction/export paths.
 

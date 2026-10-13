@@ -44,6 +44,17 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
   const cat = id => state.categories.find(c => c.id === id);
   const rates = {EUR: 1, USD: 1.09, GBP: .86, MKD: 61.5, CHF: .94, SEK: 11.2};
 
+  function payeeOptions() {
+    const seen = new Map();
+    for (const item of [...state.transactions, ...state.recurring]) {
+      const value = String(item.payee ?? item.place ?? '').trim();
+      if (!value) continue;
+      const key = value.toLocaleLowerCase();
+      if (!seen.has(key)) seen.set(key, value)
+    }
+    return [...seen.values()].sort((a, b) => a.localeCompare(b))
+  }
+
   function converted(v, c) {
     const base = getSetting('baseCurrency', 'EUR');
     if (c === base) return v;
