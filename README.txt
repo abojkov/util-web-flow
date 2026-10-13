@@ -420,6 +420,7 @@ Before treating any feature as complete, ask Codex:
 - Separated category management into Expense categories and Income categories sections.
 - Added per-section creation buttons that preselect the correct category type.
 - Preserved existing edit/delete behavior and safeguards for categories referenced by transactions.
+- Added automatic focus to the first editable modal field, with a fallback to the first modal action.
 - **Verification:** JavaScript syntax checks.
 
 ### 2026-10-13 — Modal mobile layout

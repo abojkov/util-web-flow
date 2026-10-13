@@ -1,6 +1,12 @@
 function modal(title, body) {
     $('#modal-root').innerHTML = `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${title}</h2><button class="close" id="close-modal" aria-label="Close">×</button></div><div class="modal-body">${body}</div></div></div>`;
-    $('#close-modal').onclick = closeModal
+    $('#close-modal').onclick = closeModal;
+    requestAnimationFrame(() => {
+      const body = $('.modal-body');
+      const firstField = body?.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)');
+      const firstAction = body?.querySelector('button:not(:disabled), [href], input[type="checkbox"]:not(:disabled), input[type="radio"]:not(:disabled)');
+      (firstField || firstAction)?.focus({preventScroll: true})
+    })
   }
 
   function closeModal() {
