@@ -416,6 +416,15 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — Transaction list display
+
+- Replaced inline transaction descriptions in list rows with a compact clickable `Note` badge and popover.
+- Added a hover state to make the `Note` badge read as clickable.
+- Fixed the open `Note` badge hover contrast so white text is not shown on a pale background.
+- Preserved multiline description formatting inside the note popover.
+- Kept descriptions stored, editable, and searchable.
+- **Verification:** JavaScript syntax checks.
+
 ### 2026-10-13 — App install name
 
 - Changed the document title and install metadata to use `Flow`.

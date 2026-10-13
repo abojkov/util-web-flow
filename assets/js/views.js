@@ -76,14 +76,17 @@ async function reload() {
     if (!items.length) return empty('No transactions yet', 'Your financial activity will appear here.', '↗');
     return items.map(t => {
       const a = account(t.accountId), c = cat(t.categoryId),
-        description = t.description ?? t.note ?? '',
+        description = String(t.description ?? t.note ?? '').trim(),
         payee = t.payee ?? t.place ?? '',
         categoryName = t.categoryId ? categoryLabel(t.categoryId, t.subcategoryId) : '',
-        label = t.type === 'transfer' ? `Transfer to ${account(t.toAccountId)?.name || 'account'}` : (payee || description || categoryName || t.type),
+        label = t.type === 'transfer' ? `Transfer to ${account(t.toAccountId)?.name || 'account'}` : (payee || categoryName || t.type),
         currency = a?.currency || 'EUR',
         equivalent = currency !== base() ? money(convertedTransactionAmount(t), base()) : '',
-        detail = [a?.name || 'Unknown account', categoryName, t.date, t.time, equivalent && `${equivalent} ${base()} equivalent`, description && payee ? description : ''].filter(Boolean).join(' · ');
-      return `<div class="transaction"><div class="tx-icon">${t.type === 'transfer' ? '⇄' : c?.icon || '◈'}</div><div class="tx-main"><b>${escapeHtml(label)}</b><small>${escapeHtml(detail)}</small></div><div class="tx-amount ${t.type}">${t.type === 'expense' ? '−' : t.type === 'income' ? '+' : ''}${fmt(t.amount, currency)}</div><div class="tx-actions"><button class="mini-btn" data-edit-tx="${t.id}" title="Edit">✎</button><button class="mini-btn" data-delete-tx="${t.id}" title="Delete">×</button></div></div>`
+        detail = [a?.name || 'Unknown account', categoryName, t.date, t.time, equivalent && `${equivalent} ${base()} equivalent`].filter(Boolean).join(' · '),
+        descriptionOpen = state.activeTxDescription === t.id,
+        descriptionBadge = description ? `<button class="tx-note-badge ${descriptionOpen ? 'open' : ''}" type="button" data-tx-description="${t.id}" aria-expanded="${descriptionOpen ? 'true' : 'false'}">Note</button>` : '',
+        descriptionPopover = description && descriptionOpen ? `<div class="tx-note-popover">${escapeHtml(description)}</div>` : '';
+      return `<div class="transaction"><div class="tx-icon">${t.type === 'transfer' ? '⇄' : c?.icon || '◈'}</div><div class="tx-main"><b><span>${escapeHtml(label)}</span>${descriptionBadge}</b><small>${escapeHtml(detail)}</small>${descriptionPopover}</div><div class="tx-amount ${t.type}">${t.type === 'expense' ? '−' : t.type === 'income' ? '+' : ''}${fmt(t.amount, currency)}</div><div class="tx-actions"><button class="mini-btn" data-edit-tx="${t.id}" title="Edit">✎</button><button class="mini-btn" data-delete-tx="${t.id}" title="Delete">×</button></div></div>`
     }).join('')
   }
 
@@ -265,6 +268,11 @@ async function reload() {
       const expanded = new Set(state.txExpandedCategoryGroups || []), type = e.currentTarget.dataset.txCategoryGroup;
       if (expanded.has(type)) expanded.delete(type); else expanded.add(type);
       state.txExpandedCategoryGroups = [...expanded];
+      render()
+    }));
+    document.querySelectorAll('[data-tx-description]').forEach(button => button.addEventListener('click', e => {
+      const id = e.currentTarget.dataset.txDescription;
+      state.activeTxDescription = state.activeTxDescription === id ? '' : id;
       render()
     }));
     $('#tx-clear-search')?.addEventListener('click', () => {

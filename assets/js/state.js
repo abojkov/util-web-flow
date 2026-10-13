@@ -28,6 +28,7 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     txCategoryFilters: [],
     txExpandedCategories: [],
     txExpandedCategoryGroups: [],
+    activeTxDescription: '',
     txType: 'expense',
     statsPeriod: 'month',
     statsAccount: 'all'

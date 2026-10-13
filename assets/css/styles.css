@@ -442,17 +442,76 @@
   }
 
   .tx-main b {
+    align-items: center;
+    display: flex;
+    gap: 7px;
     font-size: 13px;
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap
+  }
+
+  .tx-main b > span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis
   }
 
   .tx-main small {
     color: #98a6bb;
     font-size: 11px;
     white-space: pre-line
+  }
+
+  .tx-note-badge {
+    background: #eef4ff;
+    border: 1px solid #dbe8ff;
+    border-radius: 999px;
+    color: #3479f4;
+    cursor: pointer;
+    flex: 0 0 auto;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    padding: 4px 7px
+  }
+
+  .tx-note-badge.open {
+    background: #3479f4;
+    border-color: #3479f4;
+    color: #fff
+  }
+
+  .tx-note-badge:hover {
+    background: #dceaff;
+    border-color: #94bdff;
+    box-shadow: 0 0 0 3px #e7f0ff;
+    color: #174ea6;
+    transform: translateY(-1px)
+  }
+
+  .tx-note-badge.open:hover {
+    background: #1f5fd6;
+    border-color: #1f5fd6;
+    color: #fff
+  }
+
+  .tx-note-badge:focus {
+    outline: 2px solid #94bdff;
+    outline-offset: 2px
+  }
+
+  .tx-note-popover {
+    background: #f8fbff;
+    border: 1px solid #dbe8ff;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(52, 121, 244, .1);
+    color: #253754;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    margin-top: 7px;
+    max-width: min(420px, 72vw);
+    padding: 10px 12px;
+    white-space: pre-wrap;
+    width: fit-content
   }
 
   .tx-amount {
