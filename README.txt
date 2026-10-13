@@ -416,6 +416,14 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — Category option sorting
+
+- Sorted income and expense categories and subcategories in transaction selectors.
+- Reused the same ordering in category management so edit and select views match.
+- Ordering uses `sortOrder` when present, then category or subcategory name.
+- Added user-defined up/down ordering controls for categories and subcategories, persisted as `sortOrder`.
+- **Verification:** JavaScript syntax checks.
+
 ### 2026-10-13 — Statistics account filter visibility
 
 - Added the account selector to the Statistics page so the active account filter is visible and changeable there.

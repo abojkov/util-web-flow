@@ -86,12 +86,30 @@ function modal(title, body) {
     return kind === 'sub' ? {categoryId, subcategoryId} : {categoryId: categoryId || value, subcategoryId: ''}
   }
 
+  function sortByOrderThenName(a, b) {
+    const orderA = Number.isFinite(Number(a.sortOrder)) ? Number(a.sortOrder) : Number.MAX_SAFE_INTEGER;
+    const orderB = Number.isFinite(Number(b.sortOrder)) ? Number(b.sortOrder) : Number.MAX_SAFE_INTEGER;
+    return orderA - orderB || String(a.name || '').localeCompare(String(b.name || ''), undefined, {sensitivity: 'base'})
+  }
+
   function categoryOptions(type, selectedCategoryId = '', selectedSubcategoryId = '') {
-    return state.categories.filter(c => c.type === type).map(c => {
+    return state.categories.filter(c => c.type === type).sort(sortByOrderThenName).map(c => {
       const selected = c.id === selectedCategoryId && !selectedSubcategoryId ? 'selected' : '';
-      const children = (c.subcategories || []).map(s => `<option value="${categoryChoiceValue(c.id, s.id)}" ${c.id === selectedCategoryId && s.id === selectedSubcategoryId ? 'selected' : ''}>${escapeHtml('  ' + (s.icon || c.icon || '◦') + ' ' + c.name + ' / ' + s.name)}</option>`).join('');
+      const children = (c.subcategories || []).slice().sort(sortByOrderThenName).map(s => `<option value="${categoryChoiceValue(c.id, s.id)}" ${c.id === selectedCategoryId && s.id === selectedSubcategoryId ? 'selected' : ''}>${escapeHtml('  ' + (s.icon || c.icon || '◦') + ' ' + c.name + ' / ' + s.name)}</option>`).join('');
       return `<option value="${categoryChoiceValue(c.id)}" ${selected}>${escapeHtml((c.icon || '◈') + ' ' + c.name)}</option>${children}`
     }).join('')
+  }
+
+  async function moveCategory(id, direction) {
+    const current = cat(id);
+    if (!current) return;
+    const items = state.categories.filter(c => c.type === current.type).sort(sortByOrderThenName);
+    const index = items.findIndex(c => c.id === id), next = index + direction;
+    if (next < 0 || next >= items.length) return;
+    [items[index], items[next]] = [items[next], items[index]];
+    await Promise.all(items.map((item, sortOrder) => put('categories', {...item, sortOrder})));
+    await reload();
+    categoriesModal()
   }
 
   function accountModal(a) {
@@ -246,13 +264,14 @@ function modal(title, body) {
   }
 
   function categoriesModal() {
-    const categoryRow = c => `<div class="category-item"><div class="transaction"><div class="tx-icon" style="background:${c.color}20;color:${c.color}">${escapeHtml(c.icon)}</div><div class="tx-main"><b>${escapeHtml(c.name)}</b><small>${c.type}${c.subcategories?.length ? ` · ${c.subcategories.length} subcategories` : ''}</small></div><button class="mini-btn" data-edit-category="${c.id}" title="Edit category">✎</button><button class="mini-btn" data-remove-category="${c.id}" title="Delete category">×</button></div>${c.subcategories?.length ? `<div class="subcategory-list">${c.subcategories.map(s => `<span class="subcategory-chip">${escapeHtml((s.icon || '◦') + ' ' + s.name)}</span>`).join('')}</div>` : ''}</div>`;
+    const categoryRow = c => `<div class="category-item"><div class="transaction"><div class="tx-icon" style="background:${c.color}20;color:${c.color}">${escapeHtml(c.icon)}</div><div class="tx-main"><b>${escapeHtml(c.name)}</b><small>${c.type}${c.subcategories?.length ? ` · ${c.subcategories.length} subcategories` : ''}</small></div><button class="mini-btn" data-move-category="${c.id}" data-direction="-1" title="Move up">↑</button><button class="mini-btn" data-move-category="${c.id}" data-direction="1" title="Move down">↓</button><button class="mini-btn" data-edit-category="${c.id}" title="Edit category">✎</button><button class="mini-btn" data-remove-category="${c.id}" title="Delete category">×</button></div>${c.subcategories?.length ? `<div class="subcategory-list">${c.subcategories.slice().sort(sortByOrderThenName).map(s => `<span class="subcategory-chip">${escapeHtml((s.icon || '◦') + ' ' + s.name)}</span>`).join('')}</div>` : ''}</div>`;
     const categorySection = (type, title, description) => {
-      const items = state.categories.filter(c => c.type === type);
+      const items = state.categories.filter(c => c.type === type).sort(sortByOrderThenName);
       return `<section class="category-group"><div class="category-group-head"><div><h3>${title}</h3><p>${description}</p></div><button class="btn secondary" data-new-category="${type}">+ New</button></div><div class="table-list">${items.length ? items.map(categoryRow).join('') : empty(`No ${type} categories`, `Create a ${type} category to organize transactions.`, type === 'expense' ? '↗' : '↙')}</div></section>`
     };
     modal('Manage categories', `<div class="category-manager">${categorySection('expense', 'Expense categories', 'Used for spending, budgets, and expense reports.')}${categorySection('income', 'Income categories', 'Used for salary, gifts, interest, and income reports.')}</div>`);
     document.querySelectorAll('[data-new-category]').forEach(b => b.onclick = () => categoryEdit(null, b.dataset.newCategory));
+    document.querySelectorAll('[data-move-category]').forEach(b => b.onclick = () => moveCategory(b.dataset.moveCategory, Number(b.dataset.direction)));
     document.querySelectorAll('[data-edit-category]').forEach(b => b.onclick = () => categoryEdit(cat(b.dataset.editCategory)));
     document.querySelectorAll('[data-remove-category]').forEach(b => b.onclick = async () => {
       if (state.transactions.some(t => t.categoryId === b.dataset.removeCategory || t.splits?.some(s => s.categoryId === b.dataset.removeCategory))) return toast('Category is in use');
@@ -272,20 +291,24 @@ function modal(title, body) {
 
   function categoryEdit(c, initialType = 'expense') {
     const selectedType = c?.type || initialType;
-    const subcategoryRows = (c?.subcategories || []).map(s => `<div class="field-row subcategory-row" data-subcategory-id="${s.id}"><div class="field"><label>Subcategory name</label><input class="subcategory-name" maxlength="45" value="${escapeHtml(s.name || '')}"></div><div class="field"><label>Icon</label><div class="inline-field"><input class="subcategory-icon" maxlength="4" value="${escapeHtml(s.icon || '')}" placeholder="◦"><button type="button" class="mini-btn" data-remove-subcategory>×</button></div></div></div>`).join('');
+    const subcategoryRows = (c?.subcategories || []).slice().sort(sortByOrderThenName).map(s => `<div class="field-row subcategory-row" data-subcategory-id="${s.id}"><div class="field"><label>Subcategory name</label><input class="subcategory-name" maxlength="45" value="${escapeHtml(s.name || '')}"></div><div class="field"><label>Icon</label><div class="inline-field"><input class="subcategory-icon" maxlength="4" value="${escapeHtml(s.icon || '')}" placeholder="◦"><button type="button" class="mini-btn" data-move-subcategory="-1" title="Move up">↑</button><button type="button" class="mini-btn" data-move-subcategory="1" title="Move down">↓</button><button type="button" class="mini-btn" data-remove-subcategory title="Remove">×</button></div></div></div>`).join('');
     modal(c ? 'Edit category' : 'New category', `<form id="category-form"><div class="field"><label>Name</label><input name="name" required maxlength="45" value="${escapeHtml(c?.name || '')}"></div><div class="field-row"><div class="field"><label>Type</label><select name="type" ${c ? 'disabled' : ''}><option value="expense" ${selectedType === 'expense' ? 'selected' : ''}>Expense</option><option value="income" ${selectedType === 'income' ? 'selected' : ''}>Income</option></select></div><div class="field"><label>Icon (emoji or symbol)</label><input name="icon" maxlength="4" value="${escapeHtml(c?.icon || '◈')}"></div></div><div class="field"><label>Color</label><input name="color" type="color" value="${c?.color || '#3b82f6'}" style="height:48px"></div><div class="field"><label>Subcategories</label><div id="subcategory-rows">${subcategoryRows}</div><button type="button" class="btn secondary" id="add-subcategory">+ Add subcategory</button><p class="form-hint">Transactions can use either the parent category or one of its subcategories.</p></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Save category</button></div></form>`);
     $('#cancel').onclick = categoriesModal;
     const addSubcategoryRow = (item = {}) => {
       const row = document.createElement('div');
       row.className = 'field-row subcategory-row';
       row.dataset.subcategoryId = item.id || '';
-      row.innerHTML = `<div class="field"><label>Subcategory name</label><input class="subcategory-name" maxlength="45" value="${escapeHtml(item.name || '')}"></div><div class="field"><label>Icon</label><div class="inline-field"><input class="subcategory-icon" maxlength="4" value="${escapeHtml(item.icon || '')}" placeholder="◦"><button type="button" class="mini-btn" data-remove-subcategory>×</button></div></div>`;
+      row.innerHTML = `<div class="field"><label>Subcategory name</label><input class="subcategory-name" maxlength="45" value="${escapeHtml(item.name || '')}"></div><div class="field"><label>Icon</label><div class="inline-field"><input class="subcategory-icon" maxlength="4" value="${escapeHtml(item.icon || '')}" placeholder="◦"><button type="button" class="mini-btn" data-move-subcategory="-1" title="Move up">↑</button><button type="button" class="mini-btn" data-move-subcategory="1" title="Move down">↓</button><button type="button" class="mini-btn" data-remove-subcategory title="Remove">×</button></div></div>`;
       $('#subcategory-rows').append(row)
     };
     $('#add-subcategory').onclick = () => addSubcategoryRow();
     $('#subcategory-rows').onclick = e => {
       const remove = e.target.closest('[data-remove-subcategory]');
-      if (remove) remove.closest('.subcategory-row')?.remove()
+      if (remove) return remove.closest('.subcategory-row')?.remove();
+      const move = e.target.closest('[data-move-subcategory]');
+      if (!move) return;
+      const row = move.closest('.subcategory-row'), sibling = Number(move.dataset.moveSubcategory) < 0 ? row?.previousElementSibling : row?.nextElementSibling;
+      if (row && sibling) Number(move.dataset.moveSubcategory) < 0 ? sibling.before(row) : sibling.after(row)
     };
     $('#category-form').onsubmit = async e => {
       e.preventDefault();
@@ -297,7 +320,8 @@ function modal(title, body) {
       const subcategories = [...document.querySelectorAll('.subcategory-row')].map(row => ({
         id: row.dataset.subcategoryId || uid(),
         name: row.querySelector('.subcategory-name').value.trim(),
-        icon: row.querySelector('.subcategory-icon').value.trim()
+        icon: row.querySelector('.subcategory-icon').value.trim(),
+        sortOrder: [...document.querySelectorAll('.subcategory-row')].indexOf(row)
       })).filter(s => s.name);
       const keptIds = new Set(subcategories.map(s => s.id));
       if ((c?.subcategories || []).some(s => usedSubcategoryIds.has(s.id) && !keptIds.has(s.id))) return toast('Subcategory is in use');
@@ -307,6 +331,7 @@ function modal(title, body) {
         type: c?.type || f.get('type'),
         icon: f.get('icon') || '◈',
         color: f.get('color'),
+        sortOrder: c?.sortOrder ?? state.categories.filter(x => x.type === (c?.type || f.get('type'))).length,
         subcategories
       });
       await reload();
