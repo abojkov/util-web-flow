@@ -1,9 +1,6 @@
 function modal(title, body) {
-    $('#modal-root').innerHTML = `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${title}</h2><button class="close" id="close-modal">×</button></div>${body}</div></div>`;
-    $('#close-modal').onclick = closeModal;
-    $('.modal-backdrop').addEventListener('click', e => {
-      if (e.target.classList.contains('modal-backdrop')) closeModal()
-    })
+    $('#modal-root').innerHTML = `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${title}</h2><button class="close" id="close-modal" aria-label="Close">×</button></div><div class="modal-body">${body}</div></div></div>`;
+    $('#close-modal').onclick = closeModal
   }
 
   function closeModal() {

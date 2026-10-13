@@ -415,6 +415,13 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — Modal mobile layout
+
+- Reduced excess modal header spacing on mobile and desktop.
+- Kept modal action buttons sticky at the bottom of the modal body so save/cancel controls remain visible while long forms scroll.
+- Added mobile footer separation and safe-area padding for bottom-sheet modals.
+- **Verification:** JavaScript syntax checks passed; browser automation was unavailable in this environment, so visual verification was limited to source inspection.
+
 ### 2026-10-13 — Transaction detail fields
 
 - Added transaction time, payee, and description fields to the implementation and documented transaction model.
