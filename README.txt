@@ -107,7 +107,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Create, edit, delete, list, search, filter, and inspect transaction details.
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
 - Support daily/calendar, weekly, monthly, and chronological review.
-- Filter by date range, account, type, category, and search text. Transaction search starts at 2 characters and resets when the search field is blank.
+- Filter by date range, account, type, category/subcategory, and search text. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories, and expandable categories allow selecting only specific subcategories.
 - Validate positive amounts, valid account/category references, dates, and transfer endpoints.
 - Changes must consistently update all dependent balances, charts, and budgets.
 - Deletions must be intentional and confirmable.
@@ -415,6 +415,15 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-13 — Transaction search panel
+
+- Added a dedicated search section to the Transactions page.
+- Added multi-select category and subcategory filtering with OR matching across selected filters.
+- Separated expense and income filters in the search view and made both groups collapsed by default.
+- Kept the category UI compact by showing parent badges first and expanding subcategories only on demand.
+- Parent category filters include all subcategories and split transactions when any split belongs to the selected category.
+- **Verification:** JavaScript syntax checks and source inspection.
 
 ### 2026-10-13 — App logo
 

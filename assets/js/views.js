@@ -96,6 +96,29 @@ async function reload() {
     const rawSearch = state.txSearch.trim();
     const query = rawSearch.length >= 2 ? rawSearch.toLocaleLowerCase() : '';
     const searchPeriodOptions = [['month', 'Monthly'], ['week', 'Weekly'], ['year', 'Yearly'], ['all', 'All history']];
+    const categoryGroups = ['expense', 'income'].map(type => ({
+      type,
+      label: type === 'expense' ? 'Expense categories' : 'Income categories',
+      items: state.categories.filter(c => c.type === type).sort(sortByOrderThenName)
+    }));
+    const categoryFilterKey = (categoryId, subcategoryId = '') => subcategoryId ? `sub:${categoryId}:${subcategoryId}` : `cat:${categoryId}`;
+    const categoryFilterOptions = categoryGroups.flatMap(group => group.items.flatMap(c => [
+      {key: categoryFilterKey(c.id), categoryId: c.id},
+      ...(c.subcategories || []).map(s => ({key: categoryFilterKey(c.id, s.id), categoryId: c.id, subcategoryId: s.id}))
+    ]));
+    const validCategoryKeys = new Set(categoryFilterOptions.map(option => option.key));
+    const selectedCategoryKeys = new Set((state.txCategoryFilters || []).filter(key => validCategoryKeys.has(key)));
+    state.txCategoryFilters = [...selectedCategoryKeys];
+    const expandedCategoryIds = new Set((state.txExpandedCategories || []).filter(id => categoryFilterOptions.some(option => option.categoryId === id && option.subcategoryId)));
+    state.txExpandedCategories = [...expandedCategoryIds];
+    const expandedCategoryGroups = new Set((state.txExpandedCategoryGroups || []).filter(type => ['expense', 'income'].includes(type)));
+    state.txExpandedCategoryGroups = [...expandedCategoryGroups];
+    const categoryMatches = t => {
+      if (!selectedCategoryKeys.size) return true;
+      const matches = item => selectedCategoryKeys.has(categoryFilterKey(item.categoryId)) || selectedCategoryKeys.has(categoryFilterKey(item.categoryId, item.subcategoryId));
+      if (t.splits?.length) return t.splits.some(matches);
+      return matches(t)
+    };
     const startOfWeek = date => {
       const d = new Date(date);
       d.setDate(d.getDate() - (d.getDay() + 6) % 7);
@@ -104,11 +127,27 @@ async function reload() {
     const todayKey = today(), weekStart = startOfWeek(todayKey), yearKey = state.month.slice(0, 4);
     const inSearchPeriod = t => state.txSearchPeriod === 'all' || (state.txSearchPeriod === 'year' ? t.date?.startsWith(yearKey) : state.txSearchPeriod === 'week' ? t.date >= weekStart && t.date <= todayKey : t.date?.startsWith(state.month));
     const baseItems = state.transactions.filter(t => inSearchPeriod(t) && (state.accountFilter === 'all' || t.accountId === state.accountFilter || t.toAccountId === state.accountFilter));
-    const matchedItems = query ? baseItems.filter(t => [t.payee, t.place, t.description, t.note].some(value => String(value || '').toLocaleLowerCase().includes(query))) : baseItems;
-    const items = state.txSearchPeriod === 'all' && !query ? matchedItems.slice().sort((a, b) => b.date.localeCompare(a.date) || String(b.time || '').localeCompare(String(a.time || '')) || b.createdAt.localeCompare(a.createdAt)).slice(0, 250) : matchedItems;
+    const matchedItems = baseItems.filter(t => (!query || [t.payee, t.place, t.description, t.note].some(value => String(value || '').toLocaleLowerCase().includes(query))) && categoryMatches(t));
+    const hasSearchFilters = Boolean(query || selectedCategoryKeys.size);
+    const items = state.txSearchPeriod === 'all' && !hasSearchFilters ? matchedItems.slice().sort((a, b) => b.date.localeCompare(a.date) || String(b.time || '').localeCompare(String(a.time || '')) || b.createdAt.localeCompare(a.createdAt)).slice(0, 250) : matchedItems;
     const periodLabel = searchPeriodOptions.find(([value]) => value === state.txSearchPeriod)?.[1] || 'Monthly';
-    const resultText = query ? `${matchedItems.length} matching transactions · ${periodLabel}` : rawSearch ? `Type at least 2 characters to search · ${periodLabel}` : state.txSearchPeriod === 'all' ? `Showing latest ${items.length} of ${matchedItems.length} transactions · type to search all history` : `${periodLabel} transactions`;
-    return `<div class="toolbar"><div><h2>Transaction history</h2><p class="muted">Every movement, all in one place.</p></div><button class="btn" data-add="transaction">+ New transaction</button></div><div class="toolbar"><div class="filter-row">${monthControl()}${accountSelect()}</div><div class="filter-row"><label class="search-field"><span>Search</span><input id="tx-search" type="search" value="${escapeHtml(state.txSearch)}" placeholder="Payee or description"></label><label class="search-field search-period"><span>Period</span><select id="tx-search-period">${searchPeriodOptions.map(([value, label]) => `<option value="${value}" ${state.txSearchPeriod === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label></div></div><p class="form-hint">${escapeHtml(resultText)}</p><section class="table-list">${txList(items)}</section>`
+    const categorySummary = selectedCategoryKeys.size ? ` · ${selectedCategoryKeys.size} ${selectedCategoryKeys.size === 1 ? 'category filter' : 'category filters'}` : '';
+    const resultText = hasSearchFilters ? `${matchedItems.length} matching transactions · ${periodLabel}${categorySummary}` : rawSearch ? `Type at least 2 characters to search · ${periodLabel}` : state.txSearchPeriod === 'all' ? `Showing latest ${items.length} of ${matchedItems.length} transactions · type to search all history` : `${periodLabel} transactions`;
+    const categoryBadge = (option) => `<label class="category-check ${option.isSubcategory ? 'subcategory' : ''} ${selectedCategoryKeys.has(option.key) ? 'selected' : ''}"><input type="checkbox" data-tx-category="${escapeHtml(option.key)}" ${selectedCategoryKeys.has(option.key) ? 'checked' : ''}><span style="--category-color:${option.color}">${escapeHtml(option.icon)}</span>${escapeHtml(option.label)}</label>`;
+    const renderCategory = c => {
+      const subcategories = (c.subcategories || []).slice().sort(sortByOrderThenName);
+      const expanded = expandedCategoryIds.has(c.id);
+      const parent = categoryBadge({key: categoryFilterKey(c.id), label: c.name, icon: c.icon || '◈', color: c.color || '#3479f4'});
+      const expand = subcategories.length ? `<button class="category-expand ${expanded ? 'open' : ''}" data-tx-category-expand="${c.id}" type="button" title="${expanded ? 'Hide subcategories' : 'Show subcategories'}">${expanded ? '−' : '+'}</button>` : '';
+      const children = expanded ? `<div class="subcategory-options">${subcategories.map(s => categoryBadge({key: categoryFilterKey(c.id, s.id), label: s.name, icon: s.icon || c.icon || '◦', color: s.color || c.color || '#3479f4', isSubcategory: true})).join('')}</div>` : '';
+      return `<div class="category-filter-item"><div class="category-main">${parent}${expand}</div>${children}</div>`
+    };
+    const renderGroup = group => {
+      const expanded = expandedCategoryGroups.has(group.type);
+      const count = group.items.reduce((sum, c) => sum + 1 + (c.subcategories?.length || 0), 0);
+      return `<div class="category-filter-group ${expanded ? 'open' : ''}"><button class="category-group-toggle" data-tx-category-group="${group.type}" type="button"><span>${group.label}</span><small>${count} filters</small><b>${expanded ? '−' : '+'}</b></button>${expanded ? `<div class="category-filter-options">${group.items.length ? group.items.map(renderCategory).join('') : '<p class="form-hint">No categories yet.</p>'}</div>` : ''}</div>`
+    };
+    return `<div class="toolbar"><div><h2>Transaction history</h2><p class="muted">Every movement, all in one place.</p></div><button class="btn" data-add="transaction">+ New transaction</button></div><section class="search-panel"><div class="search-panel-head"><div><h3>Search transactions</h3><p>Find transactions by text, period, account, and category.</p></div>${selectedCategoryKeys.size || rawSearch ? '<button class="link-btn" id="tx-clear-search">Clear search</button>' : ''}</div><div class="search-grid"><label class="search-field"><span>Search</span><input id="tx-search" type="search" value="${escapeHtml(state.txSearch)}" placeholder="Payee or description"></label><label class="search-field search-period"><span>Period</span><select id="tx-search-period">${searchPeriodOptions.map(([value, label]) => `<option value="${value}" ${state.txSearchPeriod === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label class="search-field"><span>Account</span>${accountSelect()}</label></div><div class="category-filter"><span>Categories</span><div class="category-filter-groups">${categoryGroups.map(renderGroup).join('')}</div></div></section><div class="toolbar">${monthControl()}</div><p class="form-hint">${escapeHtml(resultText)}</p><section class="table-list">${txList(items)}</section>`
   }
 
   function statistics() {
@@ -159,6 +198,41 @@ async function reload() {
     });
     $('#tx-search-period')?.addEventListener('change', e => {
       state.txSearchPeriod = e.target.value;
+      render()
+    });
+    document.querySelectorAll('[data-tx-category]').forEach(input => input.addEventListener('change', e => {
+      const selected = new Set(state.txCategoryFilters || []);
+      const key = e.target.dataset.txCategory;
+      const [, categoryId] = key.split(':');
+      if (e.target.checked) {
+        if (key.startsWith('cat:')) {
+          [...selected].filter(item => item.startsWith(`sub:${categoryId}:`)).forEach(item => selected.delete(item));
+          selected.add(key)
+        } else {
+          selected.delete(`cat:${categoryId}`);
+          selected.add(key)
+        }
+      } else {
+        selected.delete(key)
+      }
+      state.txCategoryFilters = [...selected];
+      render()
+    }));
+    document.querySelectorAll('[data-tx-category-expand]').forEach(button => button.addEventListener('click', e => {
+      const expanded = new Set(state.txExpandedCategories || []), id = e.currentTarget.dataset.txCategoryExpand;
+      if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
+      state.txExpandedCategories = [...expanded];
+      render()
+    }));
+    document.querySelectorAll('[data-tx-category-group]').forEach(button => button.addEventListener('click', e => {
+      const expanded = new Set(state.txExpandedCategoryGroups || []), type = e.currentTarget.dataset.txCategoryGroup;
+      if (expanded.has(type)) expanded.delete(type); else expanded.add(type);
+      state.txExpandedCategoryGroups = [...expanded];
+      render()
+    }));
+    $('#tx-clear-search')?.addEventListener('click', () => {
+      state.txSearch = '';
+      state.txCategoryFilters = [];
       render()
     });
     document.querySelectorAll('[data-page]').forEach(b => b.onclick = () => {
