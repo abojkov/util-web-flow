@@ -416,6 +416,12 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — Hidden form rows
+
+- Fixed hidden modal fields so CSS form layout does not override the `hidden` attribute.
+- The transaction exchange-rate field now stays hidden for EUR accounts instead of showing `Exchange rate: 1 EUR = EUR`.
+- **Verification:** JavaScript syntax checks and source inspection.
+
 ### 2026-10-13 — Transaction search
 
 - Added transaction search on the Transactions page.
