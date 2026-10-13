@@ -843,6 +843,44 @@
     color: #92a0b5
   }
 
+  .payee-autocomplete {
+    position: relative
+  }
+
+  .payee-suggestions {
+    position: absolute;
+    z-index: 80;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 190px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #dce7f5;
+    border-radius: 11px;
+    box-shadow: 0 14px 35px #16325f20;
+    padding: 6px
+  }
+
+  .payee-suggestions button {
+    display: block;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: #253754;
+    text-align: left;
+    padding: 10px 11px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700
+  }
+
+  .payee-suggestions button:hover,
+  .payee-suggestions button:focus {
+    background: #edf4ff;
+    color: #2465eb
+  }
+
   .mobile-only {
     display: none
   }

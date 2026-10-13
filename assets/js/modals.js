@@ -31,8 +31,41 @@ function modal(title, body) {
     return currencies.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`).join('')
   }
 
-  function payeeDatalist(id = 'payee-options') {
-    return `<datalist id="${id}">${payeeOptions().map(payee => `<option value="${escapeHtml(payee)}"></option>`).join('')}</datalist>`
+  function payeeAutocompleteInput(value = '', id = 'payee-input') {
+    return `<div class="payee-autocomplete"><input id="${id}" name="payee" autocomplete="off" maxlength="120" value="${escapeHtml(value)}" placeholder="Merchant, person, ATM, or place"><div class="payee-suggestions" data-payee-suggestions hidden></div></div>`
+  }
+
+  function bindPayeeAutocomplete(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const panel = input.closest('.payee-autocomplete')?.querySelector('[data-payee-suggestions]');
+    if (!panel) return;
+    const options = payeeOptions();
+    const hide = () => {
+      panel.hidden = true;
+      panel.innerHTML = ''
+    };
+    const show = () => {
+      const query = input.value.trim().toLocaleLowerCase();
+      if (!query) return hide();
+      const matches = options.filter(payee => payee.toLocaleLowerCase().includes(query) && payee !== input.value).slice(0, 8);
+      if (!matches.length) return hide();
+      panel.innerHTML = matches.map(payee => `<button type="button" data-payee="${escapeHtml(payee)}">${escapeHtml(payee)}</button>`).join('');
+      panel.hidden = false
+    };
+    input.addEventListener('input', show);
+    input.addEventListener('focus', show);
+    panel.addEventListener('pointerdown', e => {
+      const option = e.target.closest('[data-payee]');
+      if (!option) return;
+      input.value = option.dataset.payee;
+      hide();
+      input.focus()
+    });
+    document.addEventListener('pointerdown', e => {
+      if (!input.closest('.payee-autocomplete').contains(e.target)) hide()
+    });
+    input.form?.addEventListener('submit', hide)
   }
 
   function accountModal(a) {
@@ -63,7 +96,8 @@ function modal(title, body) {
     }
     const type = t?.type || initial;
     const accountOpts = (sel) => active.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${escapeHtml(a.name)} (${a.currency})</option>`).join('');
-    modal(t ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label>Amount</label><input type="number" name="amount" min="0.01" step="0.01" value="${t?.amount ?? ''}" required placeholder="0.00"></div><div class="field"><label>Date</label><input type="date" name="date" value="${t?.date || today()}" required></div></div><div class="field-row"><div class="field"><label>Time</label><input type="time" name="time" value="${t?.time || currentTime()}" required></div><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div id="tx-extra"></div><div class="field"><label>Payee</label><input name="payee" list="payee-options" autocomplete="off" maxlength="120" value="${escapeHtml(t?.payee ?? t?.place ?? '')}" placeholder="Merchant, person, ATM, or place">${payeeDatalist()}</div><div class="field"><label>Description (optional)</label><input name="description" maxlength="180" value="${escapeHtml(t?.description ?? t?.note ?? '')}" placeholder="What was this for?"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn" type="submit">Save transaction</button></div></form>`);
+    modal(t ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label>Amount</label><input type="number" name="amount" min="0.01" step="0.01" value="${t?.amount ?? ''}" required placeholder="0.00"></div><div class="field"><label>Date</label><input type="date" name="date" value="${t?.date || today()}" required></div></div><div class="field-row"><div class="field"><label>Time</label><input type="time" name="time" value="${t?.time || currentTime()}" required></div><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><input name="description" maxlength="180" value="${escapeHtml(t?.description ?? t?.note ?? '')}" placeholder="What was this for?"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn" type="submit">Save transaction</button></div></form>`);
+    bindPayeeAutocomplete('tx-payee');
     let chosen = type;
     const extra = () => {
       const options = state.categories.filter(c => c.type === chosen).map(c => `<option value="${c.id}" ${c.id === t?.categoryId ? 'selected' : ''}>${escapeHtml(c.icon + ' ' + c.name)}</option>`).join('');
@@ -243,7 +277,8 @@ function modal(title, body) {
   function recurringEdit() {
     const active = state.accounts.filter(a => !a.archived);
     if (!active.length) return accountModal();
-    modal('New recurring transaction', `<form id="rec-form"><div class="field-row"><div class="field"><label>Type</label><select name="type" id="rec-type"><option value="expense">Expense</option><option value="income">Income</option></select></div><div class="field"><label>Amount</label><input name="amount" type="number" min="0.01" step="0.01" required></div></div><div class="field"><label>Account</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>Category</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>Frequency</label><select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div><div class="field"><label>First date</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>Time</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>Payee</label><input name="payee" list="rec-payee-options" autocomplete="off" maxlength="120" placeholder="Merchant, person, ATM, or place">${payeeDatalist('rec-payee-options')}</div><div class="field"><label>Description</label><input name="description" maxlength="180"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Create schedule</button></div></form>`);
+    modal('New recurring transaction', `<form id="rec-form"><div class="field-row"><div class="field"><label>Type</label><select name="type" id="rec-type"><option value="expense">Expense</option><option value="income">Income</option></select></div><div class="field"><label>Amount</label><input name="amount" type="number" min="0.01" step="0.01" required></div></div><div class="field"><label>Account</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>Category</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>Frequency</label><select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div><div class="field"><label>First date</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>Time</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>Payee</label>${payeeAutocompleteInput('', 'rec-payee')}</div><div class="field"><label>Description</label><input name="description" maxlength="180"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Create schedule</button></div></form>`);
+    bindPayeeAutocomplete('rec-payee');
     const fill = () => {
       $('#rec-cat').innerHTML = state.categories.filter(c => c.type === $('#rec-type').value).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')
     };

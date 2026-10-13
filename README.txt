@@ -105,7 +105,7 @@ Three types:
 Core fields: ID, type, amount, date, time, source account, optional destination account and received amount, category/subcategory where applicable, payee, description, optional attachment references, created/updated timestamps.
 
 - Create, edit, delete, list, search, filter, and inspect transaction details.
-- Payee inputs should suggest previously used payees as the user types.
+- Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
 - Support daily/calendar, weekly, monthly, and chronological review.
 - Filter by date range, account, type, category, and search text.
 - Validate positive amounts, valid account/category references, dates, and transfer endpoints.
