@@ -22,6 +22,32 @@ async function reload() {
     return `<div class="filter-row"><button class="icon-btn" id="prev-month">‹</button><strong style="font-size:13px;min-width:130px;text-align:center">${monthLabel(state.month)}</strong><button class="icon-btn" id="next-month">›</button></div>`
   }
 
+  function isoDate(date) {
+    return date.toISOString().slice(0, 10)
+  }
+
+  function startOfWeek(dateKey) {
+    const d = new Date(dateKey + 'T12:00:00');
+    d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+    return isoDate(d)
+  }
+
+  function shiftDate(dateKey, days) {
+    const d = new Date(dateKey + 'T12:00:00');
+    d.setDate(d.getDate() + days);
+    return isoDate(d)
+  }
+
+  function txPeriodControl() {
+    if (state.txSearchPeriod === 'all') return '';
+    if (state.txSearchPeriod === 'week') {
+      const weekStart = state.txSearchWeekStart || startOfWeek(today()), weekEnd = shiftDate(weekStart, 6);
+      return `<div class="toolbar period-toolbar"><div class="filter-row"><button class="icon-btn" id="prev-tx-period">‹</button><strong style="font-size:13px;min-width:210px;text-align:center">${weekStart} – ${weekEnd}</strong><button class="icon-btn" id="next-tx-period">›</button></div></div>`
+    }
+    if (state.txSearchPeriod === 'year') return `<div class="toolbar period-toolbar"><div class="filter-row"><button class="icon-btn" id="prev-tx-period">‹</button><strong style="font-size:13px;min-width:130px;text-align:center">${state.txSearchYear || today().slice(0, 4)}</strong><button class="icon-btn" id="next-tx-period">›</button></div></div>`;
+    return `<div class="toolbar period-toolbar"><div class="filter-row"><button class="icon-btn" id="prev-tx-period">‹</button><strong style="font-size:13px;min-width:130px;text-align:center">${monthLabel(state.month)}</strong><button class="icon-btn" id="next-tx-period">›</button></div></div>`
+  }
+
   function bindMonth() {
     const shift = d => {
       state.month = shiftMonth(state.month, d);
@@ -29,6 +55,17 @@ async function reload() {
     };
     $('#prev-month')?.addEventListener('click', () => shift(-1));
     $('#next-month')?.addEventListener('click', () => shift(1))
+  }
+
+  function bindTxPeriod() {
+    const shift = d => {
+      if (state.txSearchPeriod === 'week') state.txSearchWeekStart = shiftDate(state.txSearchWeekStart || startOfWeek(today()), d * 7);
+      else if (state.txSearchPeriod === 'year') state.txSearchYear = String(Number(state.txSearchYear || today().slice(0, 4)) + d);
+      else state.month = shiftMonth(state.month, d);
+      render()
+    };
+    $('#prev-tx-period')?.addEventListener('click', () => shift(-1));
+    $('#next-tx-period')?.addEventListener('click', () => shift(1))
   }
 
   function accountSelect(id = 'account-filter') {
@@ -119,13 +156,10 @@ async function reload() {
       if (t.splits?.length) return t.splits.some(matches);
       return matches(t)
     };
-    const startOfWeek = date => {
-      const d = new Date(date);
-      d.setDate(d.getDate() - (d.getDay() + 6) % 7);
-      return d.toISOString().slice(0, 10)
-    };
-    const todayKey = today(), weekStart = startOfWeek(todayKey), yearKey = state.month.slice(0, 4);
-    const inSearchPeriod = t => state.txSearchPeriod === 'all' || (state.txSearchPeriod === 'year' ? t.date?.startsWith(yearKey) : state.txSearchPeriod === 'week' ? t.date >= weekStart && t.date <= todayKey : t.date?.startsWith(state.month));
+    if (!state.txSearchWeekStart) state.txSearchWeekStart = startOfWeek(today());
+    if (!state.txSearchYear) state.txSearchYear = today().slice(0, 4);
+    const weekStart = state.txSearchWeekStart, weekEnd = shiftDate(weekStart, 6), yearKey = state.txSearchYear;
+    const inSearchPeriod = t => state.txSearchPeriod === 'all' || (state.txSearchPeriod === 'year' ? t.date?.startsWith(yearKey) : state.txSearchPeriod === 'week' ? t.date >= weekStart && t.date <= weekEnd : t.date?.startsWith(state.month));
     const baseItems = state.transactions.filter(t => inSearchPeriod(t) && (state.accountFilter === 'all' || t.accountId === state.accountFilter || t.toAccountId === state.accountFilter));
     const matchedItems = baseItems.filter(t => (!query || [t.payee, t.place, t.description, t.note].some(value => String(value || '').toLocaleLowerCase().includes(query))) && categoryMatches(t));
     const hasSearchFilters = Boolean(query || selectedCategoryKeys.size);
@@ -147,7 +181,7 @@ async function reload() {
       const count = group.items.reduce((sum, c) => sum + 1 + (c.subcategories?.length || 0), 0);
       return `<div class="category-filter-group ${expanded ? 'open' : ''}"><button class="category-group-toggle" data-tx-category-group="${group.type}" type="button"><span>${group.label}</span><small>${count} filters</small><b>${expanded ? '−' : '+'}</b></button>${expanded ? `<div class="category-filter-options">${group.items.length ? group.items.map(renderCategory).join('') : '<p class="form-hint">No categories yet.</p>'}</div>` : ''}</div>`
     };
-    return `<div class="toolbar"><div><h2>Transaction history</h2><p class="muted">Every movement, all in one place.</p></div><button class="btn" data-add="transaction">+ New transaction</button></div><section class="search-panel"><div class="search-panel-head"><div><h3>Search transactions</h3><p>Find transactions by text, period, account, and category.</p></div>${selectedCategoryKeys.size || rawSearch ? '<button class="link-btn" id="tx-clear-search">Clear search</button>' : ''}</div><div class="search-grid"><label class="search-field"><span>Search</span><input id="tx-search" type="search" value="${escapeHtml(state.txSearch)}" placeholder="Payee or description"></label><label class="search-field search-period"><span>Period</span><select id="tx-search-period">${searchPeriodOptions.map(([value, label]) => `<option value="${value}" ${state.txSearchPeriod === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label class="search-field"><span>Account</span>${accountSelect()}</label></div><div class="category-filter"><span>Categories</span><div class="category-filter-groups">${categoryGroups.map(renderGroup).join('')}</div></div></section><div class="toolbar">${monthControl()}</div><p class="form-hint">${escapeHtml(resultText)}</p><section class="table-list">${txList(items)}</section>`
+    return `<div class="toolbar"><div><h2>Transaction history</h2><p class="muted">Every movement, all in one place.</p></div><button class="btn" data-add="transaction">+ New transaction</button></div><section class="search-panel"><div class="search-panel-head"><div><h3>Search transactions</h3><p>Find transactions by text, period, account, and category.</p></div>${selectedCategoryKeys.size || rawSearch ? '<button class="link-btn" id="tx-clear-search">Clear search</button>' : ''}</div><div class="search-grid"><label class="search-field"><span>Search</span><input id="tx-search" type="search" value="${escapeHtml(state.txSearch)}" placeholder="Payee or description"></label><label class="search-field search-period"><span>Period</span><select id="tx-search-period">${searchPeriodOptions.map(([value, label]) => `<option value="${value}" ${state.txSearchPeriod === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label class="search-field"><span>Account</span>${accountSelect()}</label></div><div class="category-filter"><span>Categories</span><div class="category-filter-groups">${categoryGroups.map(renderGroup).join('')}</div></div></section>${txPeriodControl()}<p class="form-hint">${escapeHtml(resultText)}</p><section class="table-list">${txList(items)}</section>`
   }
 
   function statistics() {
@@ -175,6 +209,7 @@ async function reload() {
     $('#page-title').textContent = names[state.page];
     $('#view').innerHTML = ({home, transactions, statistics, accounts, more})[state.page]();
     bindMonth();
+    bindTxPeriod();
     $('#account-filter')?.addEventListener('change', e => {
       state.accountFilter = e.target.value;
       render()
@@ -198,6 +233,8 @@ async function reload() {
     });
     $('#tx-search-period')?.addEventListener('change', e => {
       state.txSearchPeriod = e.target.value;
+      if (state.txSearchPeriod === 'week' && !state.txSearchWeekStart) state.txSearchWeekStart = startOfWeek(today());
+      if (state.txSearchPeriod === 'year' && !state.txSearchYear) state.txSearchYear = today().slice(0, 4);
       render()
     });
     document.querySelectorAll('[data-tx-category]').forEach(input => input.addEventListener('change', e => {

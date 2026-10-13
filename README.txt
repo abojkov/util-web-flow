@@ -107,7 +107,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Create, edit, delete, list, search, filter, and inspect transaction details.
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
 - Support daily/calendar, weekly, monthly, and chronological review.
-- Filter by date range, account, type, category/subcategory, and search text. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories, and expandable categories allow selecting only specific subcategories.
+- Filter by date range, account, type, category/subcategory, and search text. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories, and expandable categories allow selecting only specific subcategories. Search period navigation changes with the selected period: monthly, weekly, yearly, or no navigator for all history.
 - Validate positive amounts, valid account/category references, dates, and transfer endpoints.
 - Changes must consistently update all dependent balances, charts, and budgets.
 - Deletions must be intentional and confirmable.
@@ -423,6 +423,7 @@ Before treating any feature as complete, ask Codex:
 - Separated expense and income filters in the search view and made both groups collapsed by default.
 - Kept the category UI compact by showing parent badges first and expanding subcategories only on demand.
 - Parent category filters include all subcategories and split transactions when any split belongs to the selected category.
+- Search period navigation now switches between month, week, and year controls and is hidden for all-history search.
 - **Verification:** JavaScript syntax checks and source inspection.
 
 ### 2026-10-13 — App logo
