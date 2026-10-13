@@ -416,6 +416,12 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — Statistics account filter visibility
+
+- Added the account selector to the Statistics page so the active account filter is visible and changeable there.
+- Displayed the selected account context in the net cash flow summary.
+- **Verification:** JavaScript syntax checks.
+
 ### 2026-10-13 — Subcategories in transactions
 
 - Added one-level subcategories stored under income and expense categories.
