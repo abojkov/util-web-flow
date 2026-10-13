@@ -416,6 +416,13 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — Compact exchange-rate snapshots
+
+- Changed transaction exchange-rate snapshots to store only the currencies involved in that transaction plus the base currency.
+- Compacted JSON export so older full-rate transaction snapshots are reduced during backup export.
+- Updated the generated import JSON to remove repeated unrelated currencies from each transaction snapshot.
+- **Verification:** JavaScript syntax checks and JSON import validation.
+
 ### 2026-10-13 — Category option sorting
 
 - Sorted income and expense categories and subcategories in transaction selectors.

@@ -95,6 +95,15 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     return t?.exchangeRates || exchangeRates()
   }
 
+  function rateSnapshotForCurrencies(currencies, sourceRates = exchangeRates()) {
+    const snapshot = {};
+    for (const currency of new Set(currencies.filter(Boolean))) {
+      if (sourceRates[currency]) snapshot[currency] = sourceRates[currency]
+    }
+    snapshot.EUR = sourceRates.EUR || 1;
+    return snapshot
+  }
+
   function convertedTransactionAmount(t, value = t?.amount, currency = account(t?.accountId)?.currency || 'EUR') {
     return convertedWithRates(value, currency, base(), transactionRates(t))
   }

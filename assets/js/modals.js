@@ -146,7 +146,7 @@ function modal(title, body) {
     let lastRateCurrency = '';
     const currentTransactionRates = () => {
       const selected = account($('#tx-account')?.value);
-      const snapshot = {...exchangeRates()};
+      const snapshot = rateSnapshotForCurrencies([selected?.currency, base()]);
       const rateValue = Number($('#tx-rate')?.value);
       if (selected?.currency && Number.isFinite(rateValue) && rateValue > 0) snapshot[selected.currency] = rateValue;
       return snapshot
@@ -237,7 +237,8 @@ function modal(title, body) {
         if (!to || to.id === from.id) return toast('Select a different destination account');
         record.toAccountId = to.id;
         record.received = amount(f.get('received'));
-        if (record.received <= 0) return toast('Enter the amount received')
+        if (record.received <= 0) return toast('Enter the amount received');
+        record.exchangeRates = rateSnapshotForCurrencies([from.currency, to.currency, base()], {...exchangeRates(), ...record.exchangeRates})
       } else {
         const selectedCategory = parseCategoryChoice(f.get('categoryChoice'));
         record.categoryId = selectedCategory.categoryId;
@@ -455,7 +456,7 @@ function modal(title, body) {
       while (r.nextDate <= today() && count++ < 120) {
         const key = `rec-${r.id}-${r.nextDate}`;
         if (!existing.some(t => t.id === key)) {
-          const from = account(r.accountId), snapshot = exchangeRates();
+          const from = account(r.accountId), snapshot = rateSnapshotForCurrencies([account(r.accountId)?.currency, base()]);
           await put('transactions', {
             id: key,
             type: r.type,
@@ -519,6 +520,15 @@ function modal(title, body) {
     $('#export-json').onclick = async () => {
       const data = {format: 'flow-backup', version: 1, exportedAt: new Date().toISOString()};
       for (const s of storeNames) data[s] = await all(s);
+      const exportedAccounts = Object.fromEntries(data.accounts.map(a => [a.id, a]));
+      const exportedRates = data.settings.find(s => s.id === 'exchangeRates')?.value || exchangeRates();
+      data.transactions = data.transactions.map(t => {
+        const from = exportedAccounts[t.accountId], to = exportedAccounts[t.toAccountId];
+        return {
+          ...t,
+          exchangeRates: rateSnapshotForCurrencies([from?.currency, to?.currency, base()], {...exportedRates, ...(t.exchangeRates || {})})
+        }
+      });
       download(JSON.stringify(data, null, 2), 'flow-backup-' + today() + '.json', 'application/json');
       toast('Backup exported')
     };
