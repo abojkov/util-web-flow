@@ -42,8 +42,10 @@ async function reload() {
         description = t.description ?? t.note ?? '',
         payee = t.payee ?? t.place ?? '',
         label = t.type === 'transfer' ? `Transfer to ${account(t.toAccountId)?.name || 'account'}` : (payee || description || c?.name || t.type),
-        detail = [a?.name || 'Unknown account', t.date, t.time, description && payee ? description : ''].filter(Boolean).join(' · ');
-      return `<div class="transaction"><div class="tx-icon">${t.type === 'transfer' ? '⇄' : c?.icon || '◈'}</div><div class="tx-main"><b>${escapeHtml(label)}</b><small>${escapeHtml(detail)}</small></div><div class="tx-amount ${t.type}">${t.type === 'expense' ? '−' : t.type === 'income' ? '+' : ''}${fmt(t.amount, a?.currency || 'EUR')}</div><div class="tx-actions"><button class="mini-btn" data-edit-tx="${t.id}" title="Edit">✎</button><button class="mini-btn" data-delete-tx="${t.id}" title="Delete">×</button></div></div>`
+        currency = a?.currency || 'EUR',
+        equivalent = currency !== base() ? money(convertedTransactionAmount(t), base()) : '',
+        detail = [a?.name || 'Unknown account', t.date, t.time, equivalent && `${equivalent} ${base()} equivalent`, description && payee ? description : ''].filter(Boolean).join(' · ');
+      return `<div class="transaction"><div class="tx-icon">${t.type === 'transfer' ? '⇄' : c?.icon || '◈'}</div><div class="tx-main"><b>${escapeHtml(label)}</b><small>${escapeHtml(detail)}</small></div><div class="tx-amount ${t.type}">${t.type === 'expense' ? '−' : t.type === 'income' ? '+' : ''}${fmt(t.amount, currency)}</div><div class="tx-actions"><button class="mini-btn" data-edit-tx="${t.id}" title="Edit">✎</button><button class="mini-btn" data-delete-tx="${t.id}" title="Delete">×</button></div></div>`
     }).join('')
   }
 
@@ -53,7 +55,7 @@ async function reload() {
       const splits = t.splits?.length ? t.splits : [{categoryId: t.categoryId, amount: t.amount}];
       for (const s of splits) {
         const id = s.categoryId || 'other';
-        map.set(id, (map.get(id) || 0) + converted(s.amount, account(t.accountId)?.currency || 'EUR'))
+        map.set(id, (map.get(id) || 0) + convertedTransactionAmount(t, s.amount, account(t.accountId)?.currency || 'EUR'))
       }
     }
     return [...map].map(([id, value]) => ({
@@ -72,7 +74,7 @@ async function reload() {
       pct += x.value / sum * 100;
       return `${x.color} ${a}% ${pct}%`
     }).join(',');
-    return `<div class="chart-wrap"><div class="donut" style="background:conic-gradient(${segments})"><div class="donut-hole"><div><strong>${money(sum, base())}</strong><br><small>Total spent</small></div></div></div><div class="legend">${groups.slice(0, 6).map(x => `<div class="legend-item"><span><i class="legend-dot" style="background:${x.color}"></i>${escapeHtml(x.name)}</span><b>${Math.round(x.value / sum * 100)}%</b></div>`).join('')}</div></div>`
+    return `<div class="chart-wrap"><div class="donut" style="background:conic-gradient(${segments})"><div class="donut-hole"><div><strong>${money(sum, base())}</strong><br><small>Total spent</small></div></div></div><div class="legend">${groups.slice(0, 6).map(x => `<div class="legend-item"><span><i class="legend-dot" style="background:${x.color}"></i>${escapeHtml(x.name)}</span><b>${Math.round(x.value / sum * 100)}%</b></div>`).join('')}<p class="form-hint">Totals are calculated before display rounding.</p></div></div>`
   }
 
   function home() {
@@ -104,7 +106,7 @@ async function reload() {
   function more() {
     const current = state.budgets.filter(b => b.month === state.month);
     return `<div class="toolbar"><div><h2>Manage your money</h2><p class="muted">Budgets, categories, automation and preferences.</p></div></div><div class="settings-grid"><section class="settings-tile"><h3>◉ Monthly budgets</h3><p>Set monthly spending limits without carry-over.</p><button class="btn secondary" id="open-budgets">Manage budgets</button></section><section class="settings-tile"><h3>◈ Categories</h3><p>Customize expense and income categories, icons and colors.</p><button class="btn secondary" id="open-categories">Manage categories</button></section><section class="settings-tile"><h3>↻ Recurring transactions</h3><p>Schedule regular income and expenses, processed when the app opens.</p><button class="btn secondary" id="open-recurring">Manage schedules</button></section><section class="settings-tile"><h3>⚙ Settings & backup</h3><p>Currency, data export and import, and privacy options.</p><button class="btn secondary" id="open-settings">Open settings</button></section></div><section class="panel" style="margin-top:20px"><div class="panel-head"><h3>Budget overview · ${monthLabel(state.month)}</h3><button class="link-btn" id="budget-quick">Manage →</button></div>${current.length ? current.map(b => {
-      const spent = state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(state.month)).reduce((s, t) => s + (t.splits?.length ? t.splits.filter(x => x.categoryId === b.categoryId).reduce((a, x) => a + converted(x.amount, account(t.accountId)?.currency || 'EUR'), 0) : t.categoryId === b.categoryId ? converted(t.amount, account(t.accountId)?.currency || 'EUR') : 0), 0);
+      const spent = state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(state.month)).reduce((s, t) => s + (t.splits?.length ? t.splits.filter(x => x.categoryId === b.categoryId).reduce((a, x) => a + convertedTransactionAmount(t, x.amount, account(t.accountId)?.currency || 'EUR'), 0) : t.categoryId === b.categoryId ? convertedTransactionAmount(t) : 0), 0);
       return `<div class="budget-row"><div class="head"><b>${escapeHtml(cat(b.categoryId)?.name || 'Overall budget')}</b><b>${money(spent, base())} / ${money(b.limit, base())}</b></div><div class="progress"><span style="width:${Math.min(100, spent / b.limit * 100)}%;background:${spent > b.limit ? '#f16a76' : '#3479f4'}"></span></div></div>`
     }).join('') : empty('No budgets set', 'Create a monthly budget to track spending.', '◉')}</section>`
   }

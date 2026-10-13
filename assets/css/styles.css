@@ -843,6 +843,72 @@
     color: #92a0b5
   }
 
+  .conversion-preview {
+    margin: -3px 0 14px
+  }
+
+  .rate-list {
+    border: 1px solid #e4ecf7;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 12px;
+    background: #fff
+  }
+
+  .rate-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #edf2fa;
+    font-size: 12px
+  }
+
+  .rate-row:last-child {
+    border-bottom: 0
+  }
+
+  .rate-row label {
+    display: grid;
+    gap: 2px;
+    min-width: 72px
+  }
+
+  .rate-row span {
+    color: #53647e;
+    font-weight: 800
+  }
+
+  .rate-row small {
+    color: #92a0b5;
+    font-weight: 700
+  }
+
+  .rate-input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #e1e9f4;
+    border-radius: 9px;
+    padding: 9px 10px;
+    color: #253754;
+    outline: none
+  }
+
+  .rate-input:focus {
+    border-color: #4381f5;
+    box-shadow: 0 0 0 3px #e7f0ff
+  }
+
+  .rate-row b {
+    color: #253754;
+    text-align: right
+  }
+
+  .rate-actions {
+    margin-top: 12px
+  }
+
   .payee-autocomplete {
     position: relative
   }

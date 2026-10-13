@@ -125,8 +125,13 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Each account has one native currency; base reporting currency is configurable (EUR default).
 - Support ISO currencies including EUR, USD, GBP, CHF, MKD, with correct decimal precision.
 - Cross-currency transfers store the exact source amount, destination amount, conversion rate, and optional fee.
-- Manual exchange-rate entry initially; automatic rates are not required and must not be fabricated.
+- Manual exchange-rate entry in Settings; automatic rates are not required and must not be fabricated.
 - Combined reporting uses a documented conversion policy; if a required rate is unavailable, show an explicit unavailable/incomplete state rather than an invented amount.
+- Non-base-currency transaction forms show the estimated base-currency reporting value and include an editable transaction-level exchange rate initialized from Settings.
+- Transactions keep an exchange-rate snapshot so historical reports do not silently change when Settings rates are updated later.
+- All-accounts current balance estimates convert each active account's current native balance using the current configured rates in Settings.
+- Historical transaction reports use transaction exchange-rate snapshots so old transaction values do not silently change when Settings rates are updated later.
+- Settings show editable local reference rates for currencies used in the app and the conversion formula.
 - Preserve original values and historical conversion information.
 - Use integer minor units where appropriate or an exact decimal strategy; avoid ordinary JS floating-point math for money.
 
@@ -197,6 +202,7 @@ accounts
 transactions
   id, type, amount, currency, date, time, accountId,
   destinationAccountId?, receivedAmount?, exchangeRate?, fee?,
+  exchangeRateFrom?, exchangeRateTo?, exchangeRates?,
   payee?, description?, recurringRuleId?, occurrenceKey?, createdAt, updatedAt
 transactionSplits
   id, transactionId, categoryId, subcategoryId?, amount, description?

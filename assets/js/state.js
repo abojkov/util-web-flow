@@ -47,7 +47,22 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
   const monthLabel = m => new Date(m + '-01T12:00:00').toLocaleDateString('en-GB', {month: 'long', year: 'numeric'});
   const account = id => state.accounts.find(a => a.id === id);
   const cat = id => state.categories.find(c => c.id === id);
-  const rates = {EUR: 1, USD: 1.09, GBP: .86, MKD: 61.5, CHF: .94, SEK: 11.2};
+  const defaultRates = {EUR: 1, USD: 1.09, GBP: .86, MKD: 61.5, CHF: .94, SEK: 11.2};
+
+  function exchangeRates() {
+    return {...defaultRates, ...getSetting('exchangeRates', {})}
+  }
+
+  function usedCurrencies() {
+    const values = new Set([base()]);
+    for (const item of state.accounts) values.add(item.currency);
+    for (const item of state.transactions) {
+      const from = account(item.accountId), to = account(item.toAccountId);
+      if (from?.currency) values.add(from.currency);
+      if (to?.currency) values.add(to.currency)
+    }
+    return [...values].filter(Boolean).sort()
+  }
 
   function payeeOptions() {
     const seen = new Map();
@@ -60,15 +75,55 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     return [...seen.values()].sort((a, b) => a.localeCompare(b))
   }
 
+  function convertedWithRates(v, c, targetCurrency = base(), sourceRates = exchangeRates()) {
+    if (c === targetCurrency) return v;
+    const from = sourceRates[c], to = sourceRates[targetCurrency];
+    return from && to ? v / from * to : 0
+  }
+
   function converted(v, c) {
     const base = getSetting('baseCurrency', 'EUR');
-    if (c === base) return v;
-    const from = rates[c], to = rates[base];
-    return from && to ? v / from * to : 0
+    return convertedWithRates(v, c, base)
+  }
+
+  function transactionRates(t) {
+    return t?.exchangeRates || exchangeRates()
+  }
+
+  function convertedTransactionAmount(t, value = t?.amount, currency = account(t?.accountId)?.currency || 'EUR') {
+    return convertedWithRates(value, currency, base(), transactionRates(t))
+  }
+
+  function conversionRate(fromCurrency, toCurrency = base()) {
+    if (fromCurrency === toCurrency) return 1;
+    const rates = exchangeRates(), from = rates[fromCurrency], to = rates[toCurrency];
+    return from && to ? to / from : null
+  }
+
+  function conversionNote(value, fromCurrency, toCurrency = base()) {
+    const rate = conversionRate(fromCurrency, toCurrency);
+    if (!rate) return `No reference rate is available for ${fromCurrency} to ${toCurrency}.`;
+    return `${money(value, fromCurrency)} ≈ ${money(value * rate, toCurrency)} · 1 ${fromCurrency} ≈ ${rate.toFixed(4)} ${toCurrency}`
+  }
+
+  function conversionNoteWithRates(value, fromCurrency, toCurrency = base(), sourceRates = exchangeRates()) {
+    const rate = fromCurrency === toCurrency ? 1 : sourceRates[fromCurrency] && sourceRates[toCurrency] ? sourceRates[toCurrency] / sourceRates[fromCurrency] : null;
+    if (!rate) return `No reference rate is available for ${fromCurrency} to ${toCurrency}.`;
+    return `${money(value, fromCurrency)} ≈ ${money(value * rate, toCurrency)} · 1 ${fromCurrency} ≈ ${rate.toFixed(4)} ${toCurrency}`
   }
 
   function balance(a) {
     return amount(Number(a.opening || 0) + state.transactions.reduce((sum, t) => sum + (t.type === 'income' && t.accountId === a.id ? t.amount : t.type === 'expense' && t.accountId === a.id ? -t.amount : t.type === 'transfer' && t.accountId === a.id ? -t.amount : t.type === 'transfer' && t.toAccountId === a.id ? t.received : 0), 0))
+  }
+
+  function convertedBalance(a) {
+    return amount(converted(a.opening || 0, a.currency) + state.transactions.reduce((sum, t) => {
+      if (t.type === 'income' && t.accountId === a.id) return sum + convertedTransactionAmount(t);
+      if (t.type === 'expense' && t.accountId === a.id) return sum - convertedTransactionAmount(t);
+      if (t.type === 'transfer' && t.accountId === a.id) return sum - convertedTransactionAmount(t);
+      if (t.type === 'transfer' && t.toAccountId === a.id) return sum + convertedTransactionAmount(t, t.received || 0, a.currency);
+      return sum
+    }, 0))
   }
 
   function txs() {
@@ -78,8 +133,8 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
   function totals() {
     const ts = txs();
     return {
-      income: ts.filter(t => t.type === 'income').reduce((s, t) => s + converted(t.amount, account(t.accountId)?.currency || 'EUR'), 0),
-      expense: ts.filter(t => t.type === 'expense').reduce((s, t) => s + converted(t.amount, account(t.accountId)?.currency || 'EUR'), 0)
+      income: ts.filter(t => t.type === 'income').reduce((s, t) => s + convertedTransactionAmount(t), 0),
+      expense: ts.filter(t => t.type === 'expense').reduce((s, t) => s + convertedTransactionAmount(t), 0)
     }
   }
 

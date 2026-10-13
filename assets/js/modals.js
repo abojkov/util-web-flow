@@ -31,6 +31,12 @@ function modal(title, body) {
     return currencies.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`).join('')
   }
 
+  function exchangeRateRows() {
+    const configured = exchangeRates();
+    const editable = usedCurrencies().length ? usedCurrencies() : currencies;
+    return editable.map(currency => `<div class="rate-row"><label><span>${currency}</span><small>1 EUR =</small></label><input class="rate-input" name="${currency}" type="number" min="0.000001" step="0.000001" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`).join('')
+  }
+
   function payeeAutocompleteInput(value = '', id = 'payee-input') {
     return `<div class="payee-autocomplete"><input id="${id}" name="payee" autocomplete="off" maxlength="120" value="${escapeHtml(value)}" placeholder="Merchant, person, ATM, or place"><div class="payee-suggestions" data-payee-suggestions hidden></div></div>`
   }
@@ -96,9 +102,37 @@ function modal(title, body) {
     }
     const type = t?.type || initial;
     const accountOpts = (sel) => active.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${escapeHtml(a.name)} (${a.currency})</option>`).join('');
-    modal(t ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label>Amount</label><input type="number" name="amount" min="0.01" step="0.01" value="${t?.amount ?? ''}" required placeholder="0.00"></div><div class="field"><label>Date</label><input type="date" name="date" value="${t?.date || today()}" required></div></div><div class="field-row"><div class="field"><label>Time</label><input type="time" name="time" value="${t?.time || currentTime()}" required></div><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><input name="description" maxlength="180" value="${escapeHtml(t?.description ?? t?.note ?? '')}" placeholder="What was this for?"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn" type="submit">Save transaction</button></div></form>`);
+    modal(t ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label>Amount</label><input id="tx-amount" type="number" name="amount" min="0.01" step="0.01" value="${t?.amount ?? ''}" required placeholder="0.00"></div><div class="field"><label>Date</label><input type="date" name="date" value="${t?.date || today()}" required></div></div><div class="field-row"><div class="field"><label>Time</label><input type="time" name="time" value="${t?.time || currentTime()}" required></div><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="number" min="0.000001" step="0.000001"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><input name="description" maxlength="180" value="${escapeHtml(t?.description ?? t?.note ?? '')}" placeholder="What was this for?"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn" type="submit">Save transaction</button></div></form>`);
     bindPayeeAutocomplete('tx-payee');
     let chosen = type;
+    let lastRateCurrency = '';
+    const currentTransactionRates = () => {
+      const selected = account($('#tx-account')?.value);
+      const snapshot = {...exchangeRates()};
+      const rateValue = Number($('#tx-rate')?.value);
+      if (selected?.currency && Number.isFinite(rateValue) && rateValue > 0) snapshot[selected.currency] = rateValue;
+      return snapshot
+    };
+    const updateConversionPreview = () => {
+      const selected = account($('#tx-account')?.value);
+      const value = amount($('#tx-amount')?.value);
+      const box = $('#tx-conversion'), rateBox = $('#tx-rate-field'), rateInput = $('#tx-rate'), rateLabel = $('#tx-rate-label');
+      if (selected && rateBox && rateInput && rateLabel) {
+        const snapshot = t?.exchangeRates || exchangeRates();
+        if (selected.currency !== lastRateCurrency) {
+          rateInput.value = snapshot[selected.currency] || exchangeRates()[selected.currency] || '';
+          lastRateCurrency = selected.currency
+        }
+        rateLabel.textContent = `Exchange rate: 1 EUR = ${selected.currency}`;
+        rateBox.hidden = selected.currency === 'EUR'
+      }
+      if (!box || !selected || !value || selected.currency === base()) {
+        if (box) box.hidden = true;
+        return
+      }
+      box.textContent = `Reporting estimate: ${conversionNoteWithRates(value, selected.currency, base(), currentTransactionRates())}. This transaction keeps its own rate snapshot for historical reports.`;
+      box.hidden = false
+    };
     const extra = () => {
       const options = state.categories.filter(c => c.type === chosen).map(c => `<option value="${c.id}" ${c.id === t?.categoryId ? 'selected' : ''}>${escapeHtml(c.icon + ' ' + c.name)}</option>`).join('');
       $('#tx-extra').innerHTML = chosen === 'transfer' ? `<div class="field"><label>Destination account</label><select name="toAccountId" id="tx-to">${accountOpts(t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}</select></div><div class="field"><label>Amount received (destination currency)</label><input type="number" name="received" min="0.01" step="0.01" value="${t?.received ?? ''}" required placeholder="0.00"></div><p class="form-hint">For same-currency transfers, enter the same amount. For different currencies, enter the actual received amount.</p>` : `<div class="field"><label>Category</label><select name="categoryId">${options}</select></div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
@@ -132,6 +166,10 @@ function modal(title, body) {
       extra()
     });
     $('#cancel').onclick = closeModal;
+    $('#tx-amount')?.addEventListener('input', updateConversionPreview);
+    $('#tx-account')?.addEventListener('change', updateConversionPreview);
+    $('#tx-rate')?.addEventListener('input', updateConversionPreview);
+    updateConversionPreview();
     $('#tx-form').onsubmit = async e => {
       e.preventDefault();
       const f = new FormData(e.target), from = account(f.get('accountId'));
@@ -147,9 +185,14 @@ function modal(title, body) {
         accountId: from.id,
         payee: String(f.get('payee') || '').trim(),
         description: String(f.get('description') || '').trim(),
+        exchangeRates: currentTransactionRates(),
         createdAt: t?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+      record.exchangeRateFrom = from.currency;
+      record.exchangeRateTo = base();
+      record.exchangeRate = conversionRate(from.currency, base()) || null;
+      if (record.exchangeRates[from.currency] && record.exchangeRates[base()]) record.exchangeRate = record.exchangeRates[base()] / record.exchangeRates[from.currency];
       if (chosen === 'transfer') {
         const to = account(f.get('toAccountId'));
         if (!to || to.id === from.id) return toast('Select a different destination account');
@@ -327,18 +370,25 @@ function modal(title, body) {
       let count = 0;
       while (r.nextDate <= today() && count++ < 120) {
         const key = `rec-${r.id}-${r.nextDate}`;
-        if (!existing.some(t => t.id === key)) await put('transactions', {
-          id: key,
-          type: r.type,
-          amount: r.amount,
-          date: r.nextDate,
-          time: r.time || '12:00',
-          accountId: r.accountId,
-          categoryId: r.categoryId,
-          payee: r.payee || r.place || '',
-          description: r.description ?? r.note ?? '',
-          createdAt: new Date().toISOString()
-        });
+        if (!existing.some(t => t.id === key)) {
+          const from = account(r.accountId), snapshot = exchangeRates();
+          await put('transactions', {
+            id: key,
+            type: r.type,
+            amount: r.amount,
+            date: r.nextDate,
+            time: r.time || '12:00',
+            accountId: r.accountId,
+            categoryId: r.categoryId,
+            payee: r.payee || r.place || '',
+            description: r.description ?? r.note ?? '',
+            exchangeRates: snapshot,
+            exchangeRateFrom: from?.currency || 'EUR',
+            exchangeRateTo: base(),
+            exchangeRate: from?.currency && snapshot[from.currency] && snapshot[base()] ? snapshot[base()] / snapshot[from.currency] : null,
+            createdAt: new Date().toISOString()
+          })
+        }
         r.nextDate = nextDate(r.nextDate, r.frequency);
         changed = true
       }
@@ -356,11 +406,31 @@ function modal(title, body) {
   }
 
   function settingsModal() {
-    modal('Settings & backup', `<div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Multi-currency dashboard totals use indicative built-in reference rates, not live market rates. Update the rates in the source before relying on converted reports.</div><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div>`);
+    modal('Settings & backup', `<div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts, and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div>`);
     $('#base-currency').onchange = async e => {
       await put('settings', {id: 'baseCurrency', value: e.target.value});
       await reload();
       settingsModal()
+    };
+    $('#rates-form').onsubmit = async e => {
+      e.preventDefault();
+      const next = {...exchangeRates()};
+      for (const input of e.target.querySelectorAll('.rate-input')) {
+        const value = Number(input.value);
+        if (!Number.isFinite(value) || value <= 0) return toast(`Enter a valid rate for ${input.name}`);
+        next[input.name] = Math.round(value * 1000000) / 1000000
+      }
+      next.EUR = 1;
+      await put('settings', {id: 'exchangeRates', value: next});
+      await reload();
+      settingsModal();
+      toast('Exchange rates saved')
+    };
+    $('#reset-rates').onclick = async () => {
+      await put('settings', {id: 'exchangeRates', value: {...defaultRates}});
+      await reload();
+      settingsModal();
+      toast('Exchange rates reset')
     };
     $('#export-json').onclick = async () => {
       const data = {format: 'flow-backup', version: 1, exportedAt: new Date().toISOString()};
@@ -369,8 +439,8 @@ function modal(title, body) {
       toast('Backup exported')
     };
     $('#export-csv').onclick = () => {
-      const fields = ['date', 'time', 'type', 'account', 'currency', 'amount', 'category', 'payee', 'description', 'destination', 'received'];
-      const csv = [fields, ...state.transactions.map(t => [t.date, t.time || '', t.type, account(t.accountId)?.name || '', account(t.accountId)?.currency || '', t.amount, cat(t.categoryId)?.name || '', t.payee ?? t.place ?? '', t.description ?? t.note ?? '', account(t.toAccountId)?.name || '', t.received || ''])].map(row => row.map(x => '"' + String(x ?? '').replaceAll('"', '""') + '"').join(',')).join('\r\n');
+      const fields = ['date', 'time', 'type', 'account', 'currency', 'amount', 'category', 'payee', 'description', 'exchange_rate_from', 'exchange_rate_to', 'exchange_rate', 'destination', 'received'];
+      const csv = [fields, ...state.transactions.map(t => [t.date, t.time || '', t.type, account(t.accountId)?.name || '', account(t.accountId)?.currency || '', t.amount, cat(t.categoryId)?.name || '', t.payee ?? t.place ?? '', t.description ?? t.note ?? '', t.exchangeRateFrom || '', t.exchangeRateTo || '', t.exchangeRate || '', account(t.toAccountId)?.name || '', t.received || ''])].map(row => row.map(x => '"' + String(x ?? '').replaceAll('"', '""') + '"').join(',')).join('\r\n');
       download('\ufeff' + csv, 'flow-transactions-' + today() + '.csv', 'text/csv;charset=utf-8');
       toast('CSV exported')
     };
