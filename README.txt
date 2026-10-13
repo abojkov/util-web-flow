@@ -416,6 +416,12 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-13 — Search filter contrast
+
+- Made unselected transaction category filters faded and grayscale.
+- Kept selected category filters full opacity with category-colored outlines and icons.
+- **Verification:** JavaScript syntax checks and source inspection.
+
 ### 2026-10-13 — Transaction search panel
 
 - Added a dedicated search section to the Transactions page.

@@ -745,16 +745,17 @@
 
   .category-check {
     align-items: center;
-    background: #f8fbff;
-    border: 1px solid #e1e9f4;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 999px;
-    color: #253754;
+    color: #64748b;
     cursor: pointer;
     display: inline-flex;
     font-size: 13px;
     font-weight: 800;
     gap: 7px;
     min-height: 38px;
+    opacity: .58;
     padding: 7px 12px 7px 8px
   }
 
@@ -810,20 +811,30 @@
 
   .category-check span {
     align-items: center;
-    background: #fff;
-    border: 1px solid #e1e9f4;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
     border-radius: 50%;
-    color: var(--category-color);
+    color: #94a3b8;
     display: inline-flex;
+    filter: grayscale(1);
     height: 24px;
     justify-content: center;
     width: 24px
   }
 
   .category-check.selected {
-    background: #edf5ff;
-    border-color: #86b7ff;
-    color: #174ea6
+    background: #fff;
+    border-color: var(--category-color);
+    box-shadow: 0 0 0 3px #e7f0ff;
+    color: #174ea6;
+    opacity: 1
+  }
+
+  .category-check.selected span {
+    background: #fff;
+    border-color: var(--category-color);
+    color: var(--category-color);
+    filter: none
   }
 
   .select, .field input, .field select, .field textarea {
