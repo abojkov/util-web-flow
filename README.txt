@@ -416,6 +416,12 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-14 — Numeric amount keyboards
+
+- Added explicit decimal input keyboard hints to amount, budget, opening balance, split, transfer received, recurring amount, and exchange-rate fields.
+- Preserved `type="number"` validation and decimal step behavior.
+- **Verification:** JavaScript syntax checks and source inspection.
+
 ### 2026-10-13 — Transaction deletion placement
 
 - Removed the delete action from transaction list rows.
