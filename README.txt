@@ -83,9 +83,10 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 
 Supported types: cash, bank, savings, investment, loan, and custom. **Credit cards are excluded.**
 
-Account fields: unique ID, name, type, native currency, opening balance, optional description, icon/color, archived flag, created/updated timestamps.
+Account fields: unique ID, name, type, native currency, opening balance, optional description, icon/color, archived flag, sort order, created/updated timestamps.
 
 - Create, edit, list, archive, and restore accounts.
+- Accounts are grouped by account type and can be reordered within each type group.
 - An archived account is not available for new ordinary transactions and is excluded from the current *active-account* total by default; historical transactions and reports remain available.
 - Prevent unsafe deletion of accounts referenced by transactions.
 - Account balance is derived from opening balance and transaction ledger; **no manual balance adjustment feature**.
@@ -448,6 +449,26 @@ Before treating any feature as complete, ask Codex:
 
 - Updated JSON backup and CSV transaction export filenames to include local hours, minutes, and seconds.
 - Export names now use `flow-backup-YYYY-MM-DD-HHMMSS.json` and `flow-transactions-YYYY-MM-DD-HHMMSS.csv`.
+- **Verification:** JavaScript syntax checks and source inspection.
+
+### 2026-10-14 — Account ordering and compact rows
+
+- Replaced large account cards with compact rows grouped by account type.
+- Added persisted up/down ordering controls for accounts within each type group.
+- Applied the custom account order to account dropdowns and the Home account preview.
+- **Verification:** JavaScript syntax checks and source inspection.
+
+### 2026-10-14 — Account action confirmations
+
+- Removed account deletion from the Accounts list rows.
+- Added account deletion to the edit account modal, preserving the existing transaction safety check.
+- Added confirmation dialogs before archiving or restoring an account.
+- **Verification:** JavaScript syntax checks and source inspection.
+
+### 2026-10-14 — Account picker ordering
+
+- Preserved the custom account order in transaction and recurring transaction account selectors.
+- Transfer destination selectors now follow the same account order as the Accounts page.
 - **Verification:** JavaScript syntax checks and source inspection.
 
 ### 2026-10-14 — Number input stepper prevention

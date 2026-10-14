@@ -125,7 +125,21 @@ function modal(title, body) {
   }
 
   function accountModal(a) {
-    modal(a ? 'Edit account' : 'New account', `<form id="account-form"><div class="field"><label>Account name</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="e.g. Main bank account"></div><div class="field-row"><div class="field"><label>Account type</label><select name="type">${['Bank', 'Cash', 'Savings', 'Investment', 'Loan', 'Other'].map(x => `<option ${a?.type === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div><div class="field"><label>Currency</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>Opening balance</label><input type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="opening" value="${a?.opening ?? 0}" required></div><div class="notice">Opening balances are used to calculate your balance. Currency cannot be changed after account creation.</div><div class="modal-footer"><button class="btn" type="submit">Save account</button></div></form>`);
+    modal(a ? 'Edit account' : 'New account', `<form id="account-form"><div class="field"><label>Account name</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="e.g. Main bank account"></div><div class="field-row"><div class="field"><label>Account type</label><select name="type">${['Bank', 'Cash', 'Savings', 'Investment', 'Loan', 'Other'].map(x => `<option ${a?.type === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div><div class="field"><label>Currency</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>Opening balance</label><input type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="opening" value="${a?.opening ?? 0}" required></div><div class="notice">Opening balances are used to calculate your balance. Currency cannot be changed after account creation.</div><div class="modal-footer">${a ? '<button type="button" class="btn danger" id="delete-account">Delete account</button>' : ''}<button class="btn" type="submit">Save account</button></div></form>`);
+    $('#delete-account')?.addEventListener('click', () => {
+      if (state.transactions.some(t => t.accountId === a.id || t.toAccountId === a.id)) return toast('Account has transactions. Archive it instead.');
+      confirmAction({
+        title: 'Delete account',
+        message: `Delete ${a.name}? This cannot be undone.`,
+        confirmText: 'Delete account',
+        onCancel: () => accountModal(a),
+        onConfirm: async () => {
+          await del('accounts', a.id);
+          closeModal();
+          await reload()
+        }
+      })
+    });
     $('#account-form').onsubmit = async e => {
       e.preventDefault();
       const f = new FormData(e.target);
@@ -135,7 +149,8 @@ function modal(title, body) {
         type: f.get('type'),
         currency: a?.currency || f.get('currency'),
         opening: amount(f.get('opening')),
-        archived: a?.archived || false
+        archived: a?.archived || false,
+        sortOrder: a?.sortOrder ?? state.accounts.filter(x => x.type === f.get('type')).length
       });
       closeModal();
       await reload();
@@ -166,7 +181,7 @@ function modal(title, body) {
   }
 
   function transactionModal(t, initial = 'expense', options = {}) {
-    const active = state.accounts.filter(a => !a.archived);
+    const active = orderedAccounts(state.accounts.filter(a => !a.archived));
     if (!active.length) {
       toast('Create an account first');
       return accountModal()
@@ -451,7 +466,7 @@ function modal(title, body) {
   }
 
   function recurringEdit() {
-    const active = state.accounts.filter(a => !a.archived);
+    const active = orderedAccounts(state.accounts.filter(a => !a.archived));
     if (!active.length) return accountModal();
     modal('New recurring transaction', `<form id="rec-form"><div class="field-row"><div class="field"><label>Type</label><select name="type" id="rec-type"><option value="expense">Expense</option><option value="income">Income</option></select></div><div class="field"><label>Amount</label><input name="amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div></div><div class="field"><label>Account</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>Category</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>Frequency</label><select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div><div class="field"><label>First date</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>Time</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>Payee</label>${payeeAutocompleteInput('', 'rec-payee')}</div><div class="field"><label>Description</label><input name="description" maxlength="180"></div><div class="modal-footer"><button class="btn">Create schedule</button></div></form>`);
     bindPayeeAutocomplete('rec-payee');

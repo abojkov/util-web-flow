@@ -1035,6 +1035,87 @@
     flex-wrap: wrap
   }
 
+  .account-sections {
+    display: grid;
+    gap: 18px
+  }
+
+  .account-group {
+    background: #fff;
+    border: 1px solid #e9eff8;
+    border-radius: 16px;
+    overflow: hidden
+  }
+
+  .account-group-head {
+    align-items: center;
+    background: #f8fbff;
+    border-bottom: 1px solid #eef3fb;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 16px
+  }
+
+  .account-group-head h3 {
+    color: #253754;
+    font-size: 13px;
+    margin: 0
+  }
+
+  .account-group-head span {
+    color: #8da0bb;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap
+  }
+
+  .account-list {
+    padding: 0 16px
+  }
+
+  .account-row {
+    align-items: center;
+    border-bottom: 1px solid #f0f3f9;
+    display: flex;
+    gap: 12px;
+    min-height: 68px;
+    padding: 12px 0
+  }
+
+  .account-row:last-child {
+    border-bottom: 0
+  }
+
+  .account-row > strong {
+    color: #253754;
+    font-size: 13px;
+    font-weight: 900;
+    margin-left: auto;
+    white-space: nowrap
+  }
+
+  .account-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 4px
+  }
+
+  .mini-btn.danger {
+    background: #fff1f3;
+    color: #d94f64
+  }
+
+  .account-archive {
+    margin-top: 30px
+  }
+
+  .account-archive > h3 {
+    color: #53647e;
+    font-size: 14px;
+    margin: 0 0 12px
+  }
+
   .table-list {
     background: #fff;
     border: 1px solid #e9eff8;
@@ -1561,6 +1642,32 @@
     .account-grid {
       grid-template-columns:1fr;
       gap: 12px
+    }
+
+    .account-group-head {
+      padding: 12px 13px
+    }
+
+    .account-list {
+      padding: 0 13px
+    }
+
+    .account-row {
+      align-items: flex-start;
+      display: grid;
+      grid-template-columns:40px minmax(0, 1fr) auto;
+      gap: 10px;
+      min-height: 0
+    }
+
+    .account-row > strong {
+      grid-column: 2 / 4;
+      margin-left: 0
+    }
+
+    .account-actions {
+      grid-column: 2 / 4;
+      flex-wrap: wrap
     }
 
     .settings-grid {

@@ -69,7 +69,30 @@ async function reload() {
   }
 
   function accountSelect(id = 'account-filter') {
-    return `<select class="select" id="${id}"><option value="all">All accounts</option>${state.accounts.filter(a => !a.archived).map(a => `<option value="${a.id}" ${state.accountFilter === a.id ? 'selected' : ''}>${escapeHtml(a.name)}</option>`).join('')}</select>`
+    return `<select class="select" id="${id}"><option value="all">All accounts</option>${orderedAccounts(state.accounts.filter(a => !a.archived)).map(a => `<option value="${a.id}" ${state.accountFilter === a.id ? 'selected' : ''}>${escapeHtml(a.name)}</option>`).join('')}</select>`
+  }
+
+  function orderedAccounts(items) {
+    return items.slice().sort((a, b) => {
+      const orderA = Number.isFinite(Number(a.sortOrder)) ? Number(a.sortOrder) : Number.MAX_SAFE_INTEGER;
+      const orderB = Number.isFinite(Number(b.sortOrder)) ? Number(b.sortOrder) : Number.MAX_SAFE_INTEGER;
+      return orderA - orderB || String(a.name || '').localeCompare(String(b.name || ''), undefined, {sensitivity: 'base'})
+    })
+  }
+
+  function accountGroups(items) {
+    const groups = new Map();
+    for (const item of orderedAccounts(items)) {
+      const type = item.type || 'Other';
+      if (!groups.has(type)) groups.set(type, []);
+      groups.get(type).push(item)
+    }
+    const typeOrder = ['Cash', 'Bank', 'Savings', 'Investment', 'Loan', 'Other'];
+    return [...groups.entries()].sort(([a], [b]) => {
+      const orderA = typeOrder.includes(a) ? typeOrder.indexOf(a) : typeOrder.length;
+      const orderB = typeOrder.includes(b) ? typeOrder.indexOf(b) : typeOrder.length;
+      return orderA - orderB || a.localeCompare(b, undefined, {sensitivity: 'base'})
+    })
   }
 
   function txList(items) {
@@ -123,7 +146,7 @@ async function reload() {
   }
 
   function home() {
-    const ts = txs(), t = totals(), active = state.accounts.filter(a => !a.archived),
+    const ts = txs(), t = totals(), active = orderedAccounts(state.accounts.filter(a => !a.archived)),
       total = state.accountFilter === 'all' ? active.reduce((s, a) => s + converted(balance(a), a.currency), 0) : balance(account(state.accountFilter) || {
         id: '',
         opening: 0
@@ -195,8 +218,9 @@ async function reload() {
 
   function accounts() {
     const active = state.accounts.filter(a => !a.archived), archived = state.accounts.filter(a => a.archived);
-    const cards = arr => arr.map(a => `<div class="account-card"><div class="account-symbol">▣</div><h3>${escapeHtml(a.name)} ${a.archived ? '<span class="pill">Archived</span>' : ''}</h3><strong>${money(balance(a), a.currency)}</strong><p>${escapeHtml(a.type)} · ${a.currency}</p><div class="actions"><button class="btn ghost" data-edit-account="${a.id}">Edit</button><button class="btn secondary" data-archive="${a.id}">${a.archived ? 'Restore' : 'Archive'}</button><button class="btn danger" data-delete-account="${a.id}">Delete</button></div></div>`).join('');
-    return `<div class="toolbar"><div><h2>My accounts</h2><p class="muted">Keep every balance in view.</p></div><button class="btn" data-add="account">+ Add account</button></div>${active.length ? `<div class="account-grid">${cards(active)}</div>` : empty('Create your first account', 'Add a bank, cash, or savings account to get started.', '▣')}${archived.length ? `<h3 style="margin-top:32px">Archived accounts</h3><div class="account-grid">${cards(archived)}</div>` : ''}`
+    const row = (a, group) => `<div class="account-row"><div class="tx-icon">▣</div><div class="tx-main"><b><span>${escapeHtml(a.name)}</span>${a.archived ? '<span class="pill">Archived</span>' : ''}</b><small>${escapeHtml(a.type)} · ${a.currency}</small></div><strong>${money(balance(a), a.currency)}</strong><div class="account-actions"><button class="mini-btn" data-move-account="${a.id}" data-direction="-1" title="Move up in ${escapeHtml(group)}">↑</button><button class="mini-btn" data-move-account="${a.id}" data-direction="1" title="Move down in ${escapeHtml(group)}">↓</button><button class="mini-btn" data-edit-account="${a.id}" title="Edit">✎</button><button class="mini-btn" data-archive="${a.id}" title="${a.archived ? 'Restore' : 'Archive'}">${a.archived ? '↩' : '−'}</button></div></div>`;
+    const sections = items => accountGroups(items).map(([type, group]) => `<section class="account-group"><div class="account-group-head"><h3>${escapeHtml(type)}</h3><span>${group.length} ${group.length === 1 ? 'account' : 'accounts'}</span></div><div class="account-list">${group.map(a => row(a, type)).join('')}</div></section>`).join('');
+    return `<div class="toolbar"><div><h2>My accounts</h2><p class="muted">Keep every balance in view.</p></div><button class="btn" data-add="account">+ Add account</button></div>${active.length ? `<div class="account-sections">${sections(active)}</div>` : empty('Create your first account', 'Add a bank, cash, or savings account to get started.', '▣')}${archived.length ? `<div class="account-archive"><h3>Archived accounts</h3><div class="account-sections">${sections(archived)}</div></div>` : ''}`
   }
 
   function more() {
@@ -288,20 +312,26 @@ async function reload() {
       if (b.dataset.add === 'account') accountModal(); else transactionModal(null, b.dataset.add === 'transaction' ? 'expense' : b.dataset.add)
     });
     document.querySelectorAll('[data-edit-account]').forEach(b => b.onclick = () => accountModal(account(b.dataset.editAccount)));
-    document.querySelectorAll('[data-archive]').forEach(b => b.onclick = async () => {
-      const a = account(b.dataset.archive);
-      await put('accounts', {...a, archived: !a.archived});
+    document.querySelectorAll('[data-move-account]').forEach(b => b.onclick = async () => {
+      const current = account(b.dataset.moveAccount);
+      if (!current) return;
+      const items = orderedAccounts(state.accounts.filter(a => a.type === current.type && Boolean(a.archived) === Boolean(current.archived)));
+      const index = items.findIndex(a => a.id === current.id), next = index + Number(b.dataset.direction);
+      if (next < 0 || next >= items.length) return;
+      [items[index], items[next]] = [items[next], items[index]];
+      await Promise.all(items.map((item, sortOrder) => put('accounts', {...item, sortOrder})));
       await reload()
     });
-    document.querySelectorAll('[data-delete-account]').forEach(b => b.onclick = async () => {
-      const a = account(b.dataset.deleteAccount);
-      if (state.transactions.some(t => t.accountId === a.id || t.toAccountId === a.id)) return toast('Account has transactions. Archive it instead.');
+    document.querySelectorAll('[data-archive]').forEach(b => b.onclick = async () => {
+      const a = account(b.dataset.archive);
+      const archived = !a.archived;
       confirmAction({
-        title: 'Delete account',
-        message: `Delete ${a.name}? This cannot be undone.`,
-        confirmText: 'Delete account',
+        title: archived ? 'Archive account' : 'Restore account',
+        message: `${archived ? 'Archive' : 'Restore'} ${a.name}?`,
+        confirmText: archived ? 'Archive account' : 'Restore account',
+        onCancel: closeModal,
         onConfirm: async () => {
-          await del('accounts', a.id);
+          await put('accounts', {...a, archived});
           closeModal();
           await reload()
         }
