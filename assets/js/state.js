@@ -47,7 +47,8 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     maximumFractionDigits: 2
   }).format(n || 0);
   const fmt = (n, c) => money(n, c);
-  const amount = x => Math.round((Number(x) || 0) * 100) / 100;
+  const decimalValue = x => Number(String(x ?? '').trim().replace(',', '.'));
+  const amount = x => Math.round((decimalValue(x) || 0) * 100) / 100;
   const monthKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   const shiftMonth = (month, delta) => {
     const [year, monthNumber] = month.split('-').map(Number);

@@ -11,7 +11,7 @@ function modal(title, body) {
   }
 
   function bindModalNumberInputs() {
-    document.querySelectorAll('.modal input[type="number"]').forEach(input => {
+    document.querySelectorAll('.modal input[data-decimal-input]').forEach(input => {
       input.addEventListener('wheel', e => {
         if (document.activeElement === input) e.preventDefault()
       }, {passive: false});
@@ -49,7 +49,7 @@ function modal(title, body) {
   function exchangeRateRows() {
     const configured = exchangeRates();
     const editable = usedCurrencies().length ? usedCurrencies() : currencies;
-    return editable.map(currency => `<div class="rate-row"><label><span>${currency}</span><small>1 EUR =</small></label><input class="rate-input" name="${currency}" type="number" inputmode="decimal" min="0.000001" step="0.000001" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`).join('')
+    return editable.map(currency => `<div class="rate-row"><label><span>${currency}</span><small>1 EUR =</small></label><input class="rate-input" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`).join('')
   }
 
   function payeeAutocompleteInput(value = '', id = 'payee-input') {
@@ -125,7 +125,7 @@ function modal(title, body) {
   }
 
   function accountModal(a) {
-    modal(a ? 'Edit account' : 'New account', `<form id="account-form"><div class="field"><label>Account name</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="e.g. Main bank account"></div><div class="field-row"><div class="field"><label>Account type</label><select name="type">${['Bank', 'Cash', 'Savings', 'Investment', 'Loan', 'Other'].map(x => `<option ${a?.type === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div><div class="field"><label>Currency</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>Opening balance</label><input type="number" inputmode="decimal" step="0.01" name="opening" value="${a?.opening ?? 0}" required></div><div class="notice">Opening balances are used to calculate your balance. Currency cannot be changed after account creation.</div><div class="modal-footer"><button class="btn ghost" type="button" id="cancel">Cancel</button><button class="btn" type="submit">Save account</button></div></form>`);
+    modal(a ? 'Edit account' : 'New account', `<form id="account-form"><div class="field"><label>Account name</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="e.g. Main bank account"></div><div class="field-row"><div class="field"><label>Account type</label><select name="type">${['Bank', 'Cash', 'Savings', 'Investment', 'Loan', 'Other'].map(x => `<option ${a?.type === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div><div class="field"><label>Currency</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>Opening balance</label><input type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="opening" value="${a?.opening ?? 0}" required></div><div class="notice">Opening balances are used to calculate your balance. Currency cannot be changed after account creation.</div><div class="modal-footer"><button class="btn ghost" type="button" id="cancel">Cancel</button><button class="btn" type="submit">Save account</button></div></form>`);
     $('#cancel').onclick = closeModal;
     $('#account-form').onsubmit = async e => {
       e.preventDefault();
@@ -165,14 +165,14 @@ function modal(title, body) {
     const isExisting = Boolean(t?.id) && !isCopy;
     const type = t?.type || initial;
     const accountOpts = (sel) => active.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${escapeHtml(a.name)} (${a.currency})</option>`).join('');
-    modal(isExisting ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label>Amount</label><input id="tx-amount" type="number" inputmode="decimal" name="amount" min="0.01" step="0.01" value="${t?.amount ?? ''}" required placeholder="0.00"></div><div class="field"><label>Date</label><input type="date" name="date" value="${t?.date || today()}" required></div></div><div class="field-row"><div class="field"><label>Time</label><input type="time" name="time" value="${t?.time || currentTime()}" required></div><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="number" inputmode="decimal" min="0.000001" step="0.000001"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? '<button type="button" class="btn danger" id="delete-tx">Delete transaction</button><button type="button" class="btn secondary" id="copy-tx">Copy</button>' : ''}<button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn" type="submit">Save transaction</button></div></form>`);
+    modal(isExisting ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label>Amount</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="amount" value="${t?.amount ?? ''}" required placeholder="0.00"></div><div class="field"><label>Date</label><input type="date" name="date" value="${t?.date || today()}" required></div></div><div class="field-row"><div class="field"><label>Time</label><input type="time" name="time" value="${t?.time || currentTime()}" required></div><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? '<button type="button" class="btn danger" id="delete-tx">Delete transaction</button><button type="button" class="btn secondary" id="copy-tx">Copy</button>' : ''}<button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn" type="submit">Save transaction</button></div></form>`);
     bindPayeeAutocomplete('tx-payee');
     let chosen = type;
     let lastRateCurrency = '';
     const currentTransactionRates = () => {
       const selected = account($('#tx-account')?.value);
       const snapshot = rateSnapshotForCurrencies([selected?.currency, base()]);
-      const rateValue = Number($('#tx-rate')?.value);
+      const rateValue = decimalValue($('#tx-rate')?.value);
       if (selected?.currency && Number.isFinite(rateValue) && rateValue > 0) snapshot[selected.currency] = rateValue;
       return snapshot
     };
@@ -198,7 +198,7 @@ function modal(title, body) {
     };
     const extra = () => {
       const options = categoryOptions(chosen, t?.categoryId, t?.subcategoryId);
-      $('#tx-extra').innerHTML = chosen === 'transfer' ? `<div class="field"><label>Destination account</label><select name="toAccountId" id="tx-to">${accountOpts(t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}</select></div><div class="field"><label>Amount received (destination currency)</label><input type="number" inputmode="decimal" name="received" min="0.01" step="0.01" value="${t?.received ?? ''}" required placeholder="0.00"></div><p class="form-hint">For same-currency transfers, enter the same amount. For different currencies, enter the actual received amount.</p>` : `<div class="field"><label>Category or subcategory</label><select name="categoryChoice">${options}</select></div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
+      $('#tx-extra').innerHTML = chosen === 'transfer' ? `<div class="field"><label>Destination account</label><select name="toAccountId" id="tx-to">${accountOpts(t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}</select></div><div class="field"><label>Amount received (destination currency)</label><input type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="received" value="${t?.received ?? ''}" required placeholder="0.00"></div><p class="form-hint">For same-currency transfers, enter the same amount. For different currencies, enter the actual received amount.</p>` : `<div class="field"><label>Category or subcategory</label><select name="categoryChoice">${options}</select></div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
       if (chosen !== 'transfer') {
         const toggle = $('#enable-splits'), container = $('#split-fields');
         const draw = () => {
@@ -212,7 +212,7 @@ function modal(title, body) {
             const addRow = s => {
               const el = document.createElement('div');
               el.className = 'field-row split-row';
-              el.innerHTML = `<div class="field"><label>Category or subcategory</label><select class="split-cat">${categoryOptions(chosen, s.categoryId, s.subcategoryId)}</select></div><div class="field"><label>Amount</label><input class="split-amount" type="number" inputmode="decimal" min="0.01" step="0.01" value="${s.amount ?? ''}" required></div>`;
+              el.innerHTML = `<div class="field"><label>Category or subcategory</label><select class="split-cat">${categoryOptions(chosen, s.categoryId, s.subcategoryId)}</select></div><div class="field"><label>Amount</label><input class="split-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${s.amount ?? ''}" required></div>`;
               $('#split-rows').append(el)
             };
             rows.forEach(addRow);
@@ -291,6 +291,7 @@ function modal(title, body) {
               amount: amount(row.querySelector('.split-amount').value)
             }
           });
+          if (record.splits.some(split => split.amount <= 0)) return toast('Enter a valid split amount');
           if (Math.round(record.splits.reduce((s, x) => s + x.amount, 0) * 100) !== Math.round(v * 100)) return toast('Split amounts must equal the total');
           record.categoryId = null;
           record.subcategoryId = null
@@ -404,13 +405,15 @@ function modal(title, body) {
   }
 
   function budgetEdit() {
-    modal('Add monthly budget', `<form id="budget-form"><div class="field"><label>Month</label><input name="month" type="month" value="${state.month}" required></div><div class="field"><label>Category</label><select name="categoryId"><option value="">Overall budget</option>${state.categories.filter(c => c.type === 'expense').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}</select></div><div class="field"><label>Monthly limit (${base()})</label><input name="limit" type="number" inputmode="decimal" min="0.01" step="0.01" required></div><div class="notice">Budgets reset each month. No unused amount is carried forward.</div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Save budget</button></div></form>`);
+    modal('Add monthly budget', `<form id="budget-form"><div class="field"><label>Month</label><input name="month" type="month" value="${state.month}" required></div><div class="field"><label>Category</label><select name="categoryId"><option value="">Overall budget</option>${state.categories.filter(c => c.type === 'expense').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}</select></div><div class="field"><label>Monthly limit (${base()})</label><input name="limit" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div><div class="notice">Budgets reset each month. No unused amount is carried forward.</div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Save budget</button></div></form>`);
     $('#cancel').onclick = budgetsModal;
     $('#budget-form').onsubmit = async e => {
       e.preventDefault();
       const f = new FormData(e.target), month = f.get('month'), categoryId = f.get('categoryId');
+      const limit = amount(f.get('limit'));
+      if (limit <= 0) return toast('Enter a valid budget amount');
       const old = state.budgets.find(b => b.month === month && b.categoryId === categoryId);
-      await put('budgets', {id: old?.id || uid(), month, categoryId, limit: amount(f.get('limit'))});
+      await put('budgets', {id: old?.id || uid(), month, categoryId, limit});
       await reload();
       budgetsModal()
     }
@@ -443,7 +446,7 @@ function modal(title, body) {
   function recurringEdit() {
     const active = state.accounts.filter(a => !a.archived);
     if (!active.length) return accountModal();
-    modal('New recurring transaction', `<form id="rec-form"><div class="field-row"><div class="field"><label>Type</label><select name="type" id="rec-type"><option value="expense">Expense</option><option value="income">Income</option></select></div><div class="field"><label>Amount</label><input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required></div></div><div class="field"><label>Account</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>Category</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>Frequency</label><select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div><div class="field"><label>First date</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>Time</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>Payee</label>${payeeAutocompleteInput('', 'rec-payee')}</div><div class="field"><label>Description</label><input name="description" maxlength="180"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Create schedule</button></div></form>`);
+    modal('New recurring transaction', `<form id="rec-form"><div class="field-row"><div class="field"><label>Type</label><select name="type" id="rec-type"><option value="expense">Expense</option><option value="income">Income</option></select></div><div class="field"><label>Amount</label><input name="amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div></div><div class="field"><label>Account</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>Category</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>Frequency</label><select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div><div class="field"><label>First date</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>Time</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>Payee</label>${payeeAutocompleteInput('', 'rec-payee')}</div><div class="field"><label>Description</label><input name="description" maxlength="180"></div><div class="modal-footer"><button type="button" class="btn ghost" id="cancel">Cancel</button><button class="btn">Create schedule</button></div></form>`);
     bindPayeeAutocomplete('rec-payee');
     const fill = () => {
       $('#rec-cat').innerHTML = state.categories.filter(c => c.type === $('#rec-type').value).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')
@@ -454,10 +457,12 @@ function modal(title, body) {
     $('#rec-form').onsubmit = async e => {
       e.preventDefault();
       const f = new FormData(e.target);
+      const value = amount(f.get('amount'));
+      if (value <= 0) return toast('Enter a valid amount');
       await put('recurring', {
         id: uid(),
         type: f.get('type'),
-        amount: amount(f.get('amount')),
+        amount: value,
         accountId: f.get('accountId'),
         categoryId: f.get('categoryId'),
         frequency: f.get('frequency'),
@@ -540,7 +545,7 @@ function modal(title, body) {
       e.preventDefault();
       const next = {...exchangeRates()};
       for (const input of e.target.querySelectorAll('.rate-input')) {
-        const value = Number(input.value);
+        const value = decimalValue(input.value);
         if (!Number.isFinite(value) || value <= 0) return toast(`Enter a valid rate for ${input.name}`);
         next[input.name] = Math.round(value * 1000000) / 1000000
       }

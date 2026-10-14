@@ -416,6 +416,13 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-14 — Comma decimal input
+
+- Updated decimal money and exchange-rate fields to accept both comma and dot separators, such as `1,5` and `1.5`.
+- Normalized comma decimals before amount and exchange-rate calculations.
+- Kept numeric mobile keyboard hints while avoiding browser `type="number"` decimal-separator restrictions.
+- **Verification:** JavaScript syntax checks and decimal parsing checks.
+
 ### 2026-10-14 — Transaction copy from edit
 
 - Added a copy action inside the edit transaction modal.
@@ -432,7 +439,7 @@ Before treating any feature as complete, ask Codex:
 ### 2026-10-14 — Numeric amount keyboards
 
 - Added explicit decimal input keyboard hints to amount, budget, opening balance, split, transfer received, recurring amount, and exchange-rate fields.
-- Preserved `type="number"` validation and decimal step behavior.
+- Decimal fields now use text inputs with decimal keyboard hints so comma decimals are accepted consistently.
 - **Verification:** JavaScript syntax checks and source inspection.
 
 ### 2026-10-13 — Transaction deletion placement
