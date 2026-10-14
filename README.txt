@@ -437,6 +437,13 @@ Before treating any feature as complete, ask Codex:
 - Left confirmation-dialog Cancel actions intact for destructive flows.
 - **Verification:** JavaScript syntax checks and source inspection.
 
+### 2026-10-14 — Transaction copy date choice
+
+- Added a copy choice step for edited transactions.
+- Users can copy with the current date and time or keep the original transaction date and time.
+- The chosen option opens the usual prefilled New transaction form before saving.
+- **Verification:** JavaScript syntax checks and source inspection.
+
 ### 2026-10-14 — Number input stepper prevention
 
 - Hid browser number-input increment and decrement controls.

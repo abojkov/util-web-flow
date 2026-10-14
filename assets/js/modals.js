@@ -143,7 +143,14 @@ function modal(title, body) {
     }
   }
 
-  function copyTransactionDraft(t) {
+  function copyTransactionDateChoice(t) {
+    if (!t) return toast('Transaction not found');
+    modal('Copy transaction', `<p class="notice">Choose the date and time for the copied transaction.</p><div class="modal-footer"><button type="button" class="btn secondary" id="copy-original-datetime">Same date and time</button><button type="button" class="btn" id="copy-current-datetime">Current date and time</button></div>`);
+    $('#copy-original-datetime').onclick = () => copyTransactionDraft(t, false);
+    $('#copy-current-datetime').onclick = () => copyTransactionDraft(t, true)
+  }
+
+  function copyTransactionDraft(t, useCurrentDateTime = false) {
     if (!t) return toast('Transaction not found');
     const copy = JSON.parse(JSON.stringify(t));
     delete copy.id;
@@ -151,6 +158,10 @@ function modal(title, body) {
     delete copy.updatedAt;
     delete copy.recurringRuleId;
     delete copy.occurrenceKey;
+    if (useCurrentDateTime) {
+      copy.date = today();
+      copy.time = currentTime()
+    }
     transactionModal(copy, copy.type, {copy: true})
   }
 
@@ -241,7 +252,7 @@ function modal(title, body) {
         }
       })
     });
-    $('#copy-tx')?.addEventListener('click', () => copyTransactionDraft(t));
+    $('#copy-tx')?.addEventListener('click', () => copyTransactionDateChoice(t));
     $('#tx-amount')?.addEventListener('input', updateConversionPreview);
     $('#tx-account')?.addEventListener('change', updateConversionPreview);
     $('#tx-rate')?.addEventListener('input', updateConversionPreview);
