@@ -444,6 +444,12 @@ Before treating any feature as complete, ask Codex:
 - The chosen option opens the usual prefilled New transaction form before saving.
 - **Verification:** JavaScript syntax checks and source inspection.
 
+### 2026-10-14 — Export filename timestamps
+
+- Updated JSON backup and CSV transaction export filenames to include local hours, minutes, and seconds.
+- Export names now use `flow-backup-YYYY-MM-DD-HHMMSS.json` and `flow-transactions-YYYY-MM-DD-HHMMSS.csv`.
+- **Verification:** JavaScript syntax checks and source inspection.
+
 ### 2026-10-14 — Number input stepper prevention
 
 - Hid browser number-input increment and decrement controls.

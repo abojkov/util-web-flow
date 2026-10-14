@@ -540,6 +540,12 @@ function modal(title, body) {
     setTimeout(() => URL.revokeObjectURL(url), 2000)
   }
 
+  function exportTimestamp() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
+  }
+
   function settingsModal() {
     modal('Settings & backup', `<div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts, and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div>`);
     $('#base-currency').onchange = async e => {
@@ -579,13 +585,13 @@ function modal(title, body) {
           exchangeRates: rateSnapshotForCurrencies([from?.currency, to?.currency, base()], {...exportedRates, ...(t.exchangeRates || {})})
         }
       });
-      download(JSON.stringify(data, null, 2), 'flow-backup-' + today() + '.json', 'application/json');
+      download(JSON.stringify(data, null, 2), 'flow-backup-' + exportTimestamp() + '.json', 'application/json');
       toast('Backup exported')
     };
     $('#export-csv').onclick = () => {
       const fields = ['date', 'time', 'type', 'account', 'currency', 'amount', 'category', 'subcategory', 'payee', 'description', 'exchange_rate_from', 'exchange_rate_to', 'exchange_rate', 'destination', 'received'];
       const csv = [fields, ...state.transactions.map(t => [t.date, t.time || '', t.type, account(t.accountId)?.name || '', account(t.accountId)?.currency || '', t.amount, cat(t.categoryId)?.name || '', subcat(t.categoryId, t.subcategoryId)?.name || '', t.payee ?? t.place ?? '', t.description ?? t.note ?? '', t.exchangeRateFrom || '', t.exchangeRateTo || '', t.exchangeRate || '', account(t.toAccountId)?.name || '', t.received || ''])].map(row => row.map(x => '"' + String(x ?? '').replaceAll('"', '""') + '"').join(',')).join('\r\n');
-      download('\ufeff' + csv, 'flow-transactions-' + today() + '.csv', 'text/csv;charset=utf-8');
+      download('\ufeff' + csv, 'flow-transactions-' + exportTimestamp() + '.csv', 'text/csv;charset=utf-8');
       toast('CSV exported')
     };
     $('#import-json').onchange = async e => {
