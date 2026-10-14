@@ -416,6 +416,12 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-14 — Number input stepper prevention
+
+- Hid browser number-input increment and decrement controls.
+- Prevented focused modal number fields from changing via mouse wheel or Arrow/Page keys.
+- **Verification:** JavaScript syntax checks and source inspection.
+
 ### 2026-10-14 — Numeric amount keyboards
 
 - Added explicit decimal input keyboard hints to amount, budget, opening balance, split, transfer received, recurring amount, and exchange-rate fields.
