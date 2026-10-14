@@ -416,6 +416,13 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-14 — Transaction copy from edit
+
+- Added a copy action inside the edit transaction modal.
+- Copy opens a prefilled New transaction form so the user can change fields before saving.
+- Saved copies become distinct transactions with new IDs and timestamps while preserving edited values, splits, transfer details, and exchange-rate snapshots.
+- **Verification:** JavaScript syntax checks and source inspection.
+
 ### 2026-10-14 — Number input stepper prevention
 
 - Hid browser number-input increment and decrement controls.
