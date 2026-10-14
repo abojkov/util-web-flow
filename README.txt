@@ -430,6 +430,13 @@ Before treating any feature as complete, ask Codex:
 - Saved copies become distinct transactions with new IDs and timestamps while preserving edited values, splits, transfer details, and exchange-rate snapshots.
 - **Verification:** JavaScript syntax checks and source inspection.
 
+### 2026-10-14 — Modal form cancel cleanup
+
+- Removed redundant Cancel buttons from modal data-entry forms.
+- Kept the top-right modal close button as the single form dismissal control.
+- Left confirmation-dialog Cancel actions intact for destructive flows.
+- **Verification:** JavaScript syntax checks and source inspection.
+
 ### 2026-10-14 — Number input stepper prevention
 
 - Hid browser number-input increment and decrement controls.
