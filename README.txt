@@ -531,6 +531,12 @@ Before treating any feature as complete, ask Codex:
 - Added `logo.png` as the browser favicon and Apple touch icon.
 - **Verification:** Source inspection and referenced file checks.
 
+### 2026-10-15 — Logo background fix
+
+- Removed the decorative box shadow around the sidebar and mobile header logo.
+- Preserved the original logo size and white container background.
+- **Verification:** Reviewed the CSS diff and ran `git diff --check`. Browser appearance was not verified.
+
 ### 2026-10-13 — Hidden form rows
 
 - Fixed hidden modal fields so CSS form layout does not override the `hidden` attribute.
