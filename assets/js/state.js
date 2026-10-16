@@ -40,6 +40,7 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     statsAccount: 'all'
   };
   const getSetting = (k, d) => state.settings.find(x => x.id === k)?.value ?? d;
+  const totalBalanceHidden = () => getSetting('hideTotalBalance', false) === true;
   const escapeHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',

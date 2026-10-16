@@ -741,7 +741,21 @@ function modal(title, body) {
   }
 
   function settingsModal() {
-    modal('Settings & backup', `<div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts, and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div><p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`);
+    modal('Settings & backup', `<div class="field"><label><input type="checkbox" id="hide-total-balance" ${totalBalanceHidden() ? 'checked' : ''}> Blur total balance</label><p class="form-hint">Hide the Home balance at a glance. Saved on this device; other amounts stay visible.</p></div><div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts, and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div><p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`);
+    $('#hide-total-balance').onchange = async e => {
+      const checkbox = e.target;
+      checkbox.disabled = true;
+      try {
+        await put('settings', {id: 'hideTotalBalance', value: checkbox.checked});
+        await reload()
+      } catch (error) {
+        console.error(error);
+        checkbox.checked = totalBalanceHidden();
+        toast('Could not save balance visibility. Please try again.')
+      } finally {
+        checkbox.disabled = false
+      }
+    };
     $('#base-currency').onchange = async e => {
       await put('settings', {id: 'baseCurrency', value: e.target.value});
       await reload();

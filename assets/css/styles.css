@@ -292,6 +292,35 @@
     min-height: 185px
   }
 
+  .balance-card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px
+  }
+
+  .balance-privacy-toggle {
+    border: 1px solid #ffffff66;
+    border-radius: 8px;
+    background: #ffffff1a;
+    color: #fff;
+    padding: 5px 9px;
+    font: inherit;
+    font-size: 12px
+  }
+
+  .balance-privacy-toggle:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px
+  }
+
+  .balance-value-blurred {
+    display: inline-block;
+    filter: blur(9px);
+    user-select: none;
+    -webkit-user-select: none
+  }
+
   .balance-card:after {
     content: '';
     position: absolute;
