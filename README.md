@@ -128,6 +128,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Each split has a category, optional subcategory, amount, and optional description.
 - Enabling splits hides and disables the main category field; only individual split categories are used. Disabling splits restores the main field and its prior selection. Editing/copying split transactions starts with the main field hidden.
 - Split transaction records retain `categoryId: null` and `subcategoryId: null` at the parent level. The existing schema already supports this, so no database migration or rewriting existing records is required.
+- Split transactions show a clickable purple Split badge alongside the blue Note badge when present. It expands a breakdown below the transaction details, with one line per category/subcategory and its amount in the account’s native currency. Clicking again collapses it; the dashboard and transaction history share this behavior.
 - Sum of split amounts **must exactly equal** the parent transaction amount.
 - The account ledger records the parent total once; category reports and budgets use split allocations.
 - Transfers cannot be split.
@@ -457,6 +458,16 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Distinct Split badge color
+
+- Changed the Split badge to purple, including expanded, hover, and focus states, to distinguish it from the blue Note badge.
+- Verification: JavaScript syntax and badge class/color-state checks passed; browser visual verification remains pending.
+
+### 2026-10-16 — Split breakdown in transaction lists
+
+- Added a Split badge using the Note badge style. It toggles an inline list of split category/subcategory names and native-currency amounts, one allocation per line, in transaction history and dashboard recent transactions. Note and Split disclosures operate independently; totals and stored records are unchanged.
+- Verification: JavaScript syntax, rendered breakdown/escaping checks, badge toggle/focus checks, and transaction/category regressions passed. Live browser layout and keyboard interaction remain untested.
 
 ### 2026-10-16 — Central app version constant
 

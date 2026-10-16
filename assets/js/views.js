@@ -135,8 +135,13 @@ async function reload() {
         detail = [a?.name || 'Unknown account', categoryName, t.date, t.time, equivalent && `${equivalent} ${base()} equivalent`].filter(Boolean).join(' · '),
         descriptionOpen = state.activeTxDescription === t.id,
         descriptionBadge = description ? `<button class="tx-note-badge ${descriptionOpen ? 'open' : ''}" type="button" data-tx-description="${t.id}" aria-expanded="${descriptionOpen ? 'true' : 'false'}">Note</button>` : '',
-        descriptionPopover = description && descriptionOpen ? `<div class="tx-note-popover">${escapeHtml(description)}</div>` : '';
-      return `<div class="transaction"><div class="tx-icon">${t.type === 'transfer' ? '⇄' : c?.icon || '◈'}</div><div class="tx-main"><b><span>${escapeHtml(label)}</span>${descriptionBadge}</b><small>${escapeHtml(detail)}</small>${descriptionPopover}</div><div class="tx-amount ${t.type}">${t.type === 'expense' ? '−' : t.type === 'income' ? '+' : ''}${fmt(t.amount, currency)}</div><div class="tx-actions"><button class="mini-btn" data-edit-tx="${t.id}" title="Edit">✎</button></div></div>`
+        descriptionPopover = description && descriptionOpen ? `<div class="tx-note-popover">${escapeHtml(description)}</div>` : '',
+        hasSplits = t.type !== 'transfer' && t.splits?.length > 0,
+        splitOpen = state.activeTxSplit === t.id,
+        splitDetailsId = `tx-splits-${escapeHtml(t.id)}`,
+        splitBadge = hasSplits ? `<button class="tx-note-badge tx-split-badge ${splitOpen ? 'open' : ''}" type="button" data-tx-splits="${escapeHtml(t.id)}" aria-expanded="${splitOpen}" aria-controls="${splitDetailsId}">Split</button>` : '',
+        splitDetails = hasSplits ? `<div class="tx-note-popover tx-split-details" id="${splitDetailsId}" ${splitOpen ? '' : 'hidden'}>${t.splits.map(split => `<div class="tx-split-line"><span>${escapeHtml(categoryLabel(split.categoryId, split.subcategoryId))}</span><span class="tx-split-amount">${money(split.amount, currency)}</span></div>`).join('')}</div>` : '';
+      return `<div class="transaction"><div class="tx-icon">${t.type === 'transfer' ? '⇄' : c?.icon || '◈'}</div><div class="tx-main"><b><span>${escapeHtml(label)}</span>${descriptionBadge}${splitBadge}</b><small>${escapeHtml(detail)}</small>${descriptionPopover}${splitDetails}</div><div class="tx-amount ${t.type}">${t.type === 'expense' ? '−' : t.type === 'income' ? '+' : ''}${fmt(t.amount, currency)}</div><div class="tx-actions"><button class="mini-btn" data-edit-tx="${t.id}" title="Edit">✎</button></div></div>`
     }).join('')
   }
 
@@ -332,6 +337,12 @@ async function reload() {
       if (expanded.has(type)) expanded.delete(type); else expanded.add(type);
       state.txExpandedCategoryGroups = [...expanded];
       render()
+    }));
+    document.querySelectorAll('[data-tx-splits]').forEach(button => button.addEventListener('click', e => {
+      const id = e.currentTarget.dataset.txSplits;
+      state.activeTxSplit = state.activeTxSplit === id ? '' : id;
+      render();
+      [...document.querySelectorAll('[data-tx-splits]')].find(next => next.dataset.txSplits === id)?.focus({preventScroll: true})
     }));
     document.querySelectorAll('[data-tx-description]').forEach(button => button.addEventListener('click', e => {
       const id = e.currentTarget.dataset.txDescription;

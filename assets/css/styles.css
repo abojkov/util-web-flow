@@ -512,6 +512,35 @@
     outline-offset: 2px
   }
 
+  .tx-split-badge {
+    background: #f3efff;
+    border-color: #e3d8ff;
+    color: #7750bb
+  }
+
+  .tx-split-badge.open {
+    background: #7750bb;
+    border-color: #7750bb;
+    color: #fff
+  }
+
+  .tx-split-badge:hover {
+    background: #ece4ff;
+    border-color: #b99be8;
+    box-shadow: 0 0 0 3px #f3efff;
+    color: #603c9b
+  }
+
+  .tx-split-badge.open:hover {
+    background: #603c9b;
+    border-color: #603c9b;
+    color: #fff
+  }
+
+  .tx-split-badge:focus {
+    outline-color: #b99be8
+  }
+
   .tx-note-popover {
     background: #f8fbff;
     border: 1px solid #dbe8ff;
@@ -526,6 +555,33 @@
     padding: 10px 12px;
     white-space: pre-wrap;
     width: fit-content
+  }
+
+  .tx-split-details {
+    width: 100%;
+    max-width: 420px;
+    white-space: normal
+  }
+
+  .tx-split-line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: baseline;
+    padding: 6px 0
+  }
+
+  .tx-split-line + .tx-split-line {
+    border-top: 1px solid #e1e9f4
+  }
+
+  .tx-split-line > span:first-child {
+    overflow-wrap: anywhere
+  }
+
+  .tx-split-amount {
+    white-space: nowrap;
+    font-weight: 800
   }
 
   .tx-amount {
