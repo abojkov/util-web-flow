@@ -115,6 +115,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Transaction account selectors initially show only the selected account name in a compact field; currency remains visible on the expanded account buttons. Tapping the field expands compact square buttons (72px minimum, 6px grid spacing) listing all active accounts in the configured order, with account name, currency, and a blue selected state. Selecting an account updates the field, collapses the buttons, and returns focus to the field. Reopen it to change the selection; Escape within the buttons collapses the picker. Account fields share the standard selectors’ SVG arrow and the normal fields’ blue focus border and soft shadow, including while expanded. Both source and transfer destination use the same picker; buttons support keyboard focus and expose selection with `aria-pressed`. Archived accounts remain excluded.
 - Transaction forms show Date & time first, then Amount, followed by Account. They use one native “Date & time” (`datetime-local`) input, initialized from the saved local date/time or the current local date/time for new records. Copy options retain their original/current date-time behavior.
 - Saving validates the local calendar date and time, then stores the existing separate `date` and `time` properties without timezone conversion or schema changes. Native picker appearance varies by browser; recurring schedule fields remain separate.
+- Transfers retain an optional Payee (for example, a currency exchange store). Transaction list titles show Payee, or “Transfer” when blank; details show Source account → Destination account, followed by date/time. Legacy `place` values remain supported. This applies to history and dashboard recent transactions without rewriting stored records.
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
 - Display full dates as `dd.mm.yyyy` in transaction rows, weekly range labels, and recurring next-date labels using the shared `displayDate` helper. Native date/date-time picker appearance follows browser/OS locale; stored dates and CSV/JSON dates remain ISO `yyyy-mm-dd` for reliable sorting and interchange. Month/year headings retain their existing labels.
 - Support daily/calendar, weekly, monthly, and chronological review. Transaction lists are newest first across every period and text/account/category filter: local date descending, then local time descending (missing time treated as midnight), then creation timestamp and ID for stable ties. Dashboard recent transactions use the same order. Unfiltered All history retains its latest-250 display limit after sorting.
@@ -459,6 +460,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Transfer payee title and account route
+
+- Transfer rows now use Payee as the title, falling back to “Transfer” when empty, with source → destination account names below. The transfer Payee field remains available for currency exchange merchants and other context.
+- Verification: JavaScript syntax, transfer/ordinary rendering, empty/legacy values, escaping, and transaction sorting checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Transaction type filter for manual transfer review
 
