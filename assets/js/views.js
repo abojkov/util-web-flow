@@ -42,7 +42,7 @@ async function reload() {
     if (state.txSearchPeriod === 'all') return '';
     if (state.txSearchPeriod === 'week') {
       const weekStart = state.txSearchWeekStart || startOfWeek(today()), weekEnd = shiftDate(weekStart, 6);
-      return `<div class="toolbar period-toolbar"><div class="filter-row"><button class="icon-btn" id="prev-tx-period">‹</button><strong style="font-size:13px;min-width:210px;text-align:center">${weekStart} – ${weekEnd}</strong><button class="icon-btn" id="next-tx-period">›</button></div></div>`
+      return `<div class="toolbar period-toolbar"><div class="filter-row"><button class="icon-btn" id="prev-tx-period">‹</button><strong style="font-size:13px;min-width:210px;text-align:center">${escapeHtml(displayDate(weekStart))} – ${escapeHtml(displayDate(weekEnd))}</strong><button class="icon-btn" id="next-tx-period">›</button></div></div>`
     }
     if (state.txSearchPeriod === 'year') return `<div class="toolbar period-toolbar"><div class="filter-row"><button class="icon-btn" id="prev-tx-period">‹</button><strong style="font-size:13px;min-width:130px;text-align:center">${state.txSearchYear || today().slice(0, 4)}</strong><button class="icon-btn" id="next-tx-period">›</button></div></div>`;
     return `<div class="toolbar period-toolbar"><div class="filter-row"><button class="icon-btn" id="prev-tx-period">‹</button><strong style="font-size:13px;min-width:130px;text-align:center">${monthLabel(state.month)}</strong><button class="icon-btn" id="next-tx-period">›</button></div></div>`
@@ -132,7 +132,7 @@ async function reload() {
         label = t.type === 'transfer' ? `Transfer to ${account(t.toAccountId)?.name || 'account'}` : (payee || categoryName || t.type),
         currency = a?.currency || 'EUR',
         equivalent = currency !== base() ? money(convertedTransactionAmount(t), base()) : '',
-        detail = [a?.name || 'Unknown account', categoryName, t.date, t.time, equivalent && `${equivalent} ${base()} equivalent`].filter(Boolean).join(' · '),
+        detail = [a?.name || 'Unknown account', categoryName, displayDate(t.date), t.time, equivalent && `${equivalent} ${base()} equivalent`].filter(Boolean).join(' · '),
         descriptionOpen = state.activeTxDescription === t.id,
         descriptionBadge = description ? `<button class="tx-note-badge ${descriptionOpen ? 'open' : ''}" type="button" data-tx-description="${t.id}" aria-expanded="${descriptionOpen ? 'true' : 'false'}">Note</button>` : '',
         descriptionPopover = description && descriptionOpen ? `<div class="tx-note-popover">${escapeHtml(description)}</div>` : '',
