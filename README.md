@@ -437,6 +437,16 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-16 — Smooth logo corners
+
+- Brand images now crop past the PNG’s transparent padding and irregular outer edge, with one proportional 25% container radius shared by mobile and desktop. This replaces overlapping asset/CSS curves that flattened the bottom corners. The original PNG and app icons remain unchanged.
+- Verification: inspected the supplied screenshot and logo asset, checked shared desktop/mobile sizing and clipping rules, and reviewed the diff. Live browser rendering remains unverified.
+
+### 2026-10-16 — Transparent logo container on mobile
+
+- Removed the white fill from the shared brand-icon container so the transparent logo edges blend with the mobile header and desktop sidebar backgrounds. The existing logo asset and dimensions are unchanged.
+- Verification: confirmed the PNG has transparency, checked desktop/mobile CSS rules and local asset references, and reviewed the diff. Live mobile browser rendering remains untested.
+
 ### 2026-10-16 — Account field name only
 
 - Removed the parenthesized currency from collapsed source and destination account fields, including after selection. Expanded buttons still show currencies.
