@@ -983,11 +983,6 @@
     outline-offset: 2px
   }
 
-  .account-choice-icon {
-    font-size: 16px;
-    color: #2568ee
-  }
-
   .account-choice-name {
     max-width: 100%;
     overflow-wrap: anywhere;
@@ -1984,4 +1979,10 @@
 
   .field input[type="color"] {
     padding-right: 12px
+  }
+
+  .accounts-nav-icon {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0
   }

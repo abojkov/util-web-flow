@@ -449,6 +449,21 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-16 — Text-only transaction account buttons
+
+- Removed icons from source/destination account choices inside the transaction modal. Buttons retain the account name, currency, compact sizing, and selected state; other account wallet icons remain unchanged.
+- Verification: JavaScript syntax and focused picker checks passed; browser visual verification remains pending.
+
+### 2026-10-16 — Consistent account wallet icon
+
+- Reused the shared wallet SVG in transaction account buttons, account rows, dashboard account previews, and account empty states, replacing the remaining square glyphs.
+- Verification: JavaScript syntax and shared-icon reference checks passed; browser visual verification remains pending.
+
+### 2026-10-16 — Accounts navigation icon
+
+- Replaced the square Accounts navigation glyph with a local inline wallet SVG in desktop sidebar and mobile navigation. The icon inherits normal/selected navigation colors.
+- Verification: JavaScript syntax and shared navigation icon markup checks passed; browser visual verification remains pending.
+
 ### 2026-10-16 — Account reorder boundary controls
 
 - Account rows now disable and dim impossible up/down moves at each type group boundary, matching the account type controls. Single-account groups disable both arrows in active and archived sections.
