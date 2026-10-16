@@ -1148,6 +1148,10 @@
     margin-bottom: 15px
   }
 
+  #split-container {
+    gap: 15px
+  }
+
   .field label {
     font-size: 12px;
     font-weight: 800;

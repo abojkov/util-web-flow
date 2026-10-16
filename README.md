@@ -125,6 +125,8 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 
 - Allow income and expense transactions to contain multiple category allocations.
 - Each split has a category, optional subcategory, amount, and optional description.
+- Enabling splits hides and disables the main category field; only individual split categories are used. Disabling splits restores the main field and its prior selection. Editing/copying split transactions starts with the main field hidden.
+- Split transaction records retain `categoryId: null` and `subcategoryId: null` at the parent level. The existing schema already supports this, so no database migration or rewriting existing records is required.
 - Sum of split amounts **must exactly equal** the parent transaction amount.
 - The account ledger records the parent total once; category reports and budgets use split allocations.
 - Transfers cannot be split.
@@ -454,6 +456,17 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Split checkbox spacing
+
+- Increased spacing below the split checkbox to 15px, matching the standard field spacing above it, so the first split row is clearly separated.
+- Verification: checked the targeted CSS rule and diff; browser visual verification remains pending.
+
+### 2026-10-16 — No parent category for split transactions
+
+- Main category selection is hidden and disabled while splitting; it returns with its previous selection when splitting is disabled. Expanded main category choices close when enabling splits. Edit/copy forms apply the same behavior.
+- Save logic now reads the parent category only for non-split entries; split entries keep null parent category/subcategory IDs using the existing database structure.
+- Verification: JavaScript syntax and focused split-toggle/save/validation and category regressions passed; live browser layout and IndexedDB reload persistence remain untested.
 
 ### 2026-10-16 — Consistent budget, recurring, and CSV ordering
 

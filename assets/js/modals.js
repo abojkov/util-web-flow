@@ -350,7 +350,7 @@ function modal(title, body) {
     };
     let splitPickerSequence = 0;
     const extra = () => {
-      $('#tx-extra').innerHTML = chosen === 'transfer' ? `${accountPicker('tx-to', 'toAccountId', 'Destination account', t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}<div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">Exchange rate</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter agreed rate"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">Amount received (destination currency)</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="0.00"></div>` : `${categoryPicker('tx-category', chosen, t?.categoryId, t?.subcategoryId, 'categoryChoice')}<div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
+      $('#tx-extra').innerHTML = chosen === 'transfer' ? `${accountPicker('tx-to', 'toAccountId', 'Destination account', t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}<div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">Exchange rate</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter agreed rate"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">Amount received (destination currency)</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="0.00"></div>` : `<div id="tx-category-field">${categoryPicker('tx-category', chosen, t?.categoryId, t?.subcategoryId, 'categoryChoice')}</div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
       if (chosen === 'transfer') {
         lastTransferPair = '';
         $('#tx-to').onchange = updateConversionPreview;
@@ -362,6 +362,12 @@ function modal(title, body) {
         bindCategoryPicker('tx-category');
         const toggle = $('#enable-splits'), container = $('#split-fields');
         const draw = () => {
+          $('#tx-category-field').hidden = toggle.checked;
+          $('#tx-category').disabled = toggle.checked;
+          if (toggle.checked) {
+            $('#tx-category-picker').hidden = true;
+            $('#tx-category-toggle').setAttribute('aria-expanded', 'false')
+          }
           container.innerHTML = toggle.checked ? `<div id="split-rows"></div><button type="button" class="btn secondary" id="add-split" style="margin-top:9px">+ Add split</button><p class="form-hint">Split amounts must equal the transaction total.</p>` : '';
           if (toggle.checked) {
             let rows = t?.splits?.length ? t.splits : [{
@@ -461,10 +467,6 @@ function modal(title, body) {
           const category = cat(selection.categoryId);
           return category?.type === chosen && (!selection.subcategoryId || category.subcategories?.some(child => child.id === selection.subcategoryId))
         };
-        const selectedCategory = parseCategoryChoice(f.get('categoryChoice'));
-        if (!$('#enable-splits')?.checked && !validCategory(selectedCategory)) return toast('Select a valid category or subcategory');
-        record.categoryId = selectedCategory.categoryId;
-        record.subcategoryId = selectedCategory.subcategoryId || null;
         if ($('#enable-splits')?.checked) {
           record.splits = [...document.querySelectorAll('.split-row')].map(row => {
             const selected = parseCategoryChoice(row.querySelector('.split-cat').value);
@@ -479,6 +481,11 @@ function modal(title, body) {
           if (Math.round(record.splits.reduce((s, x) => s + x.amount, 0) * 100) !== Math.round(v * 100)) return toast('Split amounts must equal the total');
           record.categoryId = null;
           record.subcategoryId = null
+        } else {
+          const selectedCategory = parseCategoryChoice(f.get('categoryChoice'));
+          if (!validCategory(selectedCategory)) return toast('Select a valid category or subcategory');
+          record.categoryId = selectedCategory.categoryId;
+          record.subcategoryId = selectedCategory.subcategoryId || null
         }
       }
       await put('transactions', record);
