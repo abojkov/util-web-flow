@@ -194,17 +194,66 @@ function modal(title, body) {
     bindPayeeAutocomplete('tx-payee');
     let chosen = type;
     let lastRateCurrency = '';
+    let lastTransferPair = '';
     const currentTransactionRates = () => {
       const selected = account($('#tx-account')?.value);
       const snapshot = rateSnapshotForCurrencies([selected?.currency, base()]);
       const rateValue = decimalValue($('#tx-rate')?.value);
-      if (selected?.currency && Number.isFinite(rateValue) && rateValue > 0) snapshot[selected.currency] = rateValue;
+      if (chosen !== 'transfer' && selected?.currency && Number.isFinite(rateValue) && rateValue > 0) snapshot[selected.currency] = rateValue;
       return snapshot
     };
-    const updateConversionPreview = () => {
+    const updateConversionPreview = (event) => {
       const selected = account($('#tx-account')?.value);
       const value = amount($('#tx-amount')?.value);
       const box = $('#tx-conversion'), rateBox = $('#tx-rate-field'), rateInput = $('#tx-rate'), rateLabel = $('#tx-rate-label');
+      if (chosen === 'transfer') {
+        const destination = account($('#tx-to')?.value);
+        const crossCurrency = destination && selected && destination.currency !== selected.currency;
+        rateBox.hidden = true;
+        rateInput.required = false;
+        const transferField = $('#tx-transfer-rate-field'), transferInput = $('#tx-transfer-rate');
+        const inverseRate = destination?.currency === base() && selected?.currency !== base();
+        const editableReceived = crossCurrency && destination.currency !== base();
+        const receivedInput = $('#tx-received');
+        $('#tx-received-field').hidden = !editableReceived;
+        receivedInput.required = Boolean(editableReceived);
+        $('#tx-received-label').textContent = `Amount received (${destination?.currency || 'destination currency'})`;
+        const pair = `${selected?.currency}:${destination?.currency}`;
+        if (transferField && transferInput) {
+          transferField.hidden = !crossCurrency;
+          transferInput.required = Boolean(crossCurrency);
+          if (pair !== lastTransferPair) {
+            const originalPair = t?.type === 'transfer' && t.accountId === selected?.id && t.toAccountId === destination?.id;
+            const rates = exchangeRates();
+            const sourceRate = rates[selected?.currency], destinationRate = rates[destination?.currency];
+            const configuredRate = Number.isFinite(sourceRate) && sourceRate > 0 && Number.isFinite(destinationRate) && destinationRate > 0
+              ? (inverseRate ? sourceRate / destinationRate : destinationRate / sourceRate) : null;
+            const initialRate = originalPair && t.amount > 0 && t.received > 0
+              ? (inverseRate ? t.amount / t.received : t.received / t.amount) : configuredRate;
+            transferInput.value = Number.isFinite(initialRate) && initialRate > 0 ? initialRate : '';
+            lastTransferPair = pair
+          }
+          $('#tx-transfer-rate-label').textContent = `Exchange rate: 1 ${inverseRate ? base() : selected?.currency || ''} = how many ${inverseRate ? selected?.currency : destination?.currency || ''}?`;
+        }
+        if (editableReceived && event?.target === receivedInput) {
+          const received = amount(receivedInput.value);
+          transferInput.value = Number.isFinite(received) && received > 0 && Number.isFinite(value) && value > 0 ? received / value : '';
+        }
+        const rate = decimalValue(transferInput?.value);
+        if (event?.target !== receivedInput) {
+          const received = amount(inverseRate ? value / rate : value * rate);
+          receivedInput.value = Number.isFinite(rate) && rate > 0 && Number.isFinite(received) && received > 0 ? received : '';
+        }
+        const reportingRates = {...exchangeRates(), ...(t?.exchangeRates || {})};
+        const reportingInfo = selected && value > 0
+          ? `Main-currency estimate: ${conversionNoteWithRates(value, selected.currency, base(), reportingRates)}. ` : '';
+        box.hidden = !selected || !(value > 0);
+
+        box.textContent = reportingInfo + (!crossCurrency ? 'The same amount is received.' : Number.isFinite(rate) && rate > 0 && value > 0
+          ? `Amount received: ${money(amount(inverseRate ? value / rate : value * rate), destination.currency)} · ${money(value, selected.currency)} ${inverseRate ? '÷' : '×'} ${rate}. Rounded to two decimal places.`
+          : 'Enter the agreed exchange rate or received amount to calculate the transfer.');
+        return
+      }
       if (selected && rateBox && rateInput && rateLabel) {
         const snapshot = t?.exchangeRates || exchangeRates();
         if (selected.currency !== lastRateCurrency) {
@@ -223,7 +272,13 @@ function modal(title, body) {
     };
     const extra = () => {
       const options = categoryOptions(chosen, t?.categoryId, t?.subcategoryId);
-      $('#tx-extra').innerHTML = chosen === 'transfer' ? `<div class="field"><label>Destination account</label><select name="toAccountId" id="tx-to">${accountOpts(t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}</select></div><div class="field"><label>Amount received (destination currency)</label><input type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="received" value="${t?.received ?? ''}" required placeholder="0.00"></div><p class="form-hint">For same-currency transfers, enter the same amount. For different currencies, enter the actual received amount.</p>` : `<div class="field"><label>Category or subcategory</label><select name="categoryChoice">${options}</select></div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
+      $('#tx-extra').innerHTML = chosen === 'transfer' ? `<div class="field"><label>Destination account</label><select name="toAccountId" id="tx-to">${accountOpts(t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}</select></div><div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">Exchange rate</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter agreed rate"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">Amount received (destination currency)</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="0.00"></div>` : `<div class="field"><label>Category or subcategory</label><select name="categoryChoice">${options}</select></div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
+      if (chosen === 'transfer') {
+        lastTransferPair = '';
+        $('#tx-to').onchange = updateConversionPreview;
+        $('#tx-transfer-rate').oninput = updateConversionPreview;
+        $('#tx-received').oninput = updateConversionPreview;
+      }
       if (chosen !== 'transfer') {
         const toggle = $('#enable-splits'), container = $('#split-fields');
         const draw = () => {
@@ -252,7 +307,8 @@ function modal(title, body) {
     document.querySelectorAll('[data-type]').forEach(b => b.onclick = () => {
       chosen = b.dataset.type;
       document.querySelectorAll('[data-type]').forEach(x => x.classList.toggle('active', x === b));
-      extra()
+      extra();
+      updateConversionPreview()
     });
     $('#delete-tx')?.addEventListener('click', () => {
       confirmAction({
@@ -299,8 +355,14 @@ function modal(title, body) {
         const to = account(f.get('toAccountId'));
         if (!to || to.id === from.id) return toast('Select a different destination account');
         record.toAccountId = to.id;
-        record.received = amount(f.get('received'));
-        if (record.received <= 0) return toast('Enter the amount received');
+        const transferRate = from.currency === to.currency ? 1 : decimalValue(f.get('transferRate'));
+        if (!Number.isFinite(transferRate) || transferRate <= 0) return toast('Enter a valid positive exchange rate');
+        const inverseRate = to.currency === base() && from.currency !== base();
+        const editableReceived = from.currency !== to.currency && to.currency !== base();
+        record.received = editableReceived ? amount(f.get('received')) : amount(inverseRate ? v / transferRate : v * transferRate);
+        if (!Number.isFinite(record.received) || record.received <= 0) return toast('The calculated amount received must be positive and finite');
+        // Keep the stored rate in destination units per source unit for compatibility.
+        record.transferRate = editableReceived ? record.received / v : inverseRate ? 1 / transferRate : transferRate;
         record.exchangeRates = rateSnapshotForCurrencies([from.currency, to.currency, base()], {...exchangeRates(), ...record.exchangeRates})
       } else {
         const selectedCategory = parseCategoryChoice(f.get('categoryChoice'));

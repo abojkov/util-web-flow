@@ -4,7 +4,7 @@
 
 **Project status:** Active development
 **Specification version:** 1.0
-**Last specification update:** 2026-10-13
+**Last specification update:** 2026-10-16
 **Implementation status:** Not audited against the current local repository. Feature descriptions below are requirements, not assertions that the feature works.
 
 ## Table of contents
@@ -125,7 +125,13 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 
 - Each account has one native currency; base reporting currency is configurable (EUR default).
 - Support ISO currencies including EUR, USD, GBP, CHF, MKD, with correct decimal precision.
-- Cross-currency transfers store the exact source amount, destination amount, conversion rate, and optional fee.
+- Same-currency transfers automatically receive the sent amount; no received-amount or exchange-rate input is shown.
+- Cross-currency transfers require an explicit positive rate. EUR pairs always display 1 EUR = X other currency: divide when receiving EUR, multiply when sending EUR. Other pairs use destination units per source unit. For cross-currency transfers whose destination is not the main currency, both exchange rate and received amount are editable and synchronized in both directions, including EUR → MKD or EUR → another currency when EUR is the main currency. Transfers into the main currency keep the calculated received amount read-only. Received amounts are rounded to two decimal places. The saved transfer preserves both amounts and `transferRate`; reporting rate snapshots remain separate.
+- Editing or copying an existing cross-currency transfer initializes the rate from its stored received/source amounts, preserving historical amounts. New currency pairs prepopulate the editable rate from Settings when available; missing or invalid reference rates leave the field blank.
+- Editing the sent amount retains the entered rate and recalculates the received amount.
+- The information line includes the main-currency reporting estimate, using the saved historical snapshot when available and Settings otherwise.
+- Transfer form changes require no database migration; existing records remain unchanged until explicitly edited and saved.
+- Optional transfer fees remain planned.
 - Manual exchange-rate entry in Settings; automatic rates are not required and must not be fabricated.
 - Combined reporting uses a documented conversion policy; if a required rate is unavailable, show an explicit unavailable/incomplete state rather than an invented amount.
 - Non-base-currency transaction forms show the estimated base-currency reporting value and include an editable transaction-level exchange rate initialized from Settings.
@@ -334,6 +340,17 @@ Explicitly excluded unless the product owner changes the requirements:
 
 ## Acceptance criteria and test scenarios
 
+### Transfer form checks
+
+- A 100 MKD → MKD transfer receives 100 MKD without extra input.
+- A 100 EUR → MKD transfer at 61.5 receives 6,150 MKD.
+- A 6,150 MKD → EUR transfer at the same quoted rate receives 100 EUR.
+- For USD → MKD, sending 100 at rate 56 fills received with 5,600; editing received to 5,700 updates the rate to 57. The info line includes a main-currency estimate.
+- Changing the amount or either account updates rate visibility and the preview.
+- Empty, zero, negative, or nonfinite cross-currency rates cannot be saved.
+
+### Full application scenarios
+
 - [ ] Opening `index.html` requires no server or internet and loads all local assets.
 - [ ] Fresh install shows no financial records or fake balances.
 - [ ] Records persist across reloads on the supported target browser.
@@ -416,6 +433,41 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — README consolidation
+
+- Combined the product specification and transfer documentation into this single README.md, preserving acceptance criteria and changelog history.
+- Removed the superseded README.txt.
+- Verification: checked preserved specification content, local Markdown links, and references to the old filename; no application code changed.
+
+### 2026-10-16 — Transfer amount and exchange-rate form
+
+- Same-currency transfers now calculate the received amount automatically.
+- Cross-currency transfers show an explicit editable pair rate and a calculated, non-editable received amount. Saved transfers include the applied `transferRate`, with no schema migration required.
+- Validation: JavaScript syntax and focused form tests; full browser persistence and responsive checks remain pending.
+
+### 2026-10-16 — Consistent EUR transfer quotes
+
+- EUR transfers now quote 1 EUR = X other currency in both directions, with matching preview, save calculation, and edit initialization. Stored `transferRate` remains destination units per source unit.
+- Verified with syntax and focused form checks; browser persistence and responsive checks remain pending.
+
+### 2026-10-16 — Transfer rate defaults from Settings
+
+- New transfer pairs use editable Settings reference rates, including cross rates for non-EUR pairs. Existing transfer amounts take precedence when editing or copying; typing an amount does not reset an edited rate.
+- Verified with focused form checks and JavaScript syntax checks; browser persistence and responsive checks remain pending.
+
+### 2026-10-16 — Transfers between two non-main currencies
+
+- Transfers such as USD → MKD expose editable exchange-rate and received-amount fields. Rate edits calculate received = sent × rate; received edits calculate rate = received ÷ sent. Source amount edits retain the rate and update received.
+- The information line shows a main-currency estimate using the historical reporting snapshot when available, otherwise Settings reference rates. The transfer pair rate does not replace reporting reference rates.
+- Main-currency pairs quote 1 main-currency unit = X other currency; same-currency transfers still receive the sent amount automatically.
+- Focused form tests cover synchronization, defaults, historical rates, rounding, saving, invalid inputs, and field visibility; JavaScript syntax checks passed. Browser persistence and responsive checks remain pending.
+
+### 2026-10-16 — Editable received amount for outgoing main-currency transfers
+
+- EUR → MKD and EUR → other currencies now show the editable received-amount field alongside the exchange rate. Editing either updates the other; main-currency reporting information remains visible.
+- Acceptance: sending 100 EUR at 61.5 fills 6,150 MKD; entering 6,200 MKD sets the rate to 62 and saves 6,200 MKD.
+- Verified with JavaScript syntax and focused form checks; browser layout and persistence checks remain pending.
 
 ### 2026-10-14 — Comma decimal input
 
