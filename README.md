@@ -83,9 +83,13 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 
 Supported types: cash, bank, savings, investment, loan, and custom. **Credit cards are excluded.**
 
-Account fields: unique ID, name, type, native currency, opening balance, optional description, icon/color, archived flag, sort order, created/updated timestamps.
+Account fields: unique ID, name, type, native currency, opening balance, optional description, icon/color, archived flag, visibility (`visible`, default true), sort order, created/updated timestamps.
 
 - Create, edit, list, archive, and restore accounts.
+- Account visibility is independent of archiving. Uncheck “Visible in account selectors” in the account create/edit form to hide it from transaction source/destination buttons, account filter dropdowns, and new recurring-schedule account selectors. Accounts without a `visible` field remain visible.
+- Hidden accounts remain listed on Accounts with a compact Hidden badge and crossed-out eye indicator and remain included in active balances, transaction history/search, statistics, budgets, and complete JSON backups. Existing recurring rules continue normally. Recheck the visibility option to show the account again. Each account row also has an eye button immediately before Archive/Restore: click to toggle visibility without confirmation. An eye means visible; a crossed-out eye means hidden. Both controls use the same saved visibility property.
+- Editing or copying a transaction retains its assigned hidden account in the collapsed field without offering that account among selectable buttons. If every active account is hidden, new transaction/schedule creation explains that an account must be made visible. A filter pointing at an account that becomes hidden resets to All accounts.
+- Visibility adds an optional account property; no IndexedDB version change or destructive migration is required.
 - Accounts are grouped by account type and can be reordered within each type group.
 - An archived account is not available for new ordinary transactions and is excluded from the current *active-account* total by default; historical transactions and reports remain available.
 - Prevent unsafe deletion of accounts referenced by transactions.
@@ -207,7 +211,7 @@ Proposed logical IndexedDB object stores (validate against actual implementation
 
 ```text
 accounts
-  id, name, type, currency, openingBalance, archived,
+  id, name, type, currency, openingBalance, archived, visible?,
   description, icon, color, createdAt, updatedAt
 transactions
   id, type, amount, currency, date, time, accountId,
@@ -331,6 +335,7 @@ Explicitly excluded unless the product owner changes the requirements:
 | F18 | Data | CSV export and import | Planned | Mapping/duplicates |
 | F19 | Security | Optional PIN lock | Planned | Clear security limitations |
 | F20 | Quality | Error states, accessibility, responsive QA | Planned | Browser verification |
+| F21 | Accounts | Account visibility | Partial — focused checks passed | Browser hide/show, reload and restore checks pending |
 
 ### Release phases
 
@@ -351,6 +356,13 @@ Explicitly excluded unless the product owner changes the requirements:
 - For USD → MKD, sending 100 at rate 56 fills received with 5,600; editing received to 5,700 updates the rate to 57. The info line includes a main-currency estimate.
 - Changing the amount or either account updates rate visibility and the preview.
 - Empty, zero, negative, or nonfinite cross-currency rates cannot be saved.
+
+### Account visibility checks
+
+- Hide/show an account in its editor; confirm source/destination pickers, account filters, and new recurring selectors reflect the setting.
+- Confirm a hidden account’s balance and transactions still contribute to totals/statistics and are searchable.
+- Edit an old transaction belonging to a hidden account without changing its account; verify its account ID is preserved.
+- Reload and JSON backup/restore must retain visibility; older accounts without the property must remain visible. Browser persistence/restore verification is pending.
 
 ### Full application scenarios
 
@@ -436,6 +448,36 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Archive button layout regression
+
+- Renamed the archive button class to avoid colliding with the archived-accounts section class. The section’s 30px top margin no longer applies to the button or stretches the action row.
+- Verification: JavaScript syntax and rendered class isolation checks passed; live browser layout verification remains pending.
+
+### 2026-10-16 — Archive account icon
+
+- Replaced the minus action with a local SVG archive-box icon, retaining the restore arrow for archived accounts and existing confirmation behavior. Added explicit accessible action labels.
+- Verification: JavaScript syntax and rendered action markup checks passed; browser visual verification remains pending.
+
+### 2026-10-16 — Compact, stable Hidden badge
+
+- Restored the Hidden badge with smaller text and padding. A visually hidden, accessibility-hidden placeholder reserves the same space for visible accounts, keeping name widths and row heights stable when toggling.
+- Verification: JavaScript syntax and badge markup/style checks passed; live mobile/desktop layout remains untested.
+
+### 2026-10-16 — Stable account rows when toggling visibility
+
+- Removed the redundant Hidden badge from account names; the fixed-size eye/crossed-out-eye button communicates visibility without adding content that can wrap and shift surrounding rows.
+- Verification: JavaScript syntax and rendered markup checks passed; live browser layout verification remains pending.
+
+### 2026-10-16 — Quick account visibility toggle
+
+- Added an eye/crossed-out-eye button immediately before Archive/Restore, toggling visibility without confirmation and sharing the account editor checkbox setting. Writes preserve other account properties; failed writes show an error and allow retry.
+- Verification: JavaScript syntax, icon/order checks, and focused toggle success/failure checks passed. Browser interaction and persistence after reload remain untested.
+
+### 2026-10-16 — Account visibility
+
+- Added a saved visibility checkbox and Hidden account badge, separate from archiving. Account choices exclude hidden accounts while financial calculations and history retain them. Existing transaction assignments are preserved during editing/copying; old accounts default to visible.
+- Verification: JavaScript syntax and focused checks passed for hide/show saving, picker/filter exclusion, historical edit safety, all-hidden empty state, balance/statistics/history inclusion, legacy defaults, and JSON serialization. Browser interactions and IndexedDB persistence after reload remain untested.
 
 ### 2026-10-16 — Smaller account choices
 

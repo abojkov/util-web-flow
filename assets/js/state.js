@@ -56,6 +56,7 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
   };
   const monthLabel = m => new Date(m + '-01T12:00:00').toLocaleDateString('en-GB', {month: 'long', year: 'numeric'});
   const account = id => state.accounts.find(a => a.id === id);
+  const isSelectableAccount = a => !a.archived && a.visible !== false;
   const cat = id => state.categories.find(c => c.id === id);
   const subcat = (categoryId, subcategoryId) => cat(categoryId)?.subcategories?.find(s => s.id === subcategoryId);
   const categoryLabel = (categoryId, subcategoryId) => {

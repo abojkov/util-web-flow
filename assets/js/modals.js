@@ -125,7 +125,7 @@ function modal(title, body) {
   }
 
   function accountModal(a) {
-    modal(a ? 'Edit account' : 'New account', `<form id="account-form"><div class="field"><label>Account name</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="e.g. Main bank account"></div><div class="field-row"><div class="field"><label>Account type</label><select name="type">${['Bank', 'Cash', 'Savings', 'Investment', 'Loan', 'Other'].map(x => `<option ${a?.type === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div><div class="field"><label>Currency</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>Opening balance</label><input type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="opening" value="${a?.opening ?? 0}" required></div><div class="notice">Opening balances are used to calculate your balance. Currency cannot be changed after account creation.</div><div class="modal-footer">${a ? '<button type="button" class="btn danger" id="delete-account">Delete account</button>' : ''}<button class="btn" type="submit">Save account</button></div></form>`);
+    modal(a ? 'Edit account' : 'New account', `<form id="account-form"><div class="field"><label>Account name</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="e.g. Main bank account"></div><div class="field-row"><div class="field"><label>Account type</label><select name="type">${['Bank', 'Cash', 'Savings', 'Investment', 'Loan', 'Other'].map(x => `<option ${a?.type === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div><div class="field"><label>Currency</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>Opening balance</label><input type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="opening" value="${a?.opening ?? 0}" required></div><div class="field"><label><input type="checkbox" name="visible" ${a?.visible !== false ? 'checked' : ''}> Visible in account selectors</label><p class="form-hint">Hidden accounts remain in balances, statistics, and transaction history. You can show them again here.</p></div><div class="notice">Opening balances are used to calculate your balance. Currency cannot be changed after account creation.</div><div class="modal-footer">${a ? '<button type="button" class="btn danger" id="delete-account">Delete account</button>' : ''}<button class="btn" type="submit">Save account</button></div></form>`);
     $('#delete-account')?.addEventListener('click', () => {
       if (state.transactions.some(t => t.accountId === a.id || t.toAccountId === a.id)) return toast('Account has transactions. Archive it instead.');
       confirmAction({
@@ -150,6 +150,7 @@ function modal(title, body) {
         currency: a?.currency || f.get('currency'),
         opening: amount(f.get('opening')),
         archived: a?.archived || false,
+        visible: f.get('visible') === 'on',
         sortOrder: a?.sortOrder ?? state.accounts.filter(x => x.type === f.get('type')).length
       });
       closeModal();
@@ -181,18 +182,21 @@ function modal(title, body) {
   }
 
   function transactionModal(t, initial = 'expense', options = {}) {
-    const active = orderedAccounts(state.accounts.filter(a => !a.archived));
-    if (!active.length) {
-      toast('Create an account first');
-      return accountModal()
+    const active = orderedAccounts(state.accounts.filter(isSelectableAccount));
+    if (!active.length && !account(t?.accountId)) {
+      if (!state.accounts.length) {
+        toast('Create an account first');
+        return accountModal()
+      }
+      return toast('No visible active accounts. Show an account in Accounts to add a transaction.')
     }
     const isCopy = Boolean(options.copy);
     const isExisting = Boolean(t?.id) && !isCopy;
     const type = t?.type || initial;
     const accountPicker = (id, name, label, selected) => {
-      const selectedId = active.some(a => a.id === selected) ? selected : active[0].id;
-      const selectedAccount = active.find(a => a.id === selectedId);
-      return `<div class="field"><label id="${id}-label" for="${id}-toggle">${label}</label><input type="hidden" name="${name}" id="${id}" value="${escapeHtml(selectedId)}"><button type="button" class="account-picker-toggle" id="${id}-toggle" aria-expanded="false" aria-controls="${id}-picker"><span id="${id}-selection">${escapeHtml(selectedAccount.name)}</span></button><div class="account-picker" id="${id}-picker" hidden role="group" aria-labelledby="${id}-label">${active.map(a => `<button type="button" class="account-choice" data-account-id="${escapeHtml(a.id)}" aria-pressed="${a.id === selectedId}"><span class="account-choice-icon" aria-hidden="true">▣</span><span class="account-choice-name">${escapeHtml(a.name)}</span><small>${escapeHtml(a.currency)}</small></button>`).join('')}</div></div>`
+      const selectedId = account(selected) ? selected : active[0]?.id || '';
+      const selectedAccount = account(selectedId);
+      return `<div class="field"><label id="${id}-label" for="${id}-toggle">${label}</label><input type="hidden" name="${name}" id="${id}" value="${escapeHtml(selectedId)}"><button type="button" class="account-picker-toggle" id="${id}-toggle" aria-expanded="false" aria-controls="${id}-picker"><span id="${id}-selection">${escapeHtml(selectedAccount?.name || 'Choose account')}</span></button><div class="account-picker" id="${id}-picker" hidden role="group" aria-labelledby="${id}-label">${active.map(a => `<button type="button" class="account-choice" data-account-id="${escapeHtml(a.id)}" aria-pressed="${a.id === selectedId}"><span class="account-choice-icon" aria-hidden="true">▣</span><span class="account-choice-name">${escapeHtml(a.name)}</span><small>${escapeHtml(a.currency)}</small></button>`).join('')}</div></div>`
     };
     const bindAccountPicker = id => {
       const input = $('#' + id), picker = $('#' + id + '-picker'), toggle = $('#' + id + '-toggle');
@@ -221,7 +225,7 @@ function modal(title, body) {
         }
       })
     };
-    modal(isExisting ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label for="tx-datetime">Date &amp; time</label><input id="tx-datetime" type="datetime-local" name="datetime" value="${escapeHtml((t?.date || today()) + 'T' + (t?.time || currentTime()))}" required></div><div class="field"><label>Amount</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="amount" value="${t?.amount ?? ''}" required placeholder="0.00"></div></div>${accountPicker('tx-account', 'accountId', 'Account', t?.accountId || active[0].id)}<div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? '<button type="button" class="btn danger" id="delete-tx">Delete transaction</button><button type="button" class="btn secondary" id="copy-tx">Copy</button>' : ''}<button class="btn" type="submit">Save transaction</button></div></form>`);
+    modal(isExisting ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label for="tx-datetime">Date &amp; time</label><input id="tx-datetime" type="datetime-local" name="datetime" value="${escapeHtml((t?.date || today()) + 'T' + (t?.time || currentTime()))}" required></div><div class="field"><label>Amount</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="amount" value="${t?.amount ?? ''}" required placeholder="0.00"></div></div>${accountPicker('tx-account', 'accountId', 'Account', t?.accountId || active[0]?.id || '')}<div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? '<button type="button" class="btn danger" id="delete-tx">Delete transaction</button><button type="button" class="btn secondary" id="copy-tx">Copy</button>' : ''}<button class="btn" type="submit">Save transaction</button></div></form>`);
     bindPayeeAutocomplete('tx-payee');
     let chosen = type;
     let lastRateCurrency = '';
@@ -570,8 +574,11 @@ function modal(title, body) {
   }
 
   function recurringEdit() {
-    const active = orderedAccounts(state.accounts.filter(a => !a.archived));
-    if (!active.length) return accountModal();
+    const active = orderedAccounts(state.accounts.filter(isSelectableAccount));
+    if (!active.length) {
+      if (!state.accounts.length) return accountModal();
+      return toast('No visible active accounts. Show an account in Accounts to create a schedule.')
+    }
     modal('New recurring transaction', `<form id="rec-form"><div class="field-row"><div class="field"><label>Type</label><select name="type" id="rec-type"><option value="expense">Expense</option><option value="income">Income</option></select></div><div class="field"><label>Amount</label><input name="amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div></div><div class="field"><label>Account</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>Category</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>Frequency</label><select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div><div class="field"><label>First date</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>Time</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>Payee</label>${payeeAutocompleteInput('', 'rec-payee')}</div><div class="field"><label>Description</label><input name="description" maxlength="180"></div><div class="modal-footer"><button class="btn">Create schedule</button></div></form>`);
     bindPayeeAutocomplete('rec-payee');
     const fill = () => {

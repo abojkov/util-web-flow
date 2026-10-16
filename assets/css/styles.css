@@ -1178,6 +1178,21 @@
     padding: 12px 0
   }
 
+  .account-hidden-badge {
+    flex: 0 0 auto;
+    padding: 2px 5px;
+    border-radius: 5px;
+    background: #edf4ff;
+    color: #2d6be6;
+    font-size: 9px;
+    line-height: 12px;
+    font-weight: 700
+  }
+
+  .account-hidden-badge-placeholder {
+    visibility: hidden
+  }
+
   .account-row:last-child {
     border-bottom: 0
   }
@@ -1194,6 +1209,23 @@
     display: flex;
     flex: 0 0 auto;
     gap: 4px
+  }
+
+  .account-visibility, .account-archive-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px
+  }
+
+  .account-visibility[aria-pressed="true"] {
+    color: #2568ee
+  }
+
+  .account-visibility:focus-visible, .account-archive-button:focus-visible {
+    outline: 3px solid #2568ee;
+    outline-offset: 2px
   }
 
   .mini-btn.danger {

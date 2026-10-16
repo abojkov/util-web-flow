@@ -69,7 +69,7 @@ async function reload() {
   }
 
   function accountSelect(id = 'account-filter') {
-    return `<select class="select" id="${id}"><option value="all">All accounts</option>${orderedAccounts(state.accounts.filter(a => !a.archived)).map(a => `<option value="${a.id}" ${state.accountFilter === a.id ? 'selected' : ''}>${escapeHtml(a.name)}</option>`).join('')}</select>`
+    return `<select class="select" id="${id}"><option value="all">All accounts</option>${orderedAccounts(state.accounts.filter(isSelectableAccount)).map(a => `<option value="${a.id}" ${state.accountFilter === a.id ? 'selected' : ''}>${escapeHtml(a.name)}</option>`).join('')}</select>`
   }
 
   function orderedAccounts(items) {
@@ -218,7 +218,8 @@ async function reload() {
 
   function accounts() {
     const active = state.accounts.filter(a => !a.archived), archived = state.accounts.filter(a => a.archived);
-    const row = (a, group) => `<div class="account-row"><div class="tx-icon">▣</div><div class="tx-main"><b><span>${escapeHtml(a.name)}</span>${a.archived ? '<span class="pill">Archived</span>' : ''}</b><small>${escapeHtml(a.type)} · ${a.currency}</small></div><strong>${money(balance(a), a.currency)}</strong><div class="account-actions"><button class="mini-btn" data-move-account="${a.id}" data-direction="-1" title="Move up in ${escapeHtml(group)}">↑</button><button class="mini-btn" data-move-account="${a.id}" data-direction="1" title="Move down in ${escapeHtml(group)}">↓</button><button class="mini-btn" data-edit-account="${a.id}" title="Edit">✎</button><button class="mini-btn" data-archive="${a.id}" title="${a.archived ? 'Restore' : 'Archive'}">${a.archived ? '↩' : '−'}</button></div></div>`;
+    const visibilityIcon = visible => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${visible ? '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>' : '<path d="m3 3 18 18M10.6 5.1A12 12 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-3 3.9M6.2 6.2A19 19 0 0 0 2 12s3.5 7 10 7a12 12 0 0 0 5.8-1.7M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'}</svg>`;
+    const row = (a, group) => `<div class="account-row"><div class="tx-icon">▣</div><div class="tx-main"><b><span>${escapeHtml(a.name)}</span>${a.archived ? '<span class="pill">Archived</span>' : ''}<span class="account-hidden-badge${a.visible === false ? '' : ' account-hidden-badge-placeholder'}"${a.visible === false ? '' : ' aria-hidden="true"'}>Hidden</span></b><small>${escapeHtml(a.type)} · ${a.currency}</small></div><strong>${money(balance(a), a.currency)}</strong><div class="account-actions"><button class="mini-btn" data-move-account="${a.id}" data-direction="-1" title="Move up in ${escapeHtml(group)}">↑</button><button class="mini-btn" data-move-account="${a.id}" data-direction="1" title="Move down in ${escapeHtml(group)}">↓</button><button class="mini-btn" data-edit-account="${a.id}" title="Edit">✎</button><button type="button" class="mini-btn account-visibility" data-visibility="${a.id}" aria-label="${a.visible === false ? 'Show account in selectors' : 'Hide account from selectors'}" title="${a.visible === false ? 'Show account in selectors' : 'Hide account from selectors'}" aria-pressed="${a.visible !== false}">${visibilityIcon(a.visible !== false)}</button><button type="button" class="mini-btn account-archive-button" data-archive="${a.id}" title="${a.archived ? 'Restore' : 'Archive'}" aria-label="${a.archived ? 'Restore account' : 'Archive account'}">${a.archived ? '↩' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="4" rx="1"/><path d="M5 7v13h14V7M10 11h4"/></svg>'}</button></div></div>`;
     const sections = items => accountGroups(items).map(([type, group]) => `<section class="account-group"><div class="account-group-head"><h3>${escapeHtml(type)}</h3><span>${group.length} ${group.length === 1 ? 'account' : 'accounts'}</span></div><div class="account-list">${group.map(a => row(a, type)).join('')}</div></section>`).join('');
     return `<div class="toolbar"><div><h2>My accounts</h2><p class="muted">Keep every balance in view.</p></div><button class="btn" data-add="account">+ Add account</button></div>${active.length ? `<div class="account-sections">${sections(active)}</div>` : empty('Create your first account', 'Add a bank, cash, or savings account to get started.', '▣')}${archived.length ? `<div class="account-archive"><h3>Archived accounts</h3><div class="account-sections">${sections(archived)}</div></div>` : ''}`
   }
@@ -232,6 +233,7 @@ async function reload() {
   }
 
   function render() {
+    if (state.accountFilter !== 'all' && !state.accounts.some(a => a.id === state.accountFilter && isSelectableAccount(a))) state.accountFilter = 'all';
     nav();
     $('#page-title').textContent = names[state.page];
     $('#view').innerHTML = ({home, transactions, statistics, accounts, more})[state.page]();
@@ -321,6 +323,19 @@ async function reload() {
       [items[index], items[next]] = [items[next], items[index]];
       await Promise.all(items.map((item, sortOrder) => put('accounts', {...item, sortOrder})));
       await reload()
+    });
+    document.querySelectorAll('[data-visibility]').forEach(button => button.onclick = async () => {
+      const current = account(button.dataset.visibility);
+      if (!current) return;
+      button.disabled = true;
+      try {
+        await put('accounts', {...current, visible: current.visible === false});
+        await reload()
+      } catch (error) {
+        console.error(error);
+        toast('Could not change account visibility. Please try again.');
+        button.disabled = false
+      }
     });
     document.querySelectorAll('[data-archive]').forEach(b => b.onclick = async () => {
       const a = account(b.dataset.archive);
