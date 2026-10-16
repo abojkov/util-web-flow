@@ -115,7 +115,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Transaction forms show Date & time first, then Amount, followed by Account. They use one native “Date & time” (`datetime-local`) input, initialized from the saved local date/time or the current local date/time for new records. Copy options retain their original/current date-time behavior.
 - Saving validates the local calendar date and time, then stores the existing separate `date` and `time` properties without timezone conversion or schema changes. Native picker appearance varies by browser; recurring schedule fields remain separate.
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
-- Support daily/calendar, weekly, monthly, and chronological review.
+- Support daily/calendar, weekly, monthly, and chronological review. Transaction lists are newest first across every period and text/account/category filter: local date descending, then local time descending (missing time treated as midnight), then creation timestamp and ID for stable ties. Dashboard recent transactions use the same order. Unfiltered All history retains its latest-250 display limit after sorting.
 - Filter by date range, account, type, category/subcategory, and search text. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories, and expandable categories allow selecting only specific subcategories. Search period navigation changes with the selected period: monthly, weekly, yearly, or no navigator for all history.
 - Validate positive amounts, valid account/category references, dates, and transfer endpoints.
 - Changes must consistently update all dependent balances, charts, and budgets.
@@ -449,6 +449,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Consistent newest-first transaction ordering
+
+- Fixed monthly and filtered transaction results being shown in database order. All periods and search/filter results now sort by transaction date and time descending before any display limit, with safe fallbacks for older records missing time/creation timestamps. Dashboard recent transactions use the same comparator. Financial records and calculations are unchanged.
+- Verification: JavaScript syntax and focused chronological, same-day, missing-value, filter/period, and display-limit checks passed; live browser rendering and persistence remain untested.
 
 ### 2026-10-16 — Transaction category and subcategory picker
 
