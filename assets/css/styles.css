@@ -1164,6 +1164,41 @@
     gap: 12px
   }
 
+  .split-row {
+    align-items: start;
+    row-gap: 7px;
+    margin-bottom: 15px
+  }
+
+  .split-row > .field {
+    display: contents
+  }
+
+  .split-row > .field:first-child > label {
+    grid-column: 1;
+    grid-row: 1
+  }
+
+  .split-row > .field:first-child > .account-picker-toggle {
+    grid-column: 1;
+    grid-row: 2
+  }
+
+  .split-row > .field:last-child > label {
+    grid-column: 2;
+    grid-row: 1
+  }
+
+  .split-row > .field:last-child > .split-amount {
+    grid-column: 2;
+    grid-row: 2
+  }
+
+  .split-row > .field > .category-picker {
+    grid-column: 1 / -1;
+    grid-row: 3
+  }
+
   .account-grid {
     display: grid;
     grid-template-columns:repeat(3, minmax(0, 1fr));
