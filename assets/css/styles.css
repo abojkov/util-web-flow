@@ -1152,6 +1152,28 @@
     padding: 13px 16px
   }
 
+  .account-group-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto
+  }
+
+  .account-group-controls > span {
+    margin-right: 4px
+  }
+
+  .account-group-controls .mini-btn {
+    min-width: 28px;
+    min-height: 28px
+  }
+
+  .account-group-controls .mini-btn:disabled,
+  .account-actions [data-move-account]:disabled {
+    opacity: .35;
+    cursor: default
+  }
+
   .account-group-head h3 {
     color: #253754;
     font-size: 13px;

@@ -90,7 +90,7 @@ Account fields: unique ID, name, type, native currency, opening balance, optiona
 - Hidden accounts remain listed on Accounts with a compact Hidden badge and crossed-out eye indicator and remain included in active balances, transaction history/search, statistics, budgets, and complete JSON backups. Existing recurring rules continue normally. Recheck the visibility option to show the account again. Each account row also has an eye button immediately before Archive/Restore: click to toggle visibility without confirmation. An eye means visible; a crossed-out eye means hidden. Both controls use the same saved visibility property; archived accounts cannot change visibility until restored.
 - Editing or copying a transaction retains its assigned hidden account in the collapsed field without offering that account among selectable buttons. If every active account is hidden, new transaction/schedule creation explains that an account must be made visible. A filter pointing at an account that becomes hidden resets to All accounts.
 - Visibility adds an optional account property; no IndexedDB version change or destructive migration is required.
-- Accounts are grouped by account type and can be reordered within each type group.
+- Accounts are grouped by account type and can be reordered within each type group. Group headers also have up/down controls to reorder account types. Type order is shared by active and archived sections, saved in the `accountTypeOrder` setting, and preserved by complete JSON backups. Moves swap with the neighboring displayed group; boundary controls are disabled. Individual accounts also disable Move up on the first row and Move down on the last row within each active/archived type group; single-account groups disable both. Account pickers, dropdowns, and account summaries use the same type order first, then saved account `sortOrder` within each type, with alphabetical ties. Accounts without a saved `sortOrder` follow ordered accounts within their type. Without a saved type order, the existing Cash, Bank, Savings, Investment, Loan, Other order is used; new/custom types follow deterministically.
 - An archived account is not available for new ordinary transactions and is excluded from the current *active-account* total by default; historical transactions and reports remain available.
 - Prevent unsafe deletion of accounts referenced by transactions.
 - Account balance is derived from opening balance and transaction ledger; **no manual balance adjustment feature**.
@@ -448,6 +448,23 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Account reorder boundary controls
+
+- Account rows now disable and dim impossible up/down moves at each type group boundary, matching the account type controls. Single-account groups disable both arrows in active and archived sections.
+- Verification: JavaScript syntax and rendered boundary/single-account checks passed; browser visual verification remains pending.
+
+### 2026-10-16 — Consistent account ordering in selectors
+
+- Updated shared account sorting to apply saved type order before within-type account order. Transaction source/destination buttons, account filter dropdowns, recurring account choices, and dashboard account summaries now follow the Accounts page ordering.
+- Older backups without a type-order setting use the default type order; missing account sort values fall back to alphabetical ordering after explicitly ordered accounts within the type. No import or database migration is needed.
+- Verification: JavaScript syntax and focused default/custom order, selector rendering, visibility, and missing-sort checks passed. Live browser interaction and reload persistence remain untested.
+
+### 2026-10-16 — Account type sorting
+
+- Added group-header up/down controls and persisted account type ordering in Settings without a database schema change. Active and archived account sections share the order; within-group account sort values are preserved.
+- Acceptance: move a group, verify the other section follows the same type order, verify boundary controls and account ordering, then confirm reload/JSON restoration retains the setting.
+- Verification: JavaScript syntax and focused sorting/move/render checks passed; browser interaction and IndexedDB reload/backup restoration remain untested.
 
 ### 2026-10-16 — Matching account status badges
 

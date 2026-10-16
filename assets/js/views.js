@@ -73,11 +73,23 @@ async function reload() {
   }
 
   function orderedAccounts(items) {
+    const typeOrder = accountTypeOrder();
+    const typeRank = type => {
+      const rank = typeOrder.indexOf(type || 'Other');
+      return rank < 0 ? typeOrder.length : rank
+    };
     return items.slice().sort((a, b) => {
       const orderA = Number.isFinite(Number(a.sortOrder)) ? Number(a.sortOrder) : Number.MAX_SAFE_INTEGER;
       const orderB = Number.isFinite(Number(b.sortOrder)) ? Number(b.sortOrder) : Number.MAX_SAFE_INTEGER;
-      return orderA - orderB || String(a.name || '').localeCompare(String(b.name || ''), undefined, {sensitivity: 'base'})
+      return typeRank(a.type) - typeRank(b.type) || orderA - orderB || String(a.name || '').localeCompare(String(b.name || ''), undefined, {sensitivity: 'base'})
     })
+  }
+
+  function accountTypeOrder() {
+    const defaults = ['Cash', 'Bank', 'Savings', 'Investment', 'Loan', 'Other'];
+    const saved = getSetting('accountTypeOrder', []);
+    const custom = state.accounts.map(a => a.type || 'Other').sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}));
+    return [...new Set([...(Array.isArray(saved) ? saved.filter(type => typeof type === 'string' && type) : []), ...defaults, ...custom])]
   }
 
   function accountGroups(items) {
@@ -87,12 +99,19 @@ async function reload() {
       if (!groups.has(type)) groups.set(type, []);
       groups.get(type).push(item)
     }
-    const typeOrder = ['Cash', 'Bank', 'Savings', 'Investment', 'Loan', 'Other'];
-    return [...groups.entries()].sort(([a], [b]) => {
-      const orderA = typeOrder.includes(a) ? typeOrder.indexOf(a) : typeOrder.length;
-      const orderB = typeOrder.includes(b) ? typeOrder.indexOf(b) : typeOrder.length;
-      return orderA - orderB || a.localeCompare(b, undefined, {sensitivity: 'base'})
-    })
+    const typeOrder = accountTypeOrder();
+    return [...groups.entries()].sort(([a], [b]) => typeOrder.indexOf(a) - typeOrder.indexOf(b))
+  }
+
+  async function moveAccountType(type, direction, archived) {
+    if (direction !== -1 && direction !== 1) return;
+    const displayed = accountGroups(state.accounts.filter(a => Boolean(a.archived) === archived)).map(([name]) => name);
+    const index = displayed.indexOf(type), next = index + direction;
+    if (index < 0 || next < 0 || next >= displayed.length) return;
+    const order = accountTypeOrder(), from = order.indexOf(type), to = order.indexOf(displayed[next]);
+    [order[from], order[to]] = [order[to], order[from]];
+    await put('settings', {id: 'accountTypeOrder', value: order});
+    await reload()
   }
 
   function txList(items) {
@@ -219,8 +238,8 @@ async function reload() {
   function accounts() {
     const active = state.accounts.filter(a => !a.archived), archived = state.accounts.filter(a => a.archived);
     const visibilityIcon = visible => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${visible ? '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>' : '<path d="m3 3 18 18M10.6 5.1A12 12 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-3 3.9M6.2 6.2A19 19 0 0 0 2 12s3.5 7 10 7a12 12 0 0 0 5.8-1.7M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'}</svg>`;
-    const row = (a, group) => `<div class="account-row"><div class="tx-icon">▣</div><div class="tx-main"><b><span>${escapeHtml(a.name)}</span>${a.archived ? '<span class="account-archived-badge">Archived</span>' : ''}${a.archived ? '' : `<span class="account-hidden-badge${!isSelectableAccount(a) ? '' : ' account-hidden-badge-placeholder'}"${!isSelectableAccount(a) ? '' : ' aria-hidden="true"'}>Hidden</span>`}</b><small>${escapeHtml(a.type)} · ${a.currency}</small></div><strong>${money(balance(a), a.currency)}</strong><div class="account-actions"><button class="mini-btn" data-move-account="${a.id}" data-direction="-1" title="Move up in ${escapeHtml(group)}">↑</button><button class="mini-btn" data-move-account="${a.id}" data-direction="1" title="Move down in ${escapeHtml(group)}">↓</button><button class="mini-btn" data-edit-account="${a.id}" title="Edit">✎</button>${a.archived ? '' : `<button type="button" class="mini-btn account-visibility" data-visibility="${a.id}" aria-label="${a.visible === false ? 'Show account in selectors' : 'Hide account from selectors'}" title="${a.visible === false ? 'Show account in selectors' : 'Hide account from selectors'}" aria-pressed="${isSelectableAccount(a)}">${visibilityIcon(isSelectableAccount(a))}</button>`}<button type="button" class="mini-btn account-archive-button" data-archive="${a.id}" title="${a.archived ? 'Restore' : 'Archive'}" aria-label="${a.archived ? 'Restore account' : 'Archive account'}">${a.archived ? '↩' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="4" rx="1"/><path d="M5 7v13h14V7M10 11h4"/></svg>'}</button></div></div>`;
-    const sections = items => accountGroups(items).map(([type, group]) => `<section class="account-group"><div class="account-group-head"><h3>${escapeHtml(type)}</h3><span>${group.length} ${group.length === 1 ? 'account' : 'accounts'}</span></div><div class="account-list">${group.map(a => row(a, type)).join('')}</div></section>`).join('');
+    const row = (a, group, index, count) => `<div class="account-row"><div class="tx-icon">▣</div><div class="tx-main"><b><span>${escapeHtml(a.name)}</span>${a.archived ? '<span class="account-archived-badge">Archived</span>' : ''}${a.archived ? '' : `<span class="account-hidden-badge${!isSelectableAccount(a) ? '' : ' account-hidden-badge-placeholder'}"${!isSelectableAccount(a) ? '' : ' aria-hidden="true"'}>Hidden</span>`}</b><small>${escapeHtml(a.type)} · ${a.currency}</small></div><strong>${money(balance(a), a.currency)}</strong><div class="account-actions"><button class="mini-btn" data-move-account="${a.id}" data-direction="-1" title="Move up in ${escapeHtml(group)}" ${index === 0 ? 'disabled' : ''}>↑</button><button class="mini-btn" data-move-account="${a.id}" data-direction="1" title="Move down in ${escapeHtml(group)}" ${index === count - 1 ? 'disabled' : ''}>↓</button><button class="mini-btn" data-edit-account="${a.id}" title="Edit">✎</button>${a.archived ? '' : `<button type="button" class="mini-btn account-visibility" data-visibility="${a.id}" aria-label="${a.visible === false ? 'Show account in selectors' : 'Hide account from selectors'}" title="${a.visible === false ? 'Show account in selectors' : 'Hide account from selectors'}" aria-pressed="${isSelectableAccount(a)}">${visibilityIcon(isSelectableAccount(a))}</button>`}<button type="button" class="mini-btn account-archive-button" data-archive="${a.id}" title="${a.archived ? 'Restore' : 'Archive'}" aria-label="${a.archived ? 'Restore account' : 'Archive account'}">${a.archived ? '↩' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="4" rx="1"/><path d="M5 7v13h14V7M10 11h4"/></svg>'}</button></div></div>`;
+    const sections = items => accountGroups(items).map(([type, group], index, groups) => `<section class="account-group"><div class="account-group-head"><h3>${escapeHtml(type)}</h3><div class="account-group-controls"><span>${group.length} ${group.length === 1 ? 'account' : 'accounts'}</span><button type="button" class="mini-btn" data-move-account-type="${escapeHtml(type)}" data-direction="-1" data-archived="${Boolean(group[0].archived)}" aria-label="Move ${escapeHtml(type)} group up" title="Move group up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" class="mini-btn" data-move-account-type="${escapeHtml(type)}" data-direction="1" data-archived="${Boolean(group[0].archived)}" aria-label="Move ${escapeHtml(type)} group down" title="Move group down" ${index === groups.length - 1 ? 'disabled' : ''}>↓</button></div></div><div class="account-list">${group.map((a, index) => row(a, type, index, group.length)).join('')}</div></section>`).join('');
     return `<div class="toolbar"><div><h2>My accounts</h2><p class="muted">Keep every balance in view.</p></div><button class="btn" data-add="account">+ Add account</button></div>${active.length ? `<div class="account-sections">${sections(active)}</div>` : empty('Create your first account', 'Add a bank, cash, or savings account to get started.', '▣')}${archived.length ? `<div class="account-archive"><h3>Archived accounts</h3><div class="account-sections">${sections(archived)}</div></div>` : ''}`
   }
 
@@ -314,6 +333,16 @@ async function reload() {
       if (b.dataset.add === 'account') accountModal(); else transactionModal(null, b.dataset.add === 'transaction' ? 'expense' : b.dataset.add)
     });
     document.querySelectorAll('[data-edit-account]').forEach(b => b.onclick = () => accountModal(account(b.dataset.editAccount)));
+    document.querySelectorAll('[data-move-account-type]').forEach(button => button.onclick = async () => {
+      button.disabled = true;
+      try {
+        await moveAccountType(button.dataset.moveAccountType, Number(button.dataset.direction), button.dataset.archived === 'true')
+      } catch (error) {
+        console.error(error);
+        toast('Could not change account type order. Please try again.');
+        button.disabled = false
+      }
+    });
     document.querySelectorAll('[data-move-account]').forEach(b => b.onclick = async () => {
       const current = account(b.dataset.moveAccount);
       if (!current) return;
