@@ -188,6 +188,8 @@ async function reload() {
   }
 
   function transactions() {
+    const typeOptions = [['all', 'All types'], ['income', 'Income'], ['expense', 'Expenses'], ['transfer', 'Transfers']];
+    const typeFilter = typeOptions.some(([value]) => value === state.txTypeFilter) ? state.txTypeFilter : 'all';
     const rawSearch = state.txSearch.trim();
     const query = rawSearch.length >= 2 ? rawSearch.toLocaleLowerCase() : '';
     const searchPeriodOptions = [['month', 'Monthly'], ['week', 'Weekly'], ['year', 'Yearly'], ['all', 'All history']];
@@ -209,7 +211,7 @@ async function reload() {
     const expandedCategoryGroups = new Set((state.txExpandedCategoryGroups || []).filter(type => ['expense', 'income'].includes(type)));
     state.txExpandedCategoryGroups = [...expandedCategoryGroups];
     const categoryMatches = t => {
-      if (!selectedCategoryKeys.size) return true;
+      if (typeFilter === 'transfer' || !selectedCategoryKeys.size) return true;
       const matches = item => selectedCategoryKeys.has(categoryFilterKey(item.categoryId)) || selectedCategoryKeys.has(categoryFilterKey(item.categoryId, item.subcategoryId));
       if (t.splits?.length) return t.splits.some(matches);
       return matches(t)
@@ -218,14 +220,15 @@ async function reload() {
     if (!state.txSearchYear) state.txSearchYear = today().slice(0, 4);
     const weekStart = state.txSearchWeekStart, weekEnd = shiftDate(weekStart, 6), yearKey = state.txSearchYear;
     const inSearchPeriod = t => state.txSearchPeriod === 'all' || (state.txSearchPeriod === 'year' ? t.date?.startsWith(yearKey) : state.txSearchPeriod === 'week' ? t.date >= weekStart && t.date <= weekEnd : t.date?.startsWith(state.month));
-    const baseItems = state.transactions.filter(t => inSearchPeriod(t) && (state.accountFilter === 'all' || t.accountId === state.accountFilter || t.toAccountId === state.accountFilter));
+    const baseItems = state.transactions.filter(t => (typeFilter === 'all' || t.type === typeFilter) && inSearchPeriod(t) && (state.accountFilter === 'all' || t.accountId === state.accountFilter || t.toAccountId === state.accountFilter));
     const matchedItems = baseItems.filter(t => (!query || [t.payee, t.place, t.description, t.note].some(value => String(value || '').toLocaleLowerCase().includes(query))) && categoryMatches(t));
-    const hasSearchFilters = Boolean(query || selectedCategoryKeys.size);
+    const hasSearchFilters = Boolean(query || selectedCategoryKeys.size || typeFilter !== 'all');
     const sortedItems = matchedItems.slice().sort(compareTransactionsNewestFirst);
     const items = state.txSearchPeriod === 'all' && !hasSearchFilters ? sortedItems.slice(0, 250) : sortedItems;
     const periodLabel = searchPeriodOptions.find(([value]) => value === state.txSearchPeriod)?.[1] || 'Monthly';
-    const categorySummary = selectedCategoryKeys.size ? ` · ${selectedCategoryKeys.size} ${selectedCategoryKeys.size === 1 ? 'category filter' : 'category filters'}` : '';
-    const resultText = hasSearchFilters ? `${matchedItems.length} matching transactions · ${periodLabel}${categorySummary}` : rawSearch ? `Type at least 2 characters to search · ${periodLabel}` : state.txSearchPeriod === 'all' ? `Showing latest ${items.length} of ${matchedItems.length} transactions · type to search all history` : `${periodLabel} transactions`;
+    const typeSummary = typeFilter !== 'all' ? ` · ${typeOptions.find(([value]) => value === typeFilter)[1]}` : '';
+    const categorySummary = typeFilter !== 'transfer' && selectedCategoryKeys.size ? ` · ${selectedCategoryKeys.size} ${selectedCategoryKeys.size === 1 ? 'category filter' : 'category filters'}` : '';
+    const resultText = hasSearchFilters ? `${matchedItems.length} matching transactions · ${periodLabel}${typeSummary}${categorySummary}` : rawSearch ? `Type at least 2 characters to search · ${periodLabel}` : state.txSearchPeriod === 'all' ? `Showing latest ${items.length} of ${matchedItems.length} transactions · type to search all history` : `${periodLabel} transactions`;
     const categoryBadge = (option) => `<label class="category-check ${option.isSubcategory ? 'subcategory' : ''} ${selectedCategoryKeys.has(option.key) ? 'selected' : ''}"><input type="checkbox" data-tx-category="${escapeHtml(option.key)}" ${selectedCategoryKeys.has(option.key) ? 'checked' : ''}><span style="--category-color:${option.color}">${escapeHtml(option.icon)}</span>${escapeHtml(option.label)}</label>`;
     const renderCategory = c => {
       const subcategories = (c.subcategories || []).slice().sort(sortByOrderThenName);
@@ -240,7 +243,7 @@ async function reload() {
       const count = group.items.reduce((sum, c) => sum + 1 + (c.subcategories?.length || 0), 0);
       return `<div class="category-filter-group ${expanded ? 'open' : ''}"><button class="category-group-toggle" data-tx-category-group="${group.type}" type="button"><span>${group.label}</span><small>${count} filters</small><b>${expanded ? '−' : '+'}</b></button>${expanded ? `<div class="category-filter-options">${group.items.length ? group.items.map(renderCategory).join('') : '<p class="form-hint">No categories yet.</p>'}</div>` : ''}</div>`
     };
-    return `<div class="toolbar"><div><h2>Transaction history</h2><p class="muted">Every movement, all in one place.</p></div><button class="btn" data-add="transaction">+ New transaction</button></div><section class="search-panel"><div class="search-panel-head"><div><h3>Search transactions</h3><p>Find transactions by text, period, account, and category.</p></div>${selectedCategoryKeys.size || rawSearch ? '<button class="link-btn" id="tx-clear-search">Clear search</button>' : ''}</div><div class="search-grid"><label class="search-field"><span>Search</span><input id="tx-search" type="search" value="${escapeHtml(state.txSearch)}" placeholder="Payee or description"></label><label class="search-field search-period"><span>Period</span><select id="tx-search-period">${searchPeriodOptions.map(([value, label]) => `<option value="${value}" ${state.txSearchPeriod === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label class="search-field"><span>Account</span>${accountSelect()}</label></div><div class="category-filter"><span>Categories</span><div class="category-filter-groups">${categoryGroups.map(renderGroup).join('')}</div></div></section>${txPeriodControl()}<p class="form-hint">${escapeHtml(resultText)}</p><section class="table-list">${txList(items)}</section>`
+    return `<div class="toolbar"><div><h2>Transaction history</h2><p class="muted">Every movement, all in one place.</p></div><button class="btn" data-add="transaction">+ New transaction</button></div><section class="search-panel"><div class="search-panel-head"><div><h3>Search transactions</h3><p>Find transactions by text, type, period, account, and category.</p></div>${selectedCategoryKeys.size || rawSearch || typeFilter !== 'all' ? '<button class="link-btn" id="tx-clear-search">Clear search</button>' : ''}</div><div class="search-grid"><label class="search-field"><span>Search</span><input id="tx-search" type="search" value="${escapeHtml(state.txSearch)}" placeholder="Payee or description"></label><label class="search-field"><span>Type</span><select id="tx-type-filter">${typeOptions.map(([value, label]) => `<option value="${value}" ${typeFilter === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label class="search-field search-period"><span>Period</span><select id="tx-search-period">${searchPeriodOptions.map(([value, label]) => `<option value="${value}" ${state.txSearchPeriod === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label class="search-field"><span>Account</span>${accountSelect()}</label></div>${typeFilter === 'transfer' ? '' : `<div class="category-filter"><span>Categories</span><div class="category-filter-groups">${categoryGroups.map(renderGroup).join('')}</div></div>`}</section>${txPeriodControl()}<p class="form-hint">${escapeHtml(resultText)}</p><section class="table-list">${txList(items)}</section>`
   }
 
   function statistics() {
@@ -302,6 +305,11 @@ async function reload() {
         next?.setSelectionRange(cursor, cursor)
       }, 180)
     });
+    $('#tx-type-filter')?.addEventListener('change', e => {
+      state.txTypeFilter = e.target.value;
+      if (state.txTypeFilter === 'transfer') state.txCategoryFilters = [];
+      render()
+    });
     $('#tx-search-period')?.addEventListener('change', e => {
       state.txSearchPeriod = e.target.value;
       if (state.txSearchPeriod === 'week' && !state.txSearchWeekStart) state.txSearchWeekStart = startOfWeek(today());
@@ -351,6 +359,7 @@ async function reload() {
     }));
     $('#tx-clear-search')?.addEventListener('click', () => {
       state.txSearch = '';
+      state.txTypeFilter = 'all';
       state.txCategoryFilters = [];
       render()
     });

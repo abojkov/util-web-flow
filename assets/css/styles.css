@@ -750,7 +750,7 @@
 
   .search-grid {
     display: grid;
-    grid-template-columns: minmax(220px, 1fr) minmax(150px, .45fr) minmax(180px, .65fr);
+    grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(120px, .6fr));
     gap: 10px;
     margin-bottom: 14px
   }

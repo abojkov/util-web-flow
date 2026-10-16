@@ -118,7 +118,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
 - Display full dates as `dd.mm.yyyy` in transaction rows, weekly range labels, and recurring next-date labels using the shared `displayDate` helper. Native date/date-time picker appearance follows browser/OS locale; stored dates and CSV/JSON dates remain ISO `yyyy-mm-dd` for reliable sorting and interchange. Month/year headings retain their existing labels.
 - Support daily/calendar, weekly, monthly, and chronological review. Transaction lists are newest first across every period and text/account/category filter: local date descending, then local time descending (missing time treated as midnight), then creation timestamp and ID for stable ties. Dashboard recent transactions use the same order. Unfiltered All history retains its latest-250 display limit after sorting.
-- Filter by date range, account, type, category/subcategory, and search text. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories, and expandable categories allow selecting only specific subcategories. Search period navigation changes with the selected period: monthly, weekly, yearly, or no navigator for all history.
+- Filter by date range, account, type, category/subcategory, and search text. The Type dropdown supports All types, Income, Expenses, and Transfers. Select Transfers + All history + All accounts with an empty text search to review every recorded transfer, newest first, without the unfiltered-history 250-row cap. Transfer mode hides/ignores category filters; selecting it clears category selections. Clear search resets Type to All types. Existing Payee/Description values remain untouched for manual review/editing. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories, and expandable categories allow selecting only specific subcategories. Search period navigation changes with the selected period: monthly, weekly, yearly, or no navigator for all history.
 - Validate positive amounts, valid account/category references, dates, and transfer endpoints.
 - Changes must consistently update all dependent balances, charts, and budgets.
 - Deletions must be intentional and confirmable.
@@ -459,6 +459,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Transaction type filter for manual transfer review
+
+- Added All types/Income/Expenses/Transfers filtering alongside the existing period and account filters. Filtered All history shows all matches; transfer filtering does not depend on payee/description text or categories. No financial records are modified automatically.
+- Verification: JavaScript syntax, transfer/all-history/filter combination checks, and sorting regressions passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Dot-separated display dates
 
