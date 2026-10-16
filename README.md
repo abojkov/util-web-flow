@@ -110,6 +110,7 @@ Three types:
 Core fields: ID, type, amount, date, time, source account, optional destination account and received amount, category/subcategory where applicable, payee, description, optional attachment references, created/updated timestamps.
 
 - Create, edit, delete, list, search, filter, and inspect transaction details.
+- Transaction category fields use the same inline expand/select/collapse flow as account selection, including split rows. Categories appear as separate buttons in saved order; a separate chevron expands a category’s ordered subcategories without selecting it. Expanding a category closes any other expanded category within that picker; clicking the open category’s chevron closes it. Split-row pickers operate independently. Every expanded parent category spans the full picker width. Multiple subcategories wrap into a responsive grid; a single subcategory stays compact (130px maximum available width) and left-aligned underneath the full-width parent. Parent categories remain selectable. The collapsed field displays Category / Subcategory when applicable; selecting returns keyboard focus to the field, and Escape closes the picker. Existing selections initialize correctly when editing/copying; empty category lists explain where to create categories. Save validation checks transaction type and parent/subcategory relationships.
 - Transaction account selectors initially show only the selected account name in a compact field; currency remains visible on the expanded account buttons. Tapping the field expands compact square buttons (72px minimum, 6px grid spacing) listing all active accounts in the configured order, with account name, currency, and a blue selected state. Selecting an account updates the field, collapses the buttons, and returns focus to the field. Reopen it to change the selection; Escape within the buttons collapses the picker. Account fields share the standard selectors’ SVG arrow and the normal fields’ blue focus border and soft shadow, including while expanded. Both source and transfer destination use the same picker; buttons support keyboard focus and expose selection with `aria-pressed`. Archived accounts remain excluded.
 - Transaction forms show Date & time first, then Amount, followed by Account. They use one native “Date & time” (`datetime-local`) input, initialized from the saved local date/time or the current local date/time for new records. Copy options retain their original/current date-time behavior.
 - Saving validates the local calendar date and time, then stores the existing separate `date` and `time` properties without timezone conversion or schema changes. Native picker appearance varies by browser; recurring schedule fields remain separate.
@@ -448,6 +449,14 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Transaction category and subcategory picker
+
+- Replaced category dropdowns in ordinary and split transactions with inline fields that expand into ordered category choices and collapse after selection. Parent categories remain selectable; separate chevrons reveal subcategories. Transfers have no category picker.
+- Opening a category closes any other expanded category within that picker; split-row pickers operate independently. Expanded parent categories span the full picker width. Multiple subcategories use a responsive grid, while a single subcategory remains compact and left-aligned underneath.
+- Preserved category/subcategory relationships and edit/copy selections, with validation of transaction type and parent relationships. Empty states, selected labels, keyboard focus return, and Escape dismissal are supported.
+- Acceptance: select parents and subcategories, verify collapsed labels and saved IDs, switch transaction types, and check split rows, empty states, accordion behavior, and single/multiple-subcategory layouts.
+- Verification: JavaScript syntax, focused markup/interaction/validation checks, layout rule checks, and transfer regressions passed. Live browser touch/layout and IndexedDB reload persistence remain untested. Consolidated the recent category-picker documentation into this entry.
 
 ### 2026-10-16 — Text-only transaction account buttons
 

@@ -104,12 +104,55 @@ function modal(title, body) {
     return orderA - orderB || String(a.name || '').localeCompare(String(b.name || ''), undefined, {sensitivity: 'base'})
   }
 
-  function categoryOptions(type, selectedCategoryId = '', selectedSubcategoryId = '') {
-    return state.categories.filter(c => c.type === type).sort(sortByOrderThenName).map(c => {
-      const selected = c.id === selectedCategoryId && !selectedSubcategoryId ? 'selected' : '';
-      const children = (c.subcategories || []).slice().sort(sortByOrderThenName).map(s => `<option value="${categoryChoiceValue(c.id, s.id)}" ${c.id === selectedCategoryId && s.id === selectedSubcategoryId ? 'selected' : ''}>${escapeHtml('  ' + (s.icon || c.icon || '◦') + ' ' + c.name + ' / ' + s.name)}</option>`).join('');
-      return `<option value="${categoryChoiceValue(c.id)}" ${selected}>${escapeHtml((c.icon || '◈') + ' ' + c.name)}</option>${children}`
-    }).join('')
+  function categoryPicker(id, type, categoryId = '', subcategoryId = '', name = '', inputClass = '') {
+    const categories = state.categories.filter(c => c.type === type).sort(sortByOrderThenName);
+    const selected = categories.find(c => c.id === categoryId) || categories[0];
+    const child = selected?.subcategories?.find(s => s.id === subcategoryId);
+    const value = selected ? categoryChoiceValue(selected.id, child?.id) : '';
+    const label = selected ? [selected.name, child?.name].filter(Boolean).join(' / ') : 'Choose category';
+    const choice = (category, subcategory) => {
+      const key = categoryChoiceValue(category.id, subcategory?.id);
+      return `<button type="button" class="category-choice" data-category-choice="${escapeHtml(key)}" aria-pressed="${key === value}"><span aria-hidden="true">${escapeHtml(subcategory?.icon || category.icon || '◈')}</span><span>${escapeHtml(subcategory?.name || category.name)}</span></button>`
+    };
+    return `<div class="field"><label for="${id}-toggle" id="${id}-label">Category or subcategory</label><input type="hidden" id="${id}" name="${name}" class="${inputClass}" value="${escapeHtml(value)}"><button type="button" class="account-picker-toggle" id="${id}-toggle" aria-expanded="false" aria-controls="${id}-picker"><span id="${id}-selection">${escapeHtml(label)}</span></button><div class="category-picker" id="${id}-picker" hidden role="group" aria-labelledby="${id}-label">${categories.length ? categories.map((category, index) => {
+      const children = (category.subcategories || []).slice().sort(sortByOrderThenName);
+      const expanded = category.id === selected?.id && Boolean(child);
+      return `<div class="category-picker-group"><div class="category-picker-parent">${choice(category)}${children.length ? `<button type="button" class="category-expand" data-category-expand="${id}-children-${index}" aria-controls="${id}-children-${index}" aria-expanded="${expanded}" aria-label="Show subcategories of ${escapeHtml(category.name)}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ''}</div>${children.length ? `<div class="category-picker-children" id="${id}-children-${index}" ${expanded ? '' : 'hidden'}>${children.map(subcategory => choice(category, subcategory)).join('')}</div>` : ''}</div>`
+    }).join('') : '<p class="form-hint">No categories yet. Create one in More → Categories.</p>'}</div></div>`
+  }
+
+  function bindCategoryPicker(id) {
+    const input = $('#' + id), picker = $('#' + id + '-picker'), toggle = $('#' + id + '-toggle');
+    const setExpanded = expanded => {
+      picker.hidden = !expanded;
+      toggle.setAttribute('aria-expanded', String(expanded))
+    };
+    toggle.onclick = () => setExpanded(picker.hidden);
+    picker.onkeydown = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        setExpanded(false);
+        toggle.focus()
+      }
+    };
+    picker.querySelectorAll('[data-category-expand]').forEach(button => button.onclick = () => {
+      const children = document.getElementById(button.dataset.categoryExpand);
+      const expand = children.hidden;
+      picker.querySelectorAll('[data-category-expand]').forEach(other => {
+        const expanded = other === button && expand;
+        document.getElementById(other.dataset.categoryExpand).hidden = !expanded;
+        other.setAttribute('aria-expanded', String(expanded))
+      })
+    });
+    picker.querySelectorAll('[data-category-choice]').forEach(button => button.onclick = () => {
+      input.value = button.dataset.categoryChoice;
+      const selected = parseCategoryChoice(input.value);
+      $('#' + id + '-selection').textContent = categoryLabel(selected.categoryId, selected.subcategoryId);
+      picker.querySelectorAll('[data-category-choice]').forEach(choice => choice.setAttribute('aria-pressed', String(choice === button)));
+      setExpanded(false);
+      toggle.focus()
+    })
   }
 
   async function moveCategory(id, direction) {
@@ -305,9 +348,9 @@ function modal(title, body) {
       box.textContent = `Reporting estimate: ${conversionNoteWithRates(value, selected.currency, base(), currentTransactionRates())}. This transaction keeps its own rate snapshot for historical reports.`;
       box.hidden = false
     };
+    let splitPickerSequence = 0;
     const extra = () => {
-      const options = categoryOptions(chosen, t?.categoryId, t?.subcategoryId);
-      $('#tx-extra').innerHTML = chosen === 'transfer' ? `${accountPicker('tx-to', 'toAccountId', 'Destination account', t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}<div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">Exchange rate</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter agreed rate"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">Amount received (destination currency)</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="0.00"></div>` : `<div class="field"><label>Category or subcategory</label><select name="categoryChoice">${options}</select></div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
+      $('#tx-extra').innerHTML = chosen === 'transfer' ? `${accountPicker('tx-to', 'toAccountId', 'Destination account', t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}<div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">Exchange rate</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter agreed rate"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">Amount received (destination currency)</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="0.00"></div>` : `${categoryPicker('tx-category', chosen, t?.categoryId, t?.subcategoryId, 'categoryChoice')}<div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
       if (chosen === 'transfer') {
         lastTransferPair = '';
         $('#tx-to').onchange = updateConversionPreview;
@@ -316,6 +359,7 @@ function modal(title, body) {
         $('#tx-received').oninput = updateConversionPreview;
       }
       if (chosen !== 'transfer') {
+        bindCategoryPicker('tx-category');
         const toggle = $('#enable-splits'), container = $('#split-fields');
         const draw = () => {
           container.innerHTML = toggle.checked ? `<div id="split-rows"></div><button type="button" class="btn secondary" id="add-split" style="margin-top:9px">+ Add split</button><p class="form-hint">Split amounts must equal the transaction total.</p>` : '';
@@ -327,9 +371,11 @@ function modal(title, body) {
             }, {categoryId: state.categories.find(c => c.type === chosen)?.id, subcategoryId: '', amount: ''}];
             const addRow = s => {
               const el = document.createElement('div');
+              const pickerId = 'tx-split-category-' + (++splitPickerSequence);
               el.className = 'field-row split-row';
-              el.innerHTML = `<div class="field"><label>Category or subcategory</label><select class="split-cat">${categoryOptions(chosen, s.categoryId, s.subcategoryId)}</select></div><div class="field"><label>Amount</label><input class="split-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${s.amount ?? ''}" required></div>`;
-              $('#split-rows').append(el)
+              el.innerHTML = `${categoryPicker(pickerId, chosen, s.categoryId, s.subcategoryId, '', 'split-cat')}<div class="field"><label>Amount</label><input class="split-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${s.amount ?? ''}" required></div>`;
+              $('#split-rows').append(el);
+              bindCategoryPicker(pickerId)
             };
             rows.forEach(addRow);
             $('#add-split').onclick = () => addRow({})
@@ -411,7 +457,12 @@ function modal(title, body) {
         record.transferRate = editableReceived ? record.received / v : inverseRate ? 1 / transferRate : transferRate;
         record.exchangeRates = rateSnapshotForCurrencies([from.currency, to.currency, base()], {...exchangeRates(), ...record.exchangeRates})
       } else {
+        const validCategory = selection => {
+          const category = cat(selection.categoryId);
+          return category?.type === chosen && (!selection.subcategoryId || category.subcategories?.some(child => child.id === selection.subcategoryId))
+        };
         const selectedCategory = parseCategoryChoice(f.get('categoryChoice'));
+        if (!$('#enable-splits')?.checked && !validCategory(selectedCategory)) return toast('Select a valid category or subcategory');
         record.categoryId = selectedCategory.categoryId;
         record.subcategoryId = selectedCategory.subcategoryId || null;
         if ($('#enable-splits')?.checked) {
@@ -423,6 +474,7 @@ function modal(title, body) {
               amount: amount(row.querySelector('.split-amount').value)
             }
           });
+          if (record.splits.some(split => !validCategory(split))) return toast('Select a valid category or subcategory for each split');
           if (record.splits.some(split => split.amount <= 0)) return toast('Enter a valid split amount');
           if (Math.round(record.splits.reduce((s, x) => s + x.amount, 0) * 100) !== Math.round(v * 100)) return toast('Split amounts must equal the total');
           record.categoryId = null;
