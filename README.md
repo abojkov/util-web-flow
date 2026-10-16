@@ -4,6 +4,7 @@
 
 **Project status:** Active development
 **Specification version:** 1.0
+**App version:** maintained in `APP_VERSION` at the top of `assets/js/state.js`; Settings reads this constant.
 **Last specification update:** 2026-10-16
 **Implementation status:** Not audited against the current local repository. Feature descriptions below are requirements, not assertions that the feature works.
 
@@ -456,6 +457,21 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Central app version constant
+
+- Added `APP_VERSION` at the top of `assets/js/state.js`. Change this value to update the version displayed at the bottom of Settings; no other UI file needs editing. Database and backup format versions remain independent.
+- Verification: JavaScript syntax, script ordering, and Settings rendering with both the current and a substituted version passed; live browser rendering remains untested.
+
+### 2026-10-16 — Settings bottom spacing
+
+- Added spacing directly to the version label: 20px above and 25px plus the device safe-area inset below. This keeps the bottom gap inside the scrollable content instead of relying on modal scroll-container padding.
+- Verification: checked label padding and removed the ineffective container override. Live browser rendering remains unverified; the connected browser was unavailable.
+
+### 2026-10-16 — App version in Settings
+
+- Added a centered “Flow - v1.0.3” label at the bottom of Settings & backup. This is the app release version; database and backup format versions are unchanged.
+- Verification: JavaScript syntax and Settings markup placement checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Full-row category choices for split transactions
 

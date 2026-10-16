@@ -2106,3 +2106,11 @@
     vertical-align: middle;
     flex-shrink: 0
   }
+
+  .settings-version {
+    margin: 0;
+    padding: 20px 0 calc(25px + env(safe-area-inset-bottom, 0px));
+    color: #71809a;
+    font-size: 12px;
+    text-align: center
+  }
