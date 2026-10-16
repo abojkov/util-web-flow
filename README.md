@@ -86,8 +86,8 @@ Supported types: cash, bank, savings, investment, loan, and custom. **Credit car
 Account fields: unique ID, name, type, native currency, opening balance, optional description, icon/color, archived flag, visibility (`visible`, default true), sort order, created/updated timestamps.
 
 - Create, edit, list, archive, and restore accounts.
-- Account visibility is independent of archiving. Uncheck “Visible in account selectors” in the account create/edit form to hide it from transaction source/destination buttons, account filter dropdowns, and new recurring-schedule account selectors. Accounts without a `visible` field remain visible.
-- Hidden accounts remain listed on Accounts with a compact Hidden badge and crossed-out eye indicator and remain included in active balances, transaction history/search, statistics, budgets, and complete JSON backups. Existing recurring rules continue normally. Recheck the visibility option to show the account again. Each account row also has an eye button immediately before Archive/Restore: click to toggle visibility without confirmation. An eye means visible; a crossed-out eye means hidden. Both controls use the same saved visibility property.
+- Active accounts have configurable visibility. Archived accounts are always hidden: their visibility checkbox is disabled, and archived rows omit both the Hidden badge and eye button. Restoring an account automatically sets it visible, even if it was hidden before archiving. Older/imported archived accounts are treated as hidden regardless of a missing or conflicting `visible` value. Uncheck “Visible in account selectors” in the account create/edit form to hide it from transaction source/destination buttons, account filter dropdowns, and new recurring-schedule account selectors. Accounts without a `visible` field remain visible.
+- Hidden accounts remain listed on Accounts with a compact Hidden badge and crossed-out eye indicator and remain included in active balances, transaction history/search, statistics, budgets, and complete JSON backups. Existing recurring rules continue normally. Recheck the visibility option to show the account again. Each account row also has an eye button immediately before Archive/Restore: click to toggle visibility without confirmation. An eye means visible; a crossed-out eye means hidden. Both controls use the same saved visibility property; archived accounts cannot change visibility until restored.
 - Editing or copying a transaction retains its assigned hidden account in the collapsed field without offering that account among selectable buttons. If every active account is hidden, new transaction/schedule creation explains that an account must be made visible. A filter pointing at an account that becomes hidden resets to All accounts.
 - Visibility adds an optional account property; no IndexedDB version change or destructive migration is required.
 - Accounts are grouped by account type and can be reordered within each type group.
@@ -448,6 +448,22 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Matching account status badges
+
+- Archived and Hidden badges now share the same compact font size, padding, line height, and corner radius.
+- Verification: JavaScript syntax and shared badge styling checks passed; browser visual verification remains pending.
+
+### 2026-10-16 — Simpler archived account rows
+
+- Removed the redundant Hidden badge and disabled eye button from archived rows. The Archived badge and Restore action remain; archived accounts are still always hidden and become visible when restored. Active rows retain their visibility badge/button behavior.
+- Verification: JavaScript syntax and rendered active/archived row checks passed; browser visual verification remains pending.
+
+### 2026-10-16 — Archived account visibility rules
+
+- Archiving now saves hidden visibility; restoring saves visible visibility. Archived rows always show the crossed-out eye and Hidden state, including older/imported records with missing or conflicting flags.
+- Disabled archived visibility controls and guarded checkbox saves and eye actions against enabling archived accounts.
+- Verification: JavaScript syntax and focused archive/restore, disabled-control, legacy-record, and edit-save checks passed. Browser interactions and persistence after reload remain untested.
 
 ### 2026-10-16 — Archive button layout regression
 

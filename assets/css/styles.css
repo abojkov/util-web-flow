@@ -1178,7 +1178,7 @@
     padding: 12px 0
   }
 
-  .account-hidden-badge {
+  .account-hidden-badge, .account-archived-badge {
     flex: 0 0 auto;
     padding: 2px 5px;
     border-radius: 5px;
@@ -1217,6 +1217,11 @@
     justify-content: center;
     min-width: 32px;
     min-height: 32px
+  }
+
+  .account-visibility:disabled {
+    opacity: .45;
+    cursor: not-allowed
   }
 
   .account-visibility[aria-pressed="true"] {
