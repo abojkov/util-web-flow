@@ -950,13 +950,14 @@
     white-space: nowrap
   }
 
-  .field input[type="date"], .field input[type="time"] {
+  .field input[type="date"], .field input[type="time"], .field input[type="datetime-local"] {
     min-height: 50px;
     text-align: left
   }
 
   .field input[type="date"]::-webkit-date-and-time-value,
-  .field input[type="time"]::-webkit-date-and-time-value {
+  .field input[type="time"]::-webkit-date-and-time-value,
+  .field input[type="datetime-local"]::-webkit-date-and-time-value {
     text-align: left
   }
 

@@ -190,7 +190,7 @@ function modal(title, body) {
     const isExisting = Boolean(t?.id) && !isCopy;
     const type = t?.type || initial;
     const accountOpts = (sel) => active.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${escapeHtml(a.name)} (${a.currency})</option>`).join('');
-    modal(isExisting ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label>Amount</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="amount" value="${t?.amount ?? ''}" required placeholder="0.00"></div><div class="field"><label>Date</label><input type="date" name="date" value="${t?.date || today()}" required></div></div><div class="field-row"><div class="field"><label>Time</label><input type="time" name="time" value="${t?.time || currentTime()}" required></div><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? '<button type="button" class="btn danger" id="delete-tx">Delete transaction</button><button type="button" class="btn secondary" id="copy-tx">Copy</button>' : ''}<button class="btn" type="submit">Save transaction</button></div></form>`);
+    modal(isExisting ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label for="tx-datetime">Date &amp; time</label><input id="tx-datetime" type="datetime-local" name="datetime" value="${escapeHtml((t?.date || today()) + 'T' + (t?.time || currentTime()))}" required></div><div class="field"><label>Amount</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="amount" value="${t?.amount ?? ''}" required placeholder="0.00"></div></div><div class="field-row"><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? '<button type="button" class="btn danger" id="delete-tx">Delete transaction</button><button type="button" class="btn secondary" id="copy-tx">Copy</button>' : ''}<button class="btn" type="submit">Save transaction</button></div></form>`);
     bindPayeeAutocomplete('tx-payee');
     let chosen = type;
     let lastRateCurrency = '';
@@ -334,12 +334,21 @@ function modal(title, body) {
       if (!from) return toast('Select an account');
       const v = amount(f.get('amount'));
       if (v <= 0) return toast('Enter a valid amount');
+      const dateTime = String(f.get('datetime') || '');
+      const parts = /^(\d{4})-(\d{2})-(\d{2})T([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/.exec(dateTime);
+      if (!parts) return toast('Enter a valid date and time');
+      const year = Number(parts[1]), month = Number(parts[2]), day = Number(parts[3]);
+      const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+      const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      if (year < 1 || month < 1 || month > 12 || day < 1 || day > daysInMonth[month - 1]) return toast('Enter a valid date and time');
+      // Keep local calendar values intact: converting to UTC could change the reporting day.
+      const [date, time] = dateTime.split('T');
       let record = {
         id: isExisting ? t.id : uid(),
         type: chosen,
         amount: v,
-        date: f.get('date'),
-        time: f.get('time'),
+        date,
+        time,
         accountId: from.id,
         payee: String(f.get('payee') || '').trim(),
         description: String(f.get('description') || '').trim(),

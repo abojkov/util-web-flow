@@ -106,6 +106,8 @@ Three types:
 Core fields: ID, type, amount, date, time, source account, optional destination account and received amount, category/subcategory where applicable, payee, description, optional attachment references, created/updated timestamps.
 
 - Create, edit, delete, list, search, filter, and inspect transaction details.
+- Transaction forms show Date & time first, then Amount, followed by Account. They use one native “Date & time” (`datetime-local`) input, initialized from the saved local date/time or the current local date/time for new records. Copy options retain their original/current date-time behavior.
+- Saving validates the local calendar date and time, then stores the existing separate `date` and `time` properties without timezone conversion or schema changes. Native picker appearance varies by browser; recurring schedule fields remain separate.
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
 - Support daily/calendar, weekly, monthly, and chronological review.
 - Filter by date range, account, type, category/subcategory, and search text. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories, and expandable categories allow selecting only specific subcategories. Search period navigation changes with the selected period: monthly, weekly, yearly, or no navigator for all history.
@@ -433,6 +435,17 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Transaction field order
+
+- Moved Date & time before Amount in the transaction form, including keyboard focus order.
+- Verification: JavaScript syntax and source field-order checks passed; browser layout remains untested.
+
+### 2026-10-16 — Combined transaction date and time
+
+- Replaced separate transaction date/time controls with one labeled Date & time input and extended existing mobile date/time styles. Existing records, reports, CSV/JSON formats, and copy options retain separate local date/time values.
+- Acceptance: new/edit/copy forms use one date-time control; saving preserves the selected local calendar day and time; blank, invalid dates, and invalid times are rejected.
+- Verification: JavaScript syntax, focused form/save validation, and regression checks passed; native browser picker, responsive rendering, and IndexedDB reload checks remain untested.
 
 ### 2026-10-16 — README consolidation
 
