@@ -128,7 +128,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Each split has a category, optional subcategory, amount, and optional description.
 - Enabling splits hides and disables the main category field; only individual split categories are used. Disabling splits restores the main field and its prior selection. Editing/copying split transactions starts with the main field hidden.
 - Split transaction records retain `categoryId: null` and `subcategoryId: null` at the parent level. The existing schema already supports this, so no database migration or rewriting existing records is required.
-- Split transactions show a clickable purple Split badge alongside the blue Note badge when present. It expands a breakdown below the transaction details, with one line per category/subcategory and its amount in the account’s native currency. Clicking again collapses it; the dashboard and transaction history share this behavior.
+- Split transactions use a branching icon representing one amount divided into categories and show a clickable purple Split badge alongside the blue Note badge when present. It expands a breakdown below the transaction details, with one line per category/subcategory and its amount in the account’s native currency. Clicking again collapses it; the dashboard and transaction history share this behavior.
 - Sum of split amounts **must exactly equal** the parent transaction amount.
 - The account ledger records the parent total once; category reports and budgets use split allocations.
 - Transfers cannot be split.
@@ -458,6 +458,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Split transaction icon
+
+- Added a local branching SVG for multi-category income/expense transactions in history and dashboard lists. Single-category entries retain category icons, and transfers retain their transfer icon.
+- Verification: JavaScript syntax and rendered split/ordinary/transfer icon checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Distinct Split badge color
 

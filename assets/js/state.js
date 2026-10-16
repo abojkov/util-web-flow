@@ -6,6 +6,7 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     currentTime = () => new Date().toTimeString().slice(0, 5);
   let txSearchTimer;
   const icons = {home: '⌂', transactions: '≡', statistics: '◉', accounts: '<svg class="accounts-nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 8V5a2 2 0 0 0-2-2H6a3 3 0 0 0 0 6h14v12H6a3 3 0 0 1-3-3V6"/><path d="M20 12h-5a2 2 0 0 0 0 4h5"/><circle cx="16" cy="14" r=".5" fill="currentColor" stroke="none"/></svg>', more: '☷'};
+  const splitTransactionIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v5a3 3 0 0 0 3 3h2a3 3 0 0 1 3 3v6M12 8a3 3 0 0 1-3 3H7a3 3 0 0 0-3 3v6M1 17l3 3 3-3m10 0 3 3 3-3"/></svg>';
   const names = {
     home: 'Overview',
     transactions: 'Transactions',
