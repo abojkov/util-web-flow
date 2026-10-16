@@ -189,8 +189,39 @@ function modal(title, body) {
     const isCopy = Boolean(options.copy);
     const isExisting = Boolean(t?.id) && !isCopy;
     const type = t?.type || initial;
-    const accountOpts = (sel) => active.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${escapeHtml(a.name)} (${a.currency})</option>`).join('');
-    modal(isExisting ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label for="tx-datetime">Date &amp; time</label><input id="tx-datetime" type="datetime-local" name="datetime" value="${escapeHtml((t?.date || today()) + 'T' + (t?.time || currentTime()))}" required></div><div class="field"><label>Amount</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="amount" value="${t?.amount ?? ''}" required placeholder="0.00"></div></div><div class="field-row"><div class="field"><label>Account</label><select name="accountId" id="tx-account">${accountOpts(t?.accountId || active[0].id)}</select></div></div><div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? '<button type="button" class="btn danger" id="delete-tx">Delete transaction</button><button type="button" class="btn secondary" id="copy-tx">Copy</button>' : ''}<button class="btn" type="submit">Save transaction</button></div></form>`);
+    const accountPicker = (id, name, label, selected) => {
+      const selectedId = active.some(a => a.id === selected) ? selected : active[0].id;
+      const selectedAccount = active.find(a => a.id === selectedId);
+      return `<div class="field"><label id="${id}-label" for="${id}-toggle">${label}</label><input type="hidden" name="${name}" id="${id}" value="${escapeHtml(selectedId)}"><button type="button" class="account-picker-toggle" id="${id}-toggle" aria-expanded="false" aria-controls="${id}-picker"><span id="${id}-selection">${escapeHtml(selectedAccount.name)}</span></button><div class="account-picker" id="${id}-picker" hidden role="group" aria-labelledby="${id}-label">${active.map(a => `<button type="button" class="account-choice" data-account-id="${escapeHtml(a.id)}" aria-pressed="${a.id === selectedId}"><span class="account-choice-icon" aria-hidden="true">▣</span><span class="account-choice-name">${escapeHtml(a.name)}</span><small>${escapeHtml(a.currency)}</small></button>`).join('')}</div></div>`
+    };
+    const bindAccountPicker = id => {
+      const input = $('#' + id), picker = $('#' + id + '-picker'), toggle = $('#' + id + '-toggle');
+      const setExpanded = expanded => {
+        picker.hidden = !expanded;
+        toggle.setAttribute('aria-expanded', String(expanded))
+      };
+      toggle.onclick = () => setExpanded(picker.hidden);
+      picker.onkeydown = event => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          setExpanded(false);
+          toggle.focus()
+        }
+      };
+      picker.querySelectorAll('[data-account-id]').forEach(button => {
+        button.onclick = () => {
+          input.value = button.dataset.accountId;
+          picker.querySelectorAll('[data-account-id]').forEach(choice => choice.setAttribute('aria-pressed', String(choice === button)));
+          const selected = account(input.value);
+          $('#' + id + '-selection').textContent = selected.name;
+          setExpanded(false);
+          toggle.focus();
+          input.dispatchEvent(new Event('change', {bubbles: true}))
+        }
+      })
+    };
+    modal(isExisting ? 'Edit transaction' : 'New transaction', `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label for="tx-datetime">Date &amp; time</label><input id="tx-datetime" type="datetime-local" name="datetime" value="${escapeHtml((t?.date || today()) + 'T' + (t?.time || currentTime()))}" required></div><div class="field"><label>Amount</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="amount" value="${t?.amount ?? ''}" required placeholder="0.00"></div></div>${accountPicker('tx-account', 'accountId', 'Account', t?.accountId || active[0].id)}<div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? '<button type="button" class="btn danger" id="delete-tx">Delete transaction</button><button type="button" class="btn secondary" id="copy-tx">Copy</button>' : ''}<button class="btn" type="submit">Save transaction</button></div></form>`);
     bindPayeeAutocomplete('tx-payee');
     let chosen = type;
     let lastRateCurrency = '';
@@ -272,10 +303,11 @@ function modal(title, body) {
     };
     const extra = () => {
       const options = categoryOptions(chosen, t?.categoryId, t?.subcategoryId);
-      $('#tx-extra').innerHTML = chosen === 'transfer' ? `<div class="field"><label>Destination account</label><select name="toAccountId" id="tx-to">${accountOpts(t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}</select></div><div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">Exchange rate</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter agreed rate"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">Amount received (destination currency)</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="0.00"></div>` : `<div class="field"><label>Category or subcategory</label><select name="categoryChoice">${options}</select></div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
+      $('#tx-extra').innerHTML = chosen === 'transfer' ? `${accountPicker('tx-to', 'toAccountId', 'Destination account', t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}<div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">Exchange rate</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter agreed rate"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">Amount received (destination currency)</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="0.00"></div>` : `<div class="field"><label>Category or subcategory</label><select name="categoryChoice">${options}</select></div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`;
       if (chosen === 'transfer') {
         lastTransferPair = '';
         $('#tx-to').onchange = updateConversionPreview;
+        bindAccountPicker('tx-to');
         $('#tx-transfer-rate').oninput = updateConversionPreview;
         $('#tx-received').oninput = updateConversionPreview;
       }
@@ -326,6 +358,7 @@ function modal(title, body) {
     $('#copy-tx')?.addEventListener('click', () => copyTransactionDateChoice(t));
     $('#tx-amount')?.addEventListener('input', updateConversionPreview);
     $('#tx-account')?.addEventListener('change', updateConversionPreview);
+    bindAccountPicker('tx-account');
     $('#tx-rate')?.addEventListener('input', updateConversionPreview);
     updateConversionPreview();
     $('#tx-form').onsubmit = async e => {

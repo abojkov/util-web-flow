@@ -106,6 +106,7 @@ Three types:
 Core fields: ID, type, amount, date, time, source account, optional destination account and received amount, category/subcategory where applicable, payee, description, optional attachment references, created/updated timestamps.
 
 - Create, edit, delete, list, search, filter, and inspect transaction details.
+- Transaction account selectors initially show only the selected account name in a compact field; currency remains visible on the expanded account buttons. Tapping the field expands square buttons listing all active accounts in the configured order, with account name, currency, and a blue selected state. Selecting an account updates the field, collapses the buttons, and returns focus to the field. Reopen it to change the selection; Escape within the buttons collapses the picker. Account fields share the standard selectors’ SVG arrow and the normal fields’ blue focus border and soft shadow, including while expanded. Both source and transfer destination use the same picker; buttons support keyboard focus and expose selection with `aria-pressed`. Archived accounts remain excluded.
 - Transaction forms show Date & time first, then Amount, followed by Account. They use one native “Date & time” (`datetime-local`) input, initialized from the saved local date/time or the current local date/time for new records. Copy options retain their original/current date-time behavior.
 - Saving validates the local calendar date and time, then stores the existing separate `date` and `time` properties without timezone conversion or schema changes. Native picker appearance varies by browser; recurring schedule fields remain separate.
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
@@ -435,6 +436,27 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Account field name only
+
+- Removed the parenthesized currency from collapsed source and destination account fields, including after selection. Expanded buttons still show currencies.
+- Verification: JavaScript syntax and focused picker checks passed; browser visual verification remains pending.
+
+### 2026-10-16 — Account field visual consistency
+
+- Account selection fields now share the standard dropdown SVG chevron, spacing, and input focus border/shadow for mouse and keyboard focus and while expanded.
+- Verification: JavaScript syntax, shared CSS rule checks, and focused picker regression checks passed; visual browser verification remains pending.
+
+### 2026-10-16 — Collapsible account selection
+
+- Source and destination account fields expand inline to show account buttons and collapse after selection. The selected account remains visible in the field; no nested modal is opened.
+- Verification: JavaScript syntax and focused interaction/form checks passed; native browser layout, touch behavior, and reload persistence remain untested.
+
+### 2026-10-16 — Transaction account buttons
+
+- Replaced source and transfer destination account dropdowns with responsive square account buttons. Selection updates the existing account IDs and currency calculations; same-account transfer validation is unchanged.
+- Acceptance: selecting a button updates its selected state and the transfer preview; saved transactions use the selected source and destination IDs.
+- Verification: JavaScript syntax and focused picker/form checks passed; browser layout, touch behavior, and persistence after reload remain untested.
 
 ### 2026-10-16 — Transaction field order
 
