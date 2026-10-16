@@ -564,7 +564,7 @@ function modal(title, body) {
   }
 
   function budgetsModal() {
-    const items = state.budgets.filter(b => b.month === state.month);
+    const items = orderedBudgets(state.budgets.filter(b => b.month === state.month));
     modal('Monthly budgets', `<div class="toolbar">${monthControl()}<button class="btn" id="new-budget">+ Add budget</button></div><div class="table-list">${items.length ? items.map(b => `<div class="transaction"><div class="tx-icon">◉</div><div class="tx-main"><b>${escapeHtml(cat(b.categoryId)?.name || 'Overall budget')}</b><small>${monthLabel(b.month)}</small></div><b>${money(b.limit, base())}</b><button class="mini-btn" data-remove-budget="${b.id}">×</button></div>`).join('') : empty('No budgets this month', 'Add a limit for your spending.')}</div>`);
     bindMonth();
     $('#prev-month').onclick = () => {
@@ -588,7 +588,7 @@ function modal(title, body) {
   }
 
   function budgetEdit() {
-    modal('Add monthly budget', `<form id="budget-form"><div class="field"><label>Month</label><input name="month" type="month" value="${state.month}" required></div><div class="field"><label>Category</label><select name="categoryId"><option value="">Overall budget</option>${state.categories.filter(c => c.type === 'expense').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}</select></div><div class="field"><label>Monthly limit (${base()})</label><input name="limit" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div><div class="notice">Budgets reset each month. No unused amount is carried forward.</div><div class="modal-footer"><button class="btn">Save budget</button></div></form>`);
+    modal('Add monthly budget', `<form id="budget-form"><div class="field"><label>Month</label><input name="month" type="month" value="${state.month}" required></div><div class="field"><label>Category</label><select name="categoryId"><option value="">Overall budget</option>${state.categories.filter(c => c.type === 'expense').sort(sortByOrderThenName).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}</select></div><div class="field"><label>Monthly limit (${base()})</label><input name="limit" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div><div class="notice">Budgets reset each month. No unused amount is carried forward.</div><div class="modal-footer"><button class="btn">Save budget</button></div></form>`);
     $('#budget-form').onsubmit = async e => {
       e.preventDefault();
       const f = new FormData(e.target), month = f.get('month'), categoryId = f.get('categoryId');
@@ -601,8 +601,17 @@ function modal(title, body) {
     }
   }
 
+  function orderedRecurring(items) {
+    const label = rule => String(rule.payee || rule.place || rule.description || rule.note || cat(rule.categoryId)?.name || 'Recurring');
+    return items.slice().sort((a, b) => String(a.nextDate || '9999-12-31').localeCompare(String(b.nextDate || '9999-12-31'))
+      || String(a.time || '12:00').padEnd(8, ':00').localeCompare(String(b.time || '12:00').padEnd(8, ':00'))
+      || label(a).localeCompare(label(b), undefined, {sensitivity: 'base'})
+      || String(a.id || '').localeCompare(String(b.id || '')))
+  }
+
   function recurringModal() {
-    modal('Recurring transactions', `<div class="toolbar"><span class="muted">Scheduled items are added when you open the app.</span><button class="btn" id="new-recurring">+ New</button></div><div class="table-list">${state.recurring.length ? state.recurring.map(r => `<div class="transaction"><div class="tx-icon">↻</div><div class="tx-main"><b>${escapeHtml(r.payee || r.place || r.description || r.note || cat(r.categoryId)?.name || 'Recurring')}</b><small>${r.frequency} · next ${r.nextDate}${r.time ? ' at ' + r.time : ''} · ${r.paused ? 'Paused' : 'Active'}</small></div><b>${money(r.amount, account(r.accountId)?.currency || base())}</b><button class="mini-btn" data-pause="${r.id}">${r.paused ? '▶' : 'Ⅱ'}</button><button class="mini-btn" data-remove-recurring="${r.id}">×</button></div>`).join('') : empty('No recurring transactions', 'Add regular salary, rent, or subscriptions.', '↻')}</div>`);
+    const items = orderedRecurring(state.recurring);
+    modal('Recurring transactions', `<div class="toolbar"><span class="muted">Scheduled items are added when you open the app.</span><button class="btn" id="new-recurring">+ New</button></div><div class="table-list">${items.length ? items.map(r => `<div class="transaction"><div class="tx-icon">↻</div><div class="tx-main"><b>${escapeHtml(r.payee || r.place || r.description || r.note || cat(r.categoryId)?.name || 'Recurring')}</b><small>${r.frequency} · next ${r.nextDate}${r.time ? ' at ' + r.time : ''} · ${r.paused ? 'Paused' : 'Active'}</small></div><b>${money(r.amount, account(r.accountId)?.currency || base())}</b><button class="mini-btn" data-pause="${r.id}">${r.paused ? '▶' : 'Ⅱ'}</button><button class="mini-btn" data-remove-recurring="${r.id}">×</button></div>`).join('') : empty('No recurring transactions', 'Add regular salary, rent, or subscriptions.', '↻')}</div>`);
     $('#new-recurring').onclick = recurringEdit;
     document.querySelectorAll('[data-pause]').forEach(b => b.onclick = async () => {
       const r = state.recurring.find(x => x.id === b.dataset.pause);
@@ -634,7 +643,7 @@ function modal(title, body) {
     modal('New recurring transaction', `<form id="rec-form"><div class="field-row"><div class="field"><label>Type</label><select name="type" id="rec-type"><option value="expense">Expense</option><option value="income">Income</option></select></div><div class="field"><label>Amount</label><input name="amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div></div><div class="field"><label>Account</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>Category</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>Frequency</label><select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div><div class="field"><label>First date</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>Time</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>Payee</label>${payeeAutocompleteInput('', 'rec-payee')}</div><div class="field"><label>Description</label><input name="description" maxlength="180"></div><div class="modal-footer"><button class="btn">Create schedule</button></div></form>`);
     bindPayeeAutocomplete('rec-payee');
     const fill = () => {
-      $('#rec-cat').innerHTML = state.categories.filter(c => c.type === $('#rec-type').value).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')
+      $('#rec-cat').innerHTML = state.categories.filter(c => c.type === $('#rec-type').value).sort(sortByOrderThenName).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')
     };
     $('#rec-type').onchange = fill;
     fill();
@@ -768,7 +777,7 @@ function modal(title, body) {
     };
     $('#export-csv').onclick = () => {
       const fields = ['date', 'time', 'type', 'account', 'currency', 'amount', 'category', 'subcategory', 'payee', 'description', 'exchange_rate_from', 'exchange_rate_to', 'exchange_rate', 'destination', 'received'];
-      const csv = [fields, ...state.transactions.map(t => [t.date, t.time || '', t.type, account(t.accountId)?.name || '', account(t.accountId)?.currency || '', t.amount, cat(t.categoryId)?.name || '', subcat(t.categoryId, t.subcategoryId)?.name || '', t.payee ?? t.place ?? '', t.description ?? t.note ?? '', t.exchangeRateFrom || '', t.exchangeRateTo || '', t.exchangeRate || '', account(t.toAccountId)?.name || '', t.received || ''])].map(row => row.map(x => '"' + String(x ?? '').replaceAll('"', '""') + '"').join(',')).join('\r\n');
+      const csv = [fields, ...state.transactions.slice().sort(compareTransactionsNewestFirst).map(t => [t.date, t.time || '', t.type, account(t.accountId)?.name || '', account(t.accountId)?.currency || '', t.amount, cat(t.categoryId)?.name || '', subcat(t.categoryId, t.subcategoryId)?.name || '', t.payee ?? t.place ?? '', t.description ?? t.note ?? '', t.exchangeRateFrom || '', t.exchangeRateTo || '', t.exchangeRate || '', account(t.toAccountId)?.name || '', t.received || ''])].map(row => row.map(x => '"' + String(x ?? '').replaceAll('"', '""') + '"').join(',')).join('\r\n');
       download('\ufeff' + csv, 'flow-transactions-' + exportTimestamp() + '.csv', 'text/csv;charset=utf-8');
       toast('CSV exported')
     };

@@ -159,6 +159,8 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 
 ### Budgets
 
+Budget lists show Overall first, then saved category order; category dropdowns use the same category ordering.
+
 - Overall monthly expense budget and category-specific monthly budgets.
 - Display spent, remaining, percentage used, and overspending warning.
 - Split expenses contribute to their corresponding category budgets.
@@ -167,6 +169,8 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Preserve previous months' budgets and actuals for comparison.
 
 ### Recurring transactions
+
+Rules are listed by next date/time ascending, then label and ID, including paused rules. Category dropdowns follow saved category order.
 
 - Recurring **income and expense** rules (not recurring transfers initially).
 - Daily, weekly, monthly, and yearly frequencies.
@@ -294,6 +298,7 @@ All financial records stay on-device by default. No cloud sync, account login, t
 
 ### CSV
 
+- CSV transaction rows are ordered newest first by transaction date/time, consistently with transaction history.
 - Export transactions in spreadsheet-compatible format with dates, account/currency, categories, splits, and transfer representation documented.
 - Import transactions using column mapping, validation, preview, and duplicate detection.
 - Do not claim CSV contains a complete application backup.
@@ -449,6 +454,13 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-16 — Consistent budget, recurring, and CSV ordering
+
+- Budget and recurring category dropdowns now follow saved category order with alphabetical ties. Both budget displays show Overall first, then category order, with missing categories last.
+- Recurring entries display by next scheduled date and time ascending (legacy missing times use noon, matching generation), then label and ID. Paused entries follow the same date ordering; missing dates appear last. This changes display order only, not schedule processing.
+- CSV export now uses the same newest-first date/time ordering as transaction history. Sorting uses copied arrays and preserves financial values, IDs, export columns, and stored order.
+- Verification: JavaScript syntax and focused budget/dropdown/recurring/CSV ordering and empty-state checks passed, plus transaction and category regressions. Live browser layout and persistence remain untested.
 
 ### 2026-10-16 — Consistent newest-first transaction ordering
 

@@ -252,8 +252,17 @@ async function reload() {
     return `<div class="toolbar"><div><h2>My accounts</h2><p class="muted">Keep every balance in view.</p></div><button class="btn" data-add="account">+ Add account</button></div>${active.length ? `<div class="account-sections">${sections(active)}</div>` : empty('Create your first account', 'Add a bank, cash, or savings account to get started.', icons.accounts)}${archived.length ? `<div class="account-archive"><h3>Archived accounts</h3><div class="account-sections">${sections(archived)}</div></div>` : ''}`
   }
 
+  function orderedBudgets(items) {
+    return items.slice().sort((a, b) => {
+      if (!a.categoryId !== !b.categoryId) return a.categoryId ? 1 : -1;
+      const categoryA = cat(a.categoryId), categoryB = cat(b.categoryId);
+      if (Boolean(categoryA) !== Boolean(categoryB)) return categoryA ? -1 : 1;
+      return sortByOrderThenName(categoryA || {}, categoryB || {}) || String(a.id || '').localeCompare(String(b.id || ''))
+    })
+  }
+
   function more() {
-    const current = state.budgets.filter(b => b.month === state.month);
+    const current = orderedBudgets(state.budgets.filter(b => b.month === state.month));
     return `<div class="toolbar"><div><h2>Manage your money</h2><p class="muted">Budgets, categories, automation and preferences.</p></div></div><div class="settings-grid"><section class="settings-tile"><h3>◉ Monthly budgets</h3><p>Set monthly spending limits without carry-over.</p><button class="btn secondary" id="open-budgets">Manage budgets</button></section><section class="settings-tile"><h3>◈ Categories</h3><p>Customize expense and income categories, icons and colors.</p><button class="btn secondary" id="open-categories">Manage categories</button></section><section class="settings-tile"><h3>↻ Recurring transactions</h3><p>Schedule regular income and expenses, processed when the app opens.</p><button class="btn secondary" id="open-recurring">Manage schedules</button></section><section class="settings-tile"><h3>⚙ Settings & backup</h3><p>Currency, data export and import, and privacy options.</p><button class="btn secondary" id="open-settings">Open settings</button></section></div><section class="panel" style="margin-top:20px"><div class="panel-head"><h3>Budget overview · ${monthLabel(state.month)}</h3><button class="link-btn" id="budget-quick">Manage →</button></div>${current.length ? current.map(b => {
       const spent = state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(state.month)).reduce((s, t) => s + (t.splits?.length ? t.splits.filter(x => x.categoryId === b.categoryId).reduce((a, x) => a + convertedTransactionAmount(t, x.amount, account(t.accountId)?.currency || 'EUR'), 0) : t.categoryId === b.categoryId ? convertedTransactionAmount(t) : 0), 0);
       return `<div class="budget-row"><div class="head"><b>${escapeHtml(cat(b.categoryId)?.name || 'Overall budget')}</b><b>${money(spent, base())} / ${money(b.limit, base())}</b></div><div class="progress"><span style="width:${Math.min(100, spent / b.limit * 100)}%;background:${spent > b.limit ? '#f16a76' : '#3479f4'}"></span></div></div>`
