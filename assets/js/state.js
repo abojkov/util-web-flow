@@ -133,11 +133,12 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     return convertedWithRates(value, currency, base(), transactionRates(t))
   }
 
-  function inverseTransferQuote(fromCurrency, toCurrency) {
+  function inverseTransferQuote(fromCurrency, toCurrency, directRate = null, sourceRates = exchangeRates()) {
     if (fromCurrency === toCurrency || fromCurrency === base()) return false;
     if (toCurrency === base()) return true;
-    const rates = exchangeRates(), from = rates[fromCurrency], to = rates[toCurrency];
-    return Number.isFinite(from) && from > 0 && Number.isFinite(to) && to > 0 && to < from
+    const from = sourceRates[fromCurrency], to = sourceRates[toCurrency];
+    if (Number.isFinite(from) && from > 0 && Number.isFinite(to) && to > 0) return to < from;
+    return Number.isFinite(directRate) && directRate > 0 && directRate < 1
   }
 
   const formatTransferRate = value => Number.isFinite(value) && value > 0

@@ -290,19 +290,20 @@ function modal(title, body) {
         rateBox.hidden = true;
         rateInput.required = false;
         const transferField = $('#tx-transfer-rate-field'), transferInput = $('#tx-transfer-rate');
-        const inverseRate = inverseTransferQuote(selected?.currency, destination?.currency);
+        const pair = `${selected?.currency}:${destination?.currency}`;
+        const originalPair = t?.type === 'transfer' && t.accountId === selected?.id && t.toAccountId === destination?.id;
+        const historicalRate = originalPair && t.amount > 0 && t.received > 0 ? t.received / t.amount : null;
+        const inverseRate = inverseTransferQuote(selected?.currency, destination?.currency, historicalRate, {...exchangeRates(), ...(t?.exchangeRates || {})});
         let originalReceived = null;
         const editableReceived = Boolean(crossCurrency);
         const receivedInput = $('#tx-received');
         $('#tx-received-field').hidden = !editableReceived;
         receivedInput.required = Boolean(editableReceived);
         $('#tx-received-label').textContent = `Amount received (${destination?.currency || 'destination currency'})`;
-        const pair = `${selected?.currency}:${destination?.currency}`;
         if (transferField && transferInput) {
           transferField.hidden = !crossCurrency;
           transferInput.required = Boolean(crossCurrency);
           if (pair !== lastTransferPair) {
-            const originalPair = t?.type === 'transfer' && t.accountId === selected?.id && t.toAccountId === destination?.id;
             const rates = exchangeRates();
             const sourceRate = rates[selected?.currency], destinationRate = rates[destination?.currency];
             const configuredRate = Number.isFinite(sourceRate) && sourceRate > 0 && Number.isFinite(destinationRate) && destinationRate > 0
@@ -352,6 +353,7 @@ function modal(title, body) {
         $('#tx-to').onchange = updateConversionPreview;
         bindAccountPicker('tx-to');
         $('#tx-transfer-rate').oninput = updateConversionPreview;
+
         $('#tx-received').oninput = updateConversionPreview;
       }
       if (chosen !== 'transfer') {
