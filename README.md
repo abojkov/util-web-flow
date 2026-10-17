@@ -141,7 +141,8 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Each account has one native currency; base reporting currency is configurable (EUR default).
 - Support ISO currencies including EUR, USD, GBP, CHF, MKD, with correct decimal precision.
 - Same-currency transfers automatically receive the sent amount; no received-amount or exchange-rate input or conversion estimate is shown.
-- Cross-currency transfers require an explicit positive rate. EUR pairs always display 1 EUR = X other currency: divide when receiving EUR, multiply when sending EUR. Other pairs use destination units per source unit. For every cross-currency transfer, both exchange rate and received amount are visible, editable, and synchronized in both directions. For transfers into the main currency, editing received recalculates the displayed quote as sent ÷ received; editing the rate recalculates received as sent ÷ rate. Outgoing-main and other pairs use received = sent × rate and rate = received ÷ sent. Received amounts are rounded to two decimal places. The saved transfer preserves both amounts and `transferRate`; reporting rate snapshots remain separate.
+- Cross-currency transfers require a positive rate. Pairs involving the main currency quote 1 main-currency unit = X other units. For other pairs, the currency with the higher unit value (lower valid Settings rate per EUR) is quoted first: MKD ↔ USD uses 1 USD = X MKD in both directions. Without valid reference rates, the quote defaults to destination units per source unit and requires manual entry. Quote orientation is based on Settings, not the entered rate, so editing does not flip the fields.
+- Every cross-currency transfer has editable rate and received fields. When quoting destination currency first, received = sent ÷ rate and rate = sent ÷ received; otherwise received = sent × rate and rate = received ÷ sent. Generated rate text uses up to 10 significant digits without scientific notation; manually entered precision is retained. Received amounts use two decimal places. Existing saved received amounts are preserved when opening/editing/copying, and the stored `transferRate` remains received ÷ sent, independent of display orientation. Reporting snapshots are separate.
 - Editing or copying an existing cross-currency transfer initializes the rate from its stored received/source amounts, preserving historical amounts. New currency pairs prepopulate the editable rate from Settings when available; missing or invalid reference rates leave the field blank.
 - Editing the sent amount retains the entered rate and recalculates the received amount.
 - Transfers do not display a blue conversion/reporting note. Cross-currency exchange-rate and received-amount fields provide the calculation through two-way synchronization; same-currency transfers receive the sent amount automatically. Reporting rate snapshots remain stored for historical calculations.
@@ -462,6 +463,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-17 — Readable non-main-currency transfer quotes
+
+- Non-main pairs now quote the higher-value currency unit first using Settings rates, keeping MKD ↔ USD expressed as 1 USD = X MKD. Main-currency pair conventions remain unchanged. Generated quotes avoid long floating-point tails with 10 significant digits; both directions retain two-way field calculations and authoritative saved received amounts.
+- Verification: JavaScript syntax and focused quote orientation, reciprocal calculations, formatting, historical amount preservation, and save checks passed; browser visual verification remains pending.
 
 ### 2026-10-17 — Transfer fields without duplicate conversion note
 

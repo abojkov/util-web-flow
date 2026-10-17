@@ -290,7 +290,8 @@ function modal(title, body) {
         rateBox.hidden = true;
         rateInput.required = false;
         const transferField = $('#tx-transfer-rate-field'), transferInput = $('#tx-transfer-rate');
-        const inverseRate = destination?.currency === base() && selected?.currency !== base();
+        const inverseRate = inverseTransferQuote(selected?.currency, destination?.currency);
+        let originalReceived = null;
         const editableReceived = Boolean(crossCurrency);
         const receivedInput = $('#tx-received');
         $('#tx-received-field').hidden = !editableReceived;
@@ -308,19 +309,20 @@ function modal(title, body) {
               ? (inverseRate ? sourceRate / destinationRate : destinationRate / sourceRate) : null;
             const initialRate = originalPair && t.amount > 0 && t.received > 0
               ? (inverseRate ? t.amount / t.received : t.received / t.amount) : configuredRate;
-            transferInput.value = Number.isFinite(initialRate) && initialRate > 0 ? initialRate : '';
+            transferInput.value = formatTransferRate(initialRate);
+            if (originalPair && t.amount > 0 && t.received > 0) originalReceived = t.received;
             lastTransferPair = pair
           }
-          $('#tx-transfer-rate-label').textContent = `Exchange rate: 1 ${inverseRate ? base() : selected?.currency || ''} = how many ${inverseRate ? selected?.currency : destination?.currency || ''}?`;
+          $('#tx-transfer-rate-label').textContent = `Exchange rate: 1 ${inverseRate ? destination?.currency || '' : selected?.currency || ''} = how many ${inverseRate ? selected?.currency : destination?.currency || ''}?`;
         }
         if (editableReceived && event?.target === receivedInput) {
           const received = amount(receivedInput.value);
-          transferInput.value = Number.isFinite(received) && received > 0 && Number.isFinite(value) && value > 0 ? (inverseRate ? value / received : received / value) : '';
+          transferInput.value = Number.isFinite(received) && received > 0 && Number.isFinite(value) && value > 0 ? formatTransferRate(inverseRate ? value / received : received / value) : '';
         }
         const rate = decimalValue(transferInput?.value);
         if (event?.target !== receivedInput) {
           const received = amount(inverseRate ? value / rate : value * rate);
-          receivedInput.value = Number.isFinite(rate) && rate > 0 && Number.isFinite(received) && received > 0 ? received : '';
+          receivedInput.value = originalReceived ?? (Number.isFinite(rate) && rate > 0 && Number.isFinite(received) && received > 0 ? received : '');
         }
         box.hidden = true;
         box.textContent = '';
