@@ -6,7 +6,9 @@ function modal(title, body) {
       const body = $('.modal-body');
       const firstField = body?.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)');
       const firstAction = body?.querySelector('button:not(:disabled), [href], input[type="checkbox"]:not(:disabled), input[type="radio"]:not(:disabled)');
-      (firstField || firstAction)?.focus({preventScroll: true})
+      // Keep dialog focus accessible without opening a keyboard or picker on touch devices.
+      const initialFocus = window.matchMedia('(any-pointer: coarse)').matches ? $('#close-modal') : firstField || firstAction;
+      initialFocus?.focus({preventScroll: true})
     })
   }
 

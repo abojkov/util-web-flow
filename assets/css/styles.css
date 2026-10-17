@@ -1801,6 +1801,8 @@
   .rate-input {
     flex: 1;
     min-width: 0;
+    /* Smaller text causes iPhone browsers to zoom when the field receives focus. */
+    font-size: 16px;
     border: 1px solid #e1e9f4;
     border-radius: 9px;
     padding: 9px 10px;

@@ -64,6 +64,7 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 - Mobile-first, optimized for iPhone; fixed bottom navigation on mobile and optional sidebar on desktop.
 - Touch-friendly targets, aligned forms, consistent spacing, responsive modals, accessible labels, clear empty/error/loading states.
 - Double-tap zoom is disabled throughout the app with `touch-action: manipulation`, allowing rapid taps on period arrows while retaining scrolling and pinch-to-zoom. Physical iPhone gesture verification is pending.
+- Settings exchange-rate inputs use 16px text to prevent iPhone focus zoom. On touch devices, dialogs initially focus Close so opening a form does not activate a keyboard or native picker; desktop dialogs retain first-field/action focus. Tapping an editable field still opens its keyboard normally. Physical iPhone verification is pending.
 - Never reintroduce the earlier orange theme or add dark mode without approval.
 
 ## Functional requirements
@@ -382,6 +383,7 @@ Explicitly excluded unless the product owner changes the requirements:
 
 ### Full application scenarios
 
+- [ ] On iPhone, opening Settings or a data-entry dialog does not activate a field/keyboard automatically; tapping an exchange-rate field opens the decimal keyboard without zooming. Desktop dialogs still focus their first field/action.
 - [ ] On iPhone, rapidly tap the previous/next period arrow two or three times: each tap changes the period once without zooming; scrolling and pinch-to-zoom still work.
 - [ ] Opening `index.html` requires no server or internet and loads all local assets.
 - [ ] Fresh install shows no financial records or fake balances.
@@ -465,6 +467,12 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-17 — Prevent form focus zoom on mobile
+
+- Set Settings exchange-rate input text to 16px instead of inheriting the rate row's 12px text.
+- Dialogs initially focus Close on devices with a coarse pointer, avoiding automatic keyboard/picker activation; desktop first-field/action focus is retained. Pinch-to-zoom remains available.
+- Verification: JavaScript syntax, focused dialog focus branches, rate-input style, local asset references, and script ordering checks passed. Physical iPhone focus/keyboard/zoom behavior remains unverified.
 
 ### 2026-10-17 — Prevent double-tap zoom
 
