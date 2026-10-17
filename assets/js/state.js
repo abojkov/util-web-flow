@@ -18,6 +18,7 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
   let state = {
     page: 'home',
     accounts: [],
+    accountsEditing: false,
     transactions: [],
     categories: [],
     budgets: [],

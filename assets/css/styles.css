@@ -1340,6 +1340,12 @@
     gap: 18px
   }
 
+  .account-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px
+  }
+
   .account-group {
     background: #fff;
     border: 1px solid #e9eff8;
@@ -2022,8 +2028,10 @@
     }
 
     .account-row > strong {
-      grid-column: 2 / 4;
-      margin-left: 0
+      grid-column: 3;
+      grid-row: 1;
+      margin-left: 0;
+      align-self: center
     }
 
     .account-actions {
