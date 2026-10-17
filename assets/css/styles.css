@@ -1475,10 +1475,71 @@
     margin-top: 30px
   }
 
-  .account-archive > h3 {
-    color: #53647e;
+  .account-archive > summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    list-style: none;
+    min-height: 44px;
+    padding: 12px 14px;
+    border: 1px solid #d8e5f8;
+    border-radius: 12px;
+    background: #edf4ff;
+    color: #2568ce;
     font-size: 14px;
-    margin: 0 0 12px
+    font-weight: 700
+  }
+
+  .account-archive > summary::-webkit-details-marker {
+    display: none
+  }
+
+  .account-archive > summary::before {
+    content: '›';
+    flex: 0 0 16px;
+    text-align: center;
+    font-size: 24px;
+    line-height: 1
+  }
+
+  .account-archive[open] > summary::before {
+    transform: rotate(90deg)
+  }
+
+  .account-archive > summary:hover {
+    background: #e3eeff;
+    border-color: #aac8f5
+  }
+
+  .account-archive-label {
+    display: grid;
+    gap: 3px
+  }
+
+  .account-archive-label small {
+    font-size: 11px;
+    font-weight: 500;
+    color: #526b94
+  }
+
+  .account-archive-collapse,
+  .account-archive[open] .account-archive-expand {
+    display: none
+  }
+
+  .account-archive[open] .account-archive-collapse {
+    display: inline
+  }
+
+  .account-archive > summary:focus-visible {
+    outline: 3px solid #2568ee;
+    outline-offset: 2px;
+    border-radius: 6px
+  }
+
+  .account-archive[open] > .account-sections {
+    margin-top: 12px
   }
 
   .table-list {

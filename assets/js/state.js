@@ -1,5 +1,5 @@
 // Update this value when releasing a new app version.
-const APP_VERSION = '1.0.3';
+const APP_VERSION = '1.0.4';
 
 const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     today = () => new Date().toLocaleDateString('en-CA'),
@@ -19,6 +19,7 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     page: 'home',
     accounts: [],
     accountsEditing: false,
+    archivedAccountsExpanded: false,
     transactions: [],
     categories: [],
     budgets: [],

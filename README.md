@@ -90,6 +90,7 @@ Supported types: cash, bank, savings, investment, loan, and custom. **Credit car
 Account fields: unique ID, name, type, native currency, opening balance, optional description, icon/color, archived flag, visibility (`visible`, default true), sort order, created/updated timestamps.
 
 - Create, edit, list, archive, and restore accounts.
+- Archived accounts appear in a collapsible section with an account count, closed by default. Its blue outlined header places a rotating chevron beside the label and shows “Tap to expand” / “Tap to collapse” hints, with hover and keyboard-focus feedback. Tap/click its heading (or use Enter/Space when focused) to expand/collapse it. Expansion survives Manage/Done and account updates while on Accounts, and resets when leaving the page or reloading. Expand and enable Manage to access archived editing, sorting, and Restore controls. The section is omitted when no accounts are archived.
 - Accounts open in a clean viewing mode with balances inline beside each account name, including on mobile. The top Manage button switches to management mode, revealing account/type sorting, visibility, editing, and Archive/Restore controls; Done hides them. Add account is always visible in both modes, including an empty list. Hidden/Archived badges remain visible in viewing mode. Management mode survives account changes while on Accounts and resets when leaving the page or reopening the app; it is not stored in backups.
 - Active accounts have configurable visibility. Archived accounts are always hidden: their visibility checkbox is disabled, and archived rows omit both the Hidden badge and eye button. Restoring an account automatically sets it visible, even if it was hidden before archiving. Older/imported archived accounts are treated as hidden regardless of a missing or conflicting `visible` value. Uncheck “Visible in account selectors” in the account create/edit form to hide it from transaction source/destination buttons, account filter dropdowns, and new recurring-schedule account selectors. Accounts without a `visible` field remain visible.
 - Hidden accounts remain listed on Accounts with a compact Hidden badge and crossed-out eye indicator and remain included in active balances, transaction history/search, statistics, budgets, and complete JSON backups. Existing recurring rules continue normally. Recheck the visibility option to show the account again. Each account row also has an eye button immediately before Archive/Restore: click to toggle visibility without confirmation. An eye means visible; a crossed-out eye means hidden. Both controls use the same saved visibility property; archived accounts cannot change visibility until restored.
@@ -384,6 +385,8 @@ Explicitly excluded unless the product owner changes the requirements:
 
 ### Full application scenarios
 
+- [ ] Archived accounts start collapsed, show the correct count, expand/collapse by touch and keyboard, retain expansion through Manage/Done and account updates, and close after navigation away/reload. No section appears without archived accounts.
+
 - [ ] Accounts always show Add account; other management controls are initially hidden. Manage reveals them, Done hides them, and balances stay inline at iPhone widths with long names/large amounts. Verify sorting, visibility, editing, archive/restore in management mode, empty-list creation, and return-to-page reset.
 - [ ] On iPhone, opening Settings or a data-entry dialog does not activate a field/keyboard automatically; tapping an exchange-rate field opens the decimal keyboard without zooming. Desktop dialogs still focus their first field/action.
 - [ ] On iPhone, rapidly tap the previous/next period arrow two or three times: each tap changes the period once without zooming; scrolling and pinch-to-zoom still work.
@@ -469,6 +472,12 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-17 — Collapsible archived accounts
+
+- Moved archived accounts into a native details/summary section with a count, closed by default. The clickable blue outlined header groups its chevron, label, and count together and includes expand/collapse hints plus hover/focus feedback. Expansion is temporary UI state retained during account management and reset on navigation away/reload.
+- Existing inline balances and archived management actions remain available when expanded.
+- Verification: JavaScript syntax, focused collapsed/expanded/empty rendering and state checks, local asset/script-order checks, and diff checks passed. Live browser touch/keyboard/layout and IndexedDB interaction remain unverified.
 
 ### 2026-10-17 — Accounts viewing and management modes
 
