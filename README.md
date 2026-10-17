@@ -167,6 +167,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 
 - Unlimited custom income and expense categories and nested subcategories (one subcategory level initially).
 - Custom names, icons, colors, and ordering.
+- Moving a category up/down preserves the category dialog's scroll position and focuses the moved category's corresponding sort button without scrolling. Subcategory sorting retains its existing inline behavior.
 - Optional editable starter categories; no seeded financial records.
 - Prevent deletion or reassignment from silently corrupting historical records.
 
@@ -385,6 +386,7 @@ Explicitly excluded unless the product owner changes the requirements:
 
 ### Full application scenarios
 
+- [ ] Scroll down in Manage categories and repeatedly move income/expense categories up/down: the dialog retains its scroll position and focus follows the moved category's sort button. Boundary moves do not change order; subcategory sorting still works inline.
 - [ ] Archived accounts start collapsed, show the correct count, expand/collapse by touch and keyboard, retain expansion through Manage/Done and account updates, and close after navigation away/reload. No section appears without archived accounts.
 
 - [ ] Accounts always show Add account; other management controls are initially hidden. Manage reveals them, Done hides them, and balances stay inline at iPhone widths with long names/large amounts. Verify sorting, visibility, editing, archive/restore in management mode, empty-list creation, and return-to-page reset.
@@ -472,6 +474,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-17 — Preserve scroll when sorting categories
+
+- Retained the category dialog's scroll offset after sorting rebuilds it, and restored focus to the moved category's matching sort button with scrolling prevented. Account and subcategory sorting are unchanged.
+- Verification: JavaScript syntax and focused sorting/scroll/focus/boundary checks passed; diff checks passed. Live browser scrolling and IndexedDB persistence remain unverified.
 
 ### 2026-10-17 — Collapsible archived accounts
 

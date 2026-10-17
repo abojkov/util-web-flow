@@ -163,10 +163,19 @@ function modal(title, body) {
     const items = state.categories.filter(c => c.type === current.type).sort(sortByOrderThenName);
     const index = items.findIndex(c => c.id === id), next = index + direction;
     if (next < 0 || next >= items.length) return;
+    const scrollTop = $('.modal-body')?.scrollTop ?? 0;
     [items[index], items[next]] = [items[next], items[index]];
     await Promise.all(items.map((item, sortOrder) => put('categories', {...item, sortOrder})));
     await reload();
-    categoriesModal()
+    categoriesModal();
+    // Rebuilding the dialog replaces its scroll container; retain the user's place.
+    const body = $('.modal-body');
+    if (body) body.scrollTop = scrollTop;
+    requestAnimationFrame(() => {
+      if (!body || body !== $('.modal-body')) return;
+      const button = [...body.querySelectorAll('[data-move-category]')].find(button => button.dataset.moveCategory === id && Number(button.dataset.direction) === direction);
+      button?.focus({preventScroll: true})
+    })
   }
 
   function accountModal(a) {
