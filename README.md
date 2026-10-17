@@ -5,7 +5,7 @@
 **Project status:** Active development
 **Specification version:** 1.0
 **App version:** maintained in `APP_VERSION` at the top of `assets/js/state.js`; Settings reads this constant.
-**Last specification update:** 2026-10-16
+**Last specification update:** 2026-10-17
 **Implementation status:** Not audited against the current local repository. Feature descriptions below are requirements, not assertions that the feature works.
 
 ## Table of contents
@@ -63,6 +63,7 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 - White and pale blue/gray surfaces, clear typography, restrained shadows, rounded cards and controls.
 - Mobile-first, optimized for iPhone; fixed bottom navigation on mobile and optional sidebar on desktop.
 - Touch-friendly targets, aligned forms, consistent spacing, responsive modals, accessible labels, clear empty/error/loading states.
+- Double-tap zoom is disabled throughout the app with `touch-action: manipulation`, allowing rapid taps on period arrows while retaining scrolling and pinch-to-zoom. Physical iPhone gesture verification is pending.
 - Never reintroduce the earlier orange theme or add dark mode without approval.
 
 ## Functional requirements
@@ -381,6 +382,7 @@ Explicitly excluded unless the product owner changes the requirements:
 
 ### Full application scenarios
 
+- [ ] On iPhone, rapidly tap the previous/next period arrow two or three times: each tap changes the period once without zooming; scrolling and pinch-to-zoom still work.
 - [ ] Opening `index.html` requires no server or internet and loads all local assets.
 - [ ] Fresh install shows no financial records or fake balances.
 - [ ] Records persist across reloads on the supported target browser.
@@ -463,6 +465,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-17 — Prevent double-tap zoom
+
+- Added root-level `touch-action: manipulation` so rapid repeated taps, including month navigation, do not trigger double-tap zoom. Scrolling and pinch-to-zoom remain allowed; viewport zoom is unrestricted.
+- Verification: root CSS rule, viewport configuration, JavaScript syntax, local asset references, and script ordering checks passed. Physical iPhone double/triple taps and pinch gestures remain unverified.
 
 ### 2026-10-17 — Remove manual quote reversal
 

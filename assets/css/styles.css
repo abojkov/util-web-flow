@@ -11,6 +11,11 @@
     box-sizing: border-box
   }
 
+  html {
+    /* Allow rapid taps throughout the app while retaining scrolling and pinch zoom. */
+    touch-action: manipulation
+  }
+
   [hidden] {
     display: none !important
   }
