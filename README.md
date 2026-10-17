@@ -167,6 +167,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 
 - Unlimited custom income and expense categories and nested subcategories (one subcategory level initially).
 - Custom names, icons, colors, and ordering.
+- Manage categories constrains its grid to the dialog width. On mobile, compact 30px category icons and 28px-wide sort/edit/delete buttons keep all four actions together on the right in the first row. The name column shrinks and wraps as needed; subcategory chips wrap within the dialog. Desktop sizing and layout are unchanged by these compact mobile styles.
 - Moving a category up/down preserves the category dialog's scroll position and focuses the moved category's corresponding sort button without scrolling. Subcategory sorting retains its existing inline behavior.
 - Optional editable starter categories; no seeded financial records.
 - Prevent deletion or reassignment from silently corrupting historical records.
@@ -386,6 +387,8 @@ Explicitly excluded unless the product owner changes the requirements:
 
 ### Full application scenarios
 
+- [ ] At 320–430px widths, Manage categories keeps New inside the dialog and all four compact category action buttons on the first row at the right, including long category/subcategory names and many subcategories. Check desktop category sizing/layout remains unchanged. Confirm all actions and scroll-preserving sorting still work.
+
 - [ ] Scroll down in Manage categories and repeatedly move income/expense categories up/down: the dialog retains its scroll position and focus follows the moved category's sort button. Boundary moves do not change order; subcategory sorting still works inline.
 - [ ] Archived accounts start collapsed, show the correct count, expand/collapse by touch and keyboard, retain expansion through Manage/Done and account updates, and close after navigation away/reload. No section appears without archived accounts.
 
@@ -474,6 +477,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-17 — Fix category manager mobile overflow
+
+- Constrained category grids to available width and allowed long category names/subcategory chips to wrap. Mobile rows use smaller category icons and compact controls on the first row at the right, with a shrinking/wrapping name column and reduced list padding; desktop sizing is unchanged.
+- Verification: JavaScript syntax, generated category markup/escaping/action-group checks, compact style scoping and row-width checks, local asset/script-order checks, and diff checks passed. Live mobile layout, touch actions, and IndexedDB persistence remain unverified.
 
 ### 2026-10-17 — Preserve scroll when sorting categories
 

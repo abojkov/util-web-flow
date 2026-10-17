@@ -1551,11 +1551,13 @@
 
   .category-manager {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 18px
   }
 
   .category-group {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px
   }
 
@@ -1564,6 +1566,22 @@
     justify-content: space-between;
     align-items: flex-end;
     gap: 14px
+  }
+
+  .category-group-head > div {
+    min-width: 0;
+    overflow-wrap: anywhere
+  }
+
+  .category-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 8px
+  }
+
+  .category-item .tx-main b {
+    white-space: normal;
+    overflow-wrap: anywhere
   }
 
   .category-group-head h3 {
@@ -1601,7 +1619,10 @@
     color: #526681;
     font-size: 11px;
     font-weight: 700;
-    padding: 5px 9px
+    padding: 5px 9px;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere
   }
 
   .inline-field {
@@ -2203,6 +2224,42 @@
 
     .category-group-head .btn {
       flex: 0 0 auto
+    }
+
+    .category-group > .table-list {
+      padding: 0 12px
+    }
+
+    .category-item .transaction {
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr) auto;
+      gap: 8px
+    }
+
+    .category-item .tx-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      font-size: 16px
+    }
+
+    .category-actions {
+      grid-column: 3;
+      grid-row: 1;
+      flex-wrap: nowrap;
+      gap: 3px
+    }
+
+    .category-actions .mini-btn {
+      width: 28px;
+      min-width: 28px;
+      height: 32px;
+      padding: 0;
+      font-size: 14px
+    }
+
+    .subcategory-list {
+      padding-left: 0
     }
 
     .field-row {
