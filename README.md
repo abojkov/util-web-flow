@@ -140,11 +140,11 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 
 - Each account has one native currency; base reporting currency is configurable (EUR default).
 - Support ISO currencies including EUR, USD, GBP, CHF, MKD, with correct decimal precision.
-- Same-currency transfers automatically receive the sent amount; no received-amount or exchange-rate input is shown.
-- Cross-currency transfers require an explicit positive rate. EUR pairs always display 1 EUR = X other currency: divide when receiving EUR, multiply when sending EUR. Other pairs use destination units per source unit. For cross-currency transfers whose destination is not the main currency, both exchange rate and received amount are editable and synchronized in both directions, including EUR → MKD or EUR → another currency when EUR is the main currency. Transfers into the main currency keep the calculated received amount read-only. Received amounts are rounded to two decimal places. The saved transfer preserves both amounts and `transferRate`; reporting rate snapshots remain separate.
+- Same-currency transfers automatically receive the sent amount; no received-amount or exchange-rate input or conversion estimate is shown.
+- Cross-currency transfers require an explicit positive rate. EUR pairs always display 1 EUR = X other currency: divide when receiving EUR, multiply when sending EUR. Other pairs use destination units per source unit. For every cross-currency transfer, both exchange rate and received amount are visible, editable, and synchronized in both directions. For transfers into the main currency, editing received recalculates the displayed quote as sent ÷ received; editing the rate recalculates received as sent ÷ rate. Outgoing-main and other pairs use received = sent × rate and rate = received ÷ sent. Received amounts are rounded to two decimal places. The saved transfer preserves both amounts and `transferRate`; reporting rate snapshots remain separate.
 - Editing or copying an existing cross-currency transfer initializes the rate from its stored received/source amounts, preserving historical amounts. New currency pairs prepopulate the editable rate from Settings when available; missing or invalid reference rates leave the field blank.
 - Editing the sent amount retains the entered rate and recalculates the received amount.
-- The information line includes the main-currency reporting estimate, using the saved historical snapshot when available and Settings otherwise.
+- Transfers do not display a blue conversion/reporting note. Cross-currency exchange-rate and received-amount fields provide the calculation through two-way synchronization; same-currency transfers receive the sent amount automatically. Reporting rate snapshots remain stored for historical calculations.
 - Transfer form changes require no database migration; existing records remain unchanged until explicitly edited and saved.
 - Optional transfer fees remain planned.
 - Manual exchange-rate entry in Settings; automatic rates are not required and must not be fabricated.
@@ -154,6 +154,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - All-accounts current balance estimates convert each active account's current native balance using the current configured rates in Settings.
 - Historical transaction reports use transaction exchange-rate snapshots so old transaction values do not silently change when Settings rates are updated later.
 - Settings show editable local reference rates for currencies used in the app and the conversion formula.
+- Monetary UI values use one shared format: grouped number with two decimal places, followed by the uppercase currency code (for example, `1,234.50 EUR`, `10.00 MKD`). Symbols such as €/$ are not used for formatted amounts. Exchange-rate quotes retain their extra precision and use the same trailing currency-code convention. Stored amounts and CSV/JSON numerical values are unchanged.
 - Preserve original values and historical conversion information.
 - Use integer minor units where appropriate or an exact decimal strategy; avoid ordinary JS floating-point math for money.
 
@@ -461,6 +462,31 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-17 — Transfer fields without duplicate conversion note
+
+- Removed the blue Amount received/Main-currency estimate note from all transfer forms. Exchange-rate and received-amount fields retain defaults, two-way calculations, validation, and saved values. Income/expense reporting previews remain unchanged.
+- Verification: JavaScript syntax and focused hidden-note, field synchronization, transfer save/validation, and ordinary transaction preview checks passed; browser visual verification remains pending.
+
+### 2026-10-17 — Consistent monetary currency formatting
+
+- Standardized the shared formatter to amount followed by uppercase currency code, with two decimals for every currency. This applies to balances, transaction/split amounts, budgets, statistics, recurring entries, and conversion previews. Removed the now-duplicated base currency code from transaction reporting equivalents.
+- Verification: JavaScript syntax, supported-currency/negative/grouping/zero/rounding checks, conversion and transaction rendering checks, and sorting/export regressions passed; browser visual verification remains pending.
+
+### 2026-10-17 — Editable received amount in both transfer directions
+
+- All cross-currency transfers now show an editable received-amount field, including transfers into the main currency. Received edits respect the main-currency quote direction, and saved destination amounts remain authoritative with the stored destination/source rate derived from them. Same-currency transfers still receive the sent amount automatically.
+- Verification: JavaScript syntax and focused incoming/outgoing rate/received synchronization, edit/default, validation, and save checks passed; browser visual verification and IndexedDB reload persistence remain untested.
+
+### 2026-10-17 — Omit redundant main-currency self-conversion
+
+- Cross-currency transfer previews no longer show a main-currency estimate when sending from the main currency (for example, EUR → MKD with EUR reporting). The received amount/calculation remains visible. Sources in another currency retain the reporting estimate; same-currency transfers remain without a preview.
+- Verification: JavaScript syntax and focused source/main-currency, account-switching, received amount, and transfer regression checks passed; browser visual verification remains pending.
+
+### 2026-10-17 — No conversion preview for same-currency transfers
+
+- Removed the redundant main-currency estimate and same-amount notice for transfers between accounts sharing a native currency. Cross-currency previews remain available, including after changing accounts. Saved transfer amounts and reporting snapshots are unchanged.
+- Verification: JavaScript syntax and focused same/cross-currency preview transition and transfer calculation checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Persistent total balance blur
 

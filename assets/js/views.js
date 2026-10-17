@@ -133,7 +133,7 @@ async function reload() {
         currency = a?.currency || 'EUR',
         equivalent = currency !== base() ? money(convertedTransactionAmount(t), base()) : '',
         accountDetail = t.type === 'transfer' ? `${a?.name || 'Unknown account'} → ${account(t.toAccountId)?.name || 'Unknown account'}` : a?.name || 'Unknown account',
-        detail = [accountDetail, t.type !== 'transfer' && categoryName, displayDate(t.date), t.time, equivalent && `${equivalent} ${base()} equivalent`].filter(Boolean).join(' · '),
+        detail = [accountDetail, t.type !== 'transfer' && categoryName, displayDate(t.date), t.time, equivalent && `${equivalent} equivalent`].filter(Boolean).join(' · '),
         descriptionOpen = state.activeTxDescription === t.id,
         descriptionBadge = description ? `<button class="tx-note-badge ${descriptionOpen ? 'open' : ''}" type="button" data-tx-description="${t.id}" aria-expanded="${descriptionOpen ? 'true' : 'false'}">Note</button>` : '',
         descriptionPopover = description && descriptionOpen ? `<div class="tx-note-popover">${escapeHtml(description)}</div>` : '',

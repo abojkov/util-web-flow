@@ -48,11 +48,17 @@ const $ = s => document.querySelector(s), uid = () => crypto.randomUUID(),
     '"': '&quot;',
     "'": '&#39;'
   }[c]));
-  const money = (n, c = 'EUR') => new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: c,
-    maximumFractionDigits: 2
-  }).format(n || 0);
+  const money = (n, c = 'EUR') => {
+    const parts = new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: c,
+      currencyDisplay: 'code',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).formatToParts(n || 0);
+    const value = parts.filter(part => part.type !== 'currency' && part.type !== 'literal').map(part => part.value).join('');
+    return `${value} ${parts.find(part => part.type === 'currency').value}`
+  };
   const fmt = (n, c) => money(n, c);
   const decimalValue = x => Number(String(x ?? '').trim().replace(',', '.'));
   const amount = x => Math.round((decimalValue(x) || 0) * 100) / 100;

@@ -291,7 +291,7 @@ function modal(title, body) {
         rateInput.required = false;
         const transferField = $('#tx-transfer-rate-field'), transferInput = $('#tx-transfer-rate');
         const inverseRate = destination?.currency === base() && selected?.currency !== base();
-        const editableReceived = crossCurrency && destination.currency !== base();
+        const editableReceived = Boolean(crossCurrency);
         const receivedInput = $('#tx-received');
         $('#tx-received-field').hidden = !editableReceived;
         receivedInput.required = Boolean(editableReceived);
@@ -315,21 +315,15 @@ function modal(title, body) {
         }
         if (editableReceived && event?.target === receivedInput) {
           const received = amount(receivedInput.value);
-          transferInput.value = Number.isFinite(received) && received > 0 && Number.isFinite(value) && value > 0 ? received / value : '';
+          transferInput.value = Number.isFinite(received) && received > 0 && Number.isFinite(value) && value > 0 ? (inverseRate ? value / received : received / value) : '';
         }
         const rate = decimalValue(transferInput?.value);
         if (event?.target !== receivedInput) {
           const received = amount(inverseRate ? value / rate : value * rate);
           receivedInput.value = Number.isFinite(rate) && rate > 0 && Number.isFinite(received) && received > 0 ? received : '';
         }
-        const reportingRates = {...exchangeRates(), ...(t?.exchangeRates || {})};
-        const reportingInfo = selected && value > 0
-          ? `Main-currency estimate: ${conversionNoteWithRates(value, selected.currency, base(), reportingRates)}. ` : '';
-        box.hidden = !selected || !(value > 0);
-
-        box.textContent = reportingInfo + (!crossCurrency ? 'The same amount is received.' : Number.isFinite(rate) && rate > 0 && value > 0
-          ? `Amount received: ${money(amount(inverseRate ? value / rate : value * rate), destination.currency)} · ${money(value, selected.currency)} ${inverseRate ? '÷' : '×'} ${rate}. Rounded to two decimal places.`
-          : 'Enter the agreed exchange rate or received amount to calculate the transfer.');
+        box.hidden = true;
+        box.textContent = '';
         return
       }
       if (selected && rateBox && rateInput && rateLabel) {
@@ -455,12 +449,11 @@ function modal(title, body) {
         record.toAccountId = to.id;
         const transferRate = from.currency === to.currency ? 1 : decimalValue(f.get('transferRate'));
         if (!Number.isFinite(transferRate) || transferRate <= 0) return toast('Enter a valid positive exchange rate');
-        const inverseRate = to.currency === base() && from.currency !== base();
-        const editableReceived = from.currency !== to.currency && to.currency !== base();
-        record.received = editableReceived ? amount(f.get('received')) : amount(inverseRate ? v / transferRate : v * transferRate);
+        const crossCurrency = from.currency !== to.currency;
+        record.received = crossCurrency ? amount(f.get('received')) : v;
         if (!Number.isFinite(record.received) || record.received <= 0) return toast('The calculated amount received must be positive and finite');
         // Keep the stored rate in destination units per source unit for compatibility.
-        record.transferRate = editableReceived ? record.received / v : inverseRate ? 1 / transferRate : transferRate;
+        record.transferRate = crossCurrency ? record.received / v : 1;
         record.exchangeRates = rateSnapshotForCurrencies([from.currency, to.currency, base()], {...exchangeRates(), ...record.exchangeRates})
       } else {
         const validCategory = selection => {
