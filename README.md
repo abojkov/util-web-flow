@@ -263,7 +263,7 @@ Schema details are illustrative, not authoritative. Prefer indexed lookups on da
 - HTML5, CSS3, vanilla JavaScript, IndexedDB.
 - No framework, bundler, backend, external CDN, or runtime network dependency.
 - Optional **development-only** formatting via Prettier (`npm install` then `npm run format`). This does not affect opening `index.html` directly and is not required to run the app.
-- The app must be **directly openable via `index.html`**, without a local HTTP server.
+- `index.html` is the sole application entry page and must be **directly openable**, without a local HTTP server.
 - For `file://` compatibility, avoid ES module imports; use classic scripts in a documented dependency order.
 - Separate database operations, financial domain logic, UI rendering, and event handling into maintainable files.
 - Keep all assets local, and avoid accidental network requests.
@@ -478,6 +478,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-21 — Remove obsolete entry page
+
+- Removed `flow-money-manager-offline.html`, the unused older entry page with the previous logo. Use `index.html`, which loads the local application assets and current logo.
+- Verification: no application references to the removed page; local asset existence, script dependency order, JavaScript syntax, and diff checks passed. Browser behavior and IndexedDB persistence were not retested.
 
 ### 2026-10-21 — Add Prettier formatting and multiline view templates
 
