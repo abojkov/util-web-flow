@@ -1,0 +1,5 @@
+node_modules/
+.git/
+.idea/
+imports/
+flow-money-manager-offline.html

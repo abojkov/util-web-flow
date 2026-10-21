@@ -49,13 +49,13 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 
 ### Main navigation
 
-| Tab | Purpose |
-| --- | --- |
-| Home | Balance overview, monthly cash flow, quick actions, spending chart, recent transactions |
-| Transactions | Add/edit/delete, chronological history, calendar, search and filters |
-| Statistics | Spending distribution, income/expense comparisons, trends and reports |
-| Accounts | Balances, account creation/editing, archiving and restoration |
-| More | Categories, budgets, recurring rules, currencies, security, import/export, settings |
+| Tab          | Purpose                                                                                 |
+| ------------ | --------------------------------------------------------------------------------------- |
+| Home         | Balance overview, monthly cash flow, quick actions, spending chart, recent transactions |
+| Transactions | Add/edit/delete, chronological history, calendar, search and filters                    |
+| Statistics   | Spending distribution, income/expense comparisons, trends and reports                   |
+| Accounts     | Balances, account creation/editing, archiving and restoration                           |
+| More         | Categories, budgets, recurring rules, currencies, security, import/export, settings     |
 
 ### Visual direction
 
@@ -97,7 +97,7 @@ Account fields: unique ID, name, type, native currency, opening balance, optiona
 - Editing or copying a transaction retains its assigned hidden account in the collapsed field without offering that account among selectable buttons. If every active account is hidden, new transaction/schedule creation explains that an account must be made visible. A filter pointing at an account that becomes hidden resets to All accounts.
 - Visibility adds an optional account property; no IndexedDB version change or destructive migration is required.
 - Accounts are grouped by account type and can be reordered within each type group. Group headers also have up/down controls to reorder account types. Type order is shared by active and archived sections, saved in the `accountTypeOrder` setting, and preserved by complete JSON backups. Moves swap with the neighboring displayed group; boundary controls are disabled. Individual accounts also disable Move up on the first row and Move down on the last row within each active/archived type group; single-account groups disable both. Account pickers, dropdowns, and account summaries use the same type order first, then saved account `sortOrder` within each type, with alphabetical ties. Accounts without a saved `sortOrder` follow ordered accounts within their type. Without a saved type order, the existing Cash, Bank, Savings, Investment, Loan, Other order is used; new/custom types follow deterministically.
-- An archived account is not available for new ordinary transactions and is excluded from the current *active-account* total by default; historical transactions and reports remain available.
+- An archived account is not available for new ordinary transactions and is excluded from the current _active-account_ total by default; historical transactions and reports remain available.
 - Prevent unsafe deletion of accounts referenced by transactions.
 - Account balance is derived from opening balance and transaction ledger; **no manual balance adjustment feature**.
 - Investment accounts initially record manual cash flows, not live market values.
@@ -107,10 +107,10 @@ Account fields: unique ID, name, type, native currency, opening balance, optiona
 
 Three types:
 
-| Type | Effect |
-| --- | --- |
-| Income | Increase selected account balance; count toward income reporting |
-| Expense | Decrease selected account balance; count toward expense reporting and relevant budgets |
+| Type     | Effect                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------ |
+| Income   | Increase selected account balance; count toward income reporting                           |
+| Expense  | Decrease selected account balance; count toward expense reporting and relevant budgets     |
 | Transfer | Decrease source and increase destination; exclude from ordinary income/expense and budgets |
 
 Core fields: ID, type, amount, date, time, source account, optional destination account and received amount, category/subcategory where applicable, payee, description, optional attachment references, created/updated timestamps.
@@ -261,7 +261,8 @@ Schema details are illustrative, not authoritative. Prefer indexed lookups on da
 ## Technical architecture
 
 - HTML5, CSS3, vanilla JavaScript, IndexedDB.
-- No framework, bundler, npm install, backend, external CDN, or runtime network dependency.
+- No framework, bundler, backend, external CDN, or runtime network dependency.
+- Optional **development-only** formatting via Prettier (`npm install` then `npm run format`). This does not affect opening `index.html` directly and is not required to run the app.
 - The app must be **directly openable via `index.html`**, without a local HTTP server.
 - For `file://` compatibility, avoid ES module imports; use classic scripts in a documented dependency order.
 - Separate database operations, financial domain logic, UI rendering, and event handling into maintainable files.
@@ -334,29 +335,29 @@ Explicitly excluded unless the product owner changes the requirements:
 
 **Important:** This tracker begins conservatively because the current local Git code has not been audited. An agent must inspect and test the implementation before changing a feature to `Implemented`.
 
-| ID | Area | Feature | Status | Verification notes |
-| --- | --- | --- | --- | --- |
-| F01 | Foundation | Direct-open offline HTML application | Planned | Verify on target browsers |
-| F02 | Foundation | Modular CSS and JavaScript | Planned | Inspect script order |
-| F03 | Foundation | Versioned IndexedDB persistence | Planned | Reload and migration tests |
-| F04 | Design | Responsive premium blue light UI | Planned | Mobile and desktop review |
-| F05 | Navigation | Five primary sections | Planned | All routes/actions functional |
-| F06 | Accounts | Create/edit accounts and opening balances | Planned | Balance tests |
-| F07 | Accounts | Archive and restore accounts | Planned | Historical data preserved |
-| F08 | Currency | Native currencies and base reporting currency | Planned | Rate handling verified |
-| F09 | Currency | Cross-currency transfers | Planned | Both ledger sides verified |
-| F10 | Transactions | Income, expenses, transfers CRUD | Planned | CRUD and totals tested |
-| F11 | Transactions | Split transactions | Planned | Exact allocation sums |
-| F12 | Transactions | History, calendar, search and filters | Planned | Date/filter edge cases |
-| F13 | Categories | Custom categories, subcategories, icons, colors | In progress | Reference safety |
-| F14 | Budgets | Overall and category monthly budgets | Planned | No carry-over |
-| F15 | Recurring | Recurring income and expenses | Planned | Idempotent catch-up |
-| F16 | Statistics | Donut, bar, trends, drilldowns | Planned | Reconcile with ledger |
-| F17 | Data | Complete JSON backup and restore | Planned | Round-trip test |
-| F18 | Data | CSV export and import | Planned | Mapping/duplicates |
-| F19 | Security | Optional PIN lock | Planned | Clear security limitations |
-| F20 | Quality | Error states, accessibility, responsive QA | Planned | Browser verification |
-| F21 | Accounts | Account visibility | Partial — focused checks passed | Browser hide/show, reload and restore checks pending |
+| ID  | Area         | Feature                                         | Status                          | Verification notes                                   |
+| --- | ------------ | ----------------------------------------------- | ------------------------------- | ---------------------------------------------------- |
+| F01 | Foundation   | Direct-open offline HTML application            | Planned                         | Verify on target browsers                            |
+| F02 | Foundation   | Modular CSS and JavaScript                      | Planned                         | Inspect script order                                 |
+| F03 | Foundation   | Versioned IndexedDB persistence                 | Planned                         | Reload and migration tests                           |
+| F04 | Design       | Responsive premium blue light UI                | Planned                         | Mobile and desktop review                            |
+| F05 | Navigation   | Five primary sections                           | Planned                         | All routes/actions functional                        |
+| F06 | Accounts     | Create/edit accounts and opening balances       | Planned                         | Balance tests                                        |
+| F07 | Accounts     | Archive and restore accounts                    | Planned                         | Historical data preserved                            |
+| F08 | Currency     | Native currencies and base reporting currency   | Planned                         | Rate handling verified                               |
+| F09 | Currency     | Cross-currency transfers                        | Planned                         | Both ledger sides verified                           |
+| F10 | Transactions | Income, expenses, transfers CRUD                | Planned                         | CRUD and totals tested                               |
+| F11 | Transactions | Split transactions                              | Planned                         | Exact allocation sums                                |
+| F12 | Transactions | History, calendar, search and filters           | Planned                         | Date/filter edge cases                               |
+| F13 | Categories   | Custom categories, subcategories, icons, colors | In progress                     | Reference safety                                     |
+| F14 | Budgets      | Overall and category monthly budgets            | Planned                         | No carry-over                                        |
+| F15 | Recurring    | Recurring income and expenses                   | Planned                         | Idempotent catch-up                                  |
+| F16 | Statistics   | Donut, bar, trends, drilldowns                  | Planned                         | Reconcile with ledger                                |
+| F17 | Data         | Complete JSON backup and restore                | Planned                         | Round-trip test                                      |
+| F18 | Data         | CSV export and import                           | Planned                         | Mapping/duplicates                                   |
+| F19 | Security     | Optional PIN lock                               | Planned                         | Clear security limitations                           |
+| F20 | Quality      | Error states, accessibility, responsive QA      | Planned                         | Browser verification                                 |
+| F21 | Accounts     | Account visibility                              | Partial — focused checks passed | Browser hide/show, reload and restore checks pending |
 
 ### Release phases
 
@@ -445,25 +446,25 @@ Before treating any feature as complete, ask Codex:
 
 ### Confirmed decisions
 
-| Decision | Choice |
-| --- | --- |
-| App name | Flow |
-| Design | Blue and white, light only |
-| Runtime | Direct-open local HTML, no server |
-| Stack | Vanilla HTML/CSS/JS + IndexedDB |
-| Default base currency | EUR |
-| Accounts | Cash, bank, savings, investment, loan, custom |
-| Credit cards | Excluded |
-| Account archiving | Included |
-| Manual balance adjustments | Excluded |
-| Split income/expenses | Included |
-| Category icons/colors | Included |
-| Recurring income/expenses | Included |
-| Monthly budget carry-over | Excluded |
-| Dedicated net worth | Excluded initially |
-| Backups | JSON backup/restore + CSV import/export |
-| App lock | Optional PIN |
-| Navigation | Home, Transactions, Statistics, Accounts, More |
+| Decision                   | Choice                                         |
+| -------------------------- | ---------------------------------------------- |
+| App name                   | Flow                                           |
+| Design                     | Blue and white, light only                     |
+| Runtime                    | Direct-open local HTML, no server              |
+| Stack                      | Vanilla HTML/CSS/JS + IndexedDB                |
+| Default base currency      | EUR                                            |
+| Accounts                   | Cash, bank, savings, investment, loan, custom  |
+| Credit cards               | Excluded                                       |
+| Account archiving          | Included                                       |
+| Manual balance adjustments | Excluded                                       |
+| Split income/expenses      | Included                                       |
+| Category icons/colors      | Included                                       |
+| Recurring income/expenses  | Included                                       |
+| Monthly budget carry-over  | Excluded                                       |
+| Dedicated net worth        | Excluded initially                             |
+| Backups                    | JSON backup/restore + CSV import/export        |
+| App lock                   | Optional PIN                                   |
+| Navigation                 | Home, Transactions, Statistics, Accounts, More |
 
 ### Open questions requiring a future decision
 
@@ -477,6 +478,14 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-21 — Add Prettier formatting and multiline view templates
+
+- Added `.prettierrc.json`, `.prettierignore`, and a dev-only `package.json` with `format` / `format:check` scripts.
+- Settings: 2-space indent, single quotes, no semicolons, 100-character print width, and embedded HTML/CSS formatting in template literals where Prettier can infer structure.
+- Refactored `assets/js/views.js` HTML template literals to multiline form. Prettier does not break single-line HTML strings automatically; multiline templates are required for readable markup and stable formatting on save.
+- Ran Prettier across JS, CSS, HTML, and Markdown sources. Runtime app behavior is unchanged; `node_modules/` is gitignored.
+- Verification: JavaScript syntax checks and `npm run format:check` passed. Browser regression testing was not run.
 
 ### 2026-10-17 — Fix category manager mobile overflow
 
