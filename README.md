@@ -65,7 +65,7 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 - Touch-friendly targets, aligned forms, consistent spacing, responsive modals, accessible labels, clear empty/error/loading states.
 - Double-tap zoom is disabled throughout the app with `touch-action: manipulation`, allowing rapid taps on period arrows while retaining scrolling and pinch-to-zoom. Physical iPhone gesture verification is pending.
 - Settings exchange-rate inputs use 16px text to prevent iPhone focus zoom. On touch devices, dialogs initially focus Close so opening a form does not activate a keyboard or native picker; desktop dialogs retain first-field/action focus. Tapping an editable field still opens its keyboard normally. Physical iPhone verification is pending.
-- Settings refreshes after changing the base currency, adding a currency, saving/resetting rates or applying synced rates preserve the current dialog scroll position and focused control. Opening Settings initially keeps normal dialog focus behavior.
+- Settings updates happen in place after changing the base currency, adding a currency, saving/resetting rates or applying synced rates. The modal body and existing inputs remain mounted, preserving scroll, focus and unfinished edits in unrelated fields. Adding a currency inserts one sorted rate row and clears only the Add currency fields. Explicit rate save/reset actions update only their affected fields. Opening Settings initially keeps normal dialog focus behavior.
 - Settings uses distinct reporting, synchronization/rates, Add currency, Backups and Reset app sections. Use 24px between sections, 12px between control groups and 4px between a section heading and description. The dialog title remains in the modal header; section headings use a smaller 16px style.
 - Never reintroduce the earlier orange theme or add dark mode without approval.
 
@@ -535,6 +535,12 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Update Settings controls in place
+
+- Replaced ordinary Settings rebuilds and full database reloads with targeted updates after base-currency changes, adding currencies, saving/resetting rates and applying synced rates. Already committed Settings values remain the source for the background dashboard render.
+- Retained existing rate input nodes and their unfinished edits; added currencies insert a sorted row without replacing the rate list. Only explicit saves/resets replace affected edits. Successful currency creation clears its own fields. Background sync uses the same updater and retained inputs receive number-input listeners only once.
+- Verification: 19 automated currency tests passed, including unchanged modal/input identity, scroll/focus, dirty-value/caret/draft preservation, sorted row insertion and no duplicate listeners. Syntax, assets/script order, formatting and diff checks passed. Live browser scrolling, caret behavior and persistence were not retested.
 
 ### 2026-10-22 — Preserve Settings scroll during updates
 

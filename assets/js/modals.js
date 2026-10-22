@@ -32,6 +32,8 @@ function modal(title, body, { restoreView = null } = {}) {
 
 function bindModalNumberInputs() {
   document.querySelectorAll('.modal input[data-decimal-input]').forEach(input => {
+    if (input.dataset.decimalInputsBound) return
+    input.dataset.decimalInputsBound = 'true'
     input.addEventListener(
       'wheel',
       e => {
@@ -79,15 +81,13 @@ function currencyOptions(current) {
     .join('')
 }
 
-function exchangeRateRows() {
+function exchangeRateRow(currency) {
   const configured = exchangeRates()
-  const editable = availableCurrencies()
-  return editable
-    .map(
-      currency =>
-        `<div class="rate-row"><label><span>${currency}</span><small>1 EUR =</small><small data-currency-rate-source="${currency}">${currencyRateSource(currency)}</small></label><input class="rate-input" data-original-rate="${configured[currency] ?? ''}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`
-    )
-    .join('')
+  return `<div class="rate-row" data-rate-currency="${currency}"><label><span>${currency}</span><small>1 EUR =</small><small data-currency-rate-source="${currency}">${currencyRateSource(currency)}</small></label><input class="rate-input" data-original-rate="${configured[currency] ?? ''}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`
+}
+
+function exchangeRateRows() {
+  return availableCurrencies().map(exchangeRateRow).join('')
 }
 
 function payeeAutocompleteInput(value = '', id = 'payee-input') {
@@ -1064,7 +1064,8 @@ function updateAddCurrencyOptions() {
   if (!select) return
   const codes = syncedCurrenciesToAdd()
   const selected = select.value
-  select.innerHTML = `<option value="">Select</option>${codes.map(code => `<option value="${code}">${code}</option>`).join('')}`
+  const options = `<option value="">Select</option>${codes.map(code => `<option value="${code}">${code}</option>`).join('')}`
+  if (select.innerHTML !== options) select.innerHTML = options
   select.value = codes.includes(selected) ? selected : ''
   select.disabled = !codes.length
   const hint = $('#new-currency-hint')
@@ -1075,6 +1076,44 @@ function updateAddCurrencyOptions() {
         : codes.length
           ? 'Choose a currency from the synced list. Leave the rate blank to use its synced rate or enter a manual override. Amounts currently use two decimal places.'
           : 'All currencies from the cached sync list are already available. Sync again to check for new currencies.'
+}
+
+function reportingCurrencyNotice() {
+  return `Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Synced and manual reference rates are saved on this device for offline use. Your bank or exchange provider may apply a different rate.`
+}
+
+function refreshSettingsCurrencyControls({ savedCodes = [] } = {}) {
+  const content = $('.settings-content')
+  if (!content?.querySelector) return
+  const codes = availableCurrencies()
+  const select = content.querySelector('#base-currency')
+  if ([...select.options].map(option => option.value).join() !== codes.join()) {
+    const selected = select.value
+    select.innerHTML = currencyOptions(selected)
+    select.value = selected
+  }
+  content.querySelector('#base-currency-notice').textContent = reportingCurrencyNotice()
+  const list = content.querySelector('.rate-list')
+  for (const code of codes) {
+    if (list.querySelector(`[data-rate-currency="${code}"]`)) continue
+    const nextRow = [...list.children].find(row => row.dataset.rateCurrency > code)
+    if (nextRow) nextRow.insertAdjacentHTML('beforebegin', exchangeRateRow(code))
+    else list.insertAdjacentHTML('beforeend', exchangeRateRow(code))
+  }
+  const rates = exchangeRates()
+  for (const input of list.querySelectorAll('.rate-input')) {
+    // Preserve dirty fields except those explicitly saved or reset by this action.
+    if (
+      savedCodes.includes(input.name) ||
+      decimalValue(input.value) === Number(input.dataset.originalRate)
+    ) {
+      const value = String(rates[input.name] ?? '')
+      if (input.value !== value) input.value = value
+      input.dataset.originalRate = value
+    }
+  }
+  bindModalNumberInputs()
+  updateCurrencySyncStatus()
 }
 
 function settingsModal() {
@@ -1090,7 +1129,7 @@ function settingsModal() {
           <label for="base-currency">Base currency</label>
           <select id="base-currency">${currencyOptions(base())}</select>
         </div>
-        <div class="notice">Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Synced and manual reference rates are saved on this device for offline use. Your bank or exchange provider may apply a different rate.</div>
+        <div class="notice" id="base-currency-notice">${reportingCurrencyNotice()}</div>
       </section>
 
       <section class="settings-section" aria-labelledby="currency-sync-heading">
@@ -1183,8 +1222,10 @@ function settingsModal() {
           ...new Set([...manualCurrencyCodes(), ...(manualRate ? [code] : [])]),
         ],
       })
-      await reload()
-      settingsModal()
+      render()
+      refreshSettingsCurrencyControls()
+      form.elements.code.value = ''
+      form.elements.rate.value = ''
       toast(`${code} added. It is now available for accounts and reporting.`)
     } catch (error) {
       console.error(error)
@@ -1210,8 +1251,10 @@ function settingsModal() {
     for (const code of Object.keys(next)) if (cached[code]) next[code] = cached[code]
     try {
       await saveCurrencySettings({ exchangeRates: next, manualCurrencyCodes: manual })
-      await reload()
-      settingsModal()
+      render()
+      refreshSettingsCurrencyControls({
+        savedCodes: Object.keys(next).filter(code => cached[code]),
+      })
       toast('Supported currencies now use synced rates. Other manual rates are preserved.')
     } catch (error) {
       toast('Could not apply synced rates. Please try again.')
@@ -1225,9 +1268,9 @@ function settingsModal() {
         'Cannot use this reporting currency: a configured or historical transaction rate is missing.'
       )
     }
-    await put('settings', { id: 'baseCurrency', value: e.target.value })
-    await reload()
-    settingsModal()
+    await saveCurrencySettings({ baseCurrency: e.target.value })
+    render()
+    refreshSettingsCurrencyControls()
   }
   $('#rates-form').onsubmit = async e => {
     e.preventDefault()
@@ -1244,8 +1287,10 @@ function settingsModal() {
     }
     next.EUR = 1
     await saveCurrencySettings({ exchangeRates: next, manualCurrencyCodes: [...manual] })
-    await reload()
-    settingsModal()
+    render()
+    refreshSettingsCurrencyControls({
+      savedCodes: [...e.target.querySelectorAll('.rate-input')].map(input => input.name),
+    })
     toast('Exchange rates saved')
   }
   $('#reset-rates').onclick = async () => {
@@ -1253,8 +1298,8 @@ function settingsModal() {
       exchangeRates: { ...exchangeRates(), ...defaultRates },
       manualCurrencyCodes: manualCurrencyCodes(),
     })
-    await reload()
-    settingsModal()
+    render()
+    refreshSettingsCurrencyControls({ savedCodes: Object.keys(defaultRates) })
     toast('Starter rates reset. Custom currency rates preserved.')
   }
   $('#export-json').onclick = async () => {

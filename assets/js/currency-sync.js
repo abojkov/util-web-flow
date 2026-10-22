@@ -142,12 +142,7 @@ async function syncCurrencyRates() {
         lastDate: rateDate,
       },
     })
-    for (const input of document.querySelectorAll('#rates-form .rate-input')) {
-      if (decimalValue(input.value) === Number(input.dataset.originalRate)) {
-        input.value = exchangeRates()[input.name] ?? ''
-        input.dataset.originalRate = input.value
-      }
-    }
+    if (typeof refreshSettingsCurrencyControls === 'function') refreshSettingsCurrencyControls()
     // Avoid rebuilding an open form and losing unsaved edits.
     if (!$('#modal-root')?.innerHTML) render()
   } catch (error) {
