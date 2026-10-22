@@ -65,6 +65,7 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 - Touch-friendly targets, aligned forms, consistent spacing, responsive modals, accessible labels, clear empty/error/loading states.
 - Double-tap zoom is disabled throughout the app with `touch-action: manipulation`, allowing rapid taps on period arrows while retaining scrolling and pinch-to-zoom. Physical iPhone gesture verification is pending.
 - Settings exchange-rate inputs use 16px text to prevent iPhone focus zoom. On touch devices, dialogs initially focus Close so opening a form does not activate a keyboard or native picker; desktop dialogs retain first-field/action focus. Tapping an editable field still opens its keyboard normally. Physical iPhone verification is pending.
+- Settings refreshes after changing the base currency, adding a currency, saving/resetting rates or applying synced rates preserve the current dialog scroll position and focused control. Opening Settings initially keeps normal dialog focus behavior.
 - Settings uses distinct reporting, synchronization/rates, Add currency, Backups and Reset app sections. Use 24px between sections, 12px between control groups and 4px between a section heading and description. The dialog title remains in the modal header; section headings use a smaller 16px style.
 - Never reintroduce the earlier orange theme or add dark mode without approval.
 
@@ -534,6 +535,12 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Preserve Settings scroll during updates
+
+- Settings refreshes now retain their scroll offset and focused action instead of returning to the top after rate reset/save, applying synced rates, adding a currency or changing the reporting currency.
+- Added stable submit-control IDs and prevented queued focus callbacks from affecting a replaced/closed dialog. Initial opening still uses normal dialog focus behavior.
+- Verification: automated Settings refresh/scroll/focus and stale-dialog checks plus currency regression tests, JavaScript syntax, formatting and diff checks passed. Physical browser scrolling and persistence were not retested.
 
 ### 2026-10-22 — EUR-only starter currency
 

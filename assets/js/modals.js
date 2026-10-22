@@ -1,10 +1,21 @@
-function modal(title, body) {
+function modal(title, body, { restoreView = null } = {}) {
   $('#modal-root').innerHTML =
     `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${title}</h2><button class="close" id="close-modal" aria-label="Close">×</button></div><div class="modal-body">${body}</div></div></div>`
   $('#close-modal').onclick = closeModal
   bindModalNumberInputs()
+  const modalBody = $('.modal-body')
   requestAnimationFrame(() => {
-    const body = $('.modal-body')
+    // Ignore focus work queued for a dialog that has since been replaced or closed.
+    if ($('.modal-body') !== modalBody) return
+    const body = modalBody
+    if (restoreView) {
+      const focused = restoreView.focusId ? document.getElementById(restoreView.focusId) : null
+      const target =
+        focused && body.contains(focused) && !focused.disabled ? focused : $('#close-modal')
+      target?.focus({ preventScroll: true })
+      body.scrollTop = restoreView.scrollTop
+      return
+    }
     const firstField = body?.querySelector(
       'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)'
     )
@@ -1067,6 +1078,10 @@ function updateAddCurrencyOptions() {
 }
 
 function settingsModal() {
+  const previousBody = $('.modal-body')
+  const restoreView = previousBody?.querySelector?.('.settings-content')
+    ? { scrollTop: previousBody.scrollTop, focusId: document.activeElement?.id }
+    : null
   modal(
     'Settings & backup',
     `<div class="settings-content">
@@ -1094,7 +1109,7 @@ function settingsModal() {
           <div class="rate-list">${exchangeRateRows()}</div>
           <div class="settings-actions">
             <button type="button" class="btn ghost" id="reset-rates">Reset starter rates</button>
-            <button class="btn secondary" type="submit">Save rates</button>
+            <button class="btn secondary" type="submit" id="save-rates">Save rates</button>
           </div>
         </form>
       </section>
@@ -1115,7 +1130,7 @@ function settingsModal() {
           </div>
         </div>
         <div class="settings-actions">
-          <button class="btn secondary" type="submit">Add currency</button>
+          <button class="btn secondary" type="submit" id="add-currency-submit">Add currency</button>
         </div>
       </form>
 
@@ -1140,7 +1155,8 @@ function settingsModal() {
         <button type="button" class="btn danger" id="reset-all-data">Reset all data</button>
       </section>
     </div>
-    <p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`
+    <p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`,
+    { restoreView }
   )
   updateAddCurrencyOptions()
   $('#add-currency-form').onsubmit = async e => {

@@ -425,3 +425,133 @@ test('resetting starter rates leaves an enabled automatic USD rate unchanged', a
   assert.equal(s.run('exchangeRates().USD'), 1.2)
   assert.equal(s.run("manualCurrencyCodes().includes('USD')"), false)
 })
+
+function scrollingSettings() {
+  const s = setup()
+  const frames = []
+  let body = null,
+    html = '',
+    controls = new Map(),
+    focusCalls = []
+  const root = {
+    get innerHTML() {
+      return html
+    },
+    set innerHTML(value) {
+      html = value
+      controls = new Map(
+        [...value.matchAll(/<([a-z-]+)[^>]*\bid="([^"]+)"/g)].map(([, tag, id]) => [
+          id,
+          {
+            id,
+            tag,
+            disabled: false,
+            focus(options) {
+              focusCalls.push({ id, options })
+              s.context.document.activeElement = this
+            },
+          },
+        ])
+      )
+      body = value
+        ? {
+            scrollTop: 0,
+            contains: node => controls.get(node.id) === node && node.id !== 'close-modal',
+            querySelector: selector =>
+              selector === '.settings-content'
+                ? html.includes('class="settings-content"')
+                  ? {}
+                  : null
+                : [...controls.values()].find(node => ['input', 'select'].includes(node.tag)),
+          }
+        : null
+    },
+  }
+  Object.assign(s.context.document, {
+    querySelector: selector =>
+      selector === '#modal-root'
+        ? root
+        : selector === '.modal-body'
+          ? body
+          : controls.get(selector.slice(1)) || null,
+    getElementById: id => controls.get(id) || null,
+  })
+  Object.assign(s.context, {
+    requestAnimationFrame: callback => frames.push(callback),
+    window: { matchMedia: () => ({ matches: false }) },
+    reload: async () => {},
+    toast() {},
+    put: async (store, item) => {
+      s.context.item = item
+      s.run('state.settings=state.settings.filter(s=>s.id!==item.id).concat([item])')
+    },
+  })
+  vm.runInContext(source('modals'), s.context)
+  s.context.toast = () => {}
+  return {
+    ...s,
+    body: () => body,
+    root,
+    control: id => controls.get(id),
+    focusCalls: () => focusCalls,
+    flush: () => {
+      while (frames.length) frames.shift()()
+    },
+  }
+}
+
+test('Settings actions preserve scroll and focus after replacing the modal body', async () => {
+  for (const action of [
+    'reset-rates',
+    'use-synced-rates',
+    'add-currency-submit',
+    'save-rates',
+    'base-currency',
+  ]) {
+    const s = scrollingSettings()
+    await s.context.syncCurrencyRates()
+    s.run('settingsModal()')
+    s.flush()
+    assert.equal(s.body().scrollTop, 0)
+    assert.equal(s.focusCalls().at(-1).id, 'base-currency')
+    const oldBody = s.body()
+    oldBody.scrollTop = 537
+    s.context.document.activeElement = s.control(action)
+    if (action === 'add-currency-submit') {
+      const button = s.control(action)
+      await s.control('add-currency-form').onsubmit({
+        preventDefault() {},
+        target: {
+          elements: { code: { value: 'CAD' }, rate: { value: '' } },
+          querySelector: () => button,
+        },
+      })
+    } else if (action === 'save-rates') {
+      await s
+        .control('rates-form')
+        .onsubmit({ preventDefault() {}, target: { querySelectorAll: () => [] } })
+    } else if (action === 'base-currency') {
+      await s.control(action).onchange({ target: { value: 'EUR' } })
+    } else await s.control(action).onclick()
+    assert.notEqual(s.body(), oldBody, action)
+    s.flush()
+    assert.equal(s.body().scrollTop, 537, action)
+    assert.equal(s.focusCalls().at(-1).id, action)
+    assert.equal(s.focusCalls().at(-1).options.preventScroll, true)
+  }
+})
+
+test('queued focus for a replaced or closed dialog cannot affect its successor', () => {
+  const s = scrollingSettings()
+  s.run('settingsModal();settingsModal()')
+  s.flush()
+  assert.equal(s.focusCalls().length, 1)
+  s.run('settingsModal();closeModal()')
+  s.flush()
+  assert.equal(s.focusCalls().length, 1)
+  s.context.window.matchMedia = () => ({ matches: true })
+  s.run('settingsModal()')
+  s.flush()
+  assert.equal(s.body().scrollTop, 0)
+  assert.equal(s.focusCalls().at(-1).id, 'close-modal')
+})
