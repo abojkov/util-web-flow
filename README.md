@@ -287,6 +287,7 @@ Schema details are illustrative, not authoritative. Prefer indexed lookups on da
 - No framework, bundler, backend or external CDN. Core financial features have no runtime network dependency; optional currency synchronization uses a public HTTPS API.
 - Optional **development-only** formatting via Prettier (`npm install` then `npm run format`). This does not affect opening `index.html` directly and is not required to run the app.
 - `index.html` is the sole application entry page and must be **directly openable**, without a local HTTP server.
+- Page metadata includes a description, canonical URL, Open Graph website tags and a large-image Twitter/X card. Preview URLs use `https://flow.aboykov.com/` from `CNAME` with the local `og-image.png` asset (1672 × 941), image type and descriptive alternative text. Social previews require the page and image to be publicly deployed; metadata does not add runtime network requests or affect direct-file use.
 - For `file://` compatibility, avoid ES module imports; use classic scripts in a documented dependency order.
 - Separate database operations, financial domain logic, UI rendering and event handling into maintainable files.
 - Keep all assets local. The only runtime network request is optional currency-rate synchronization.
@@ -564,6 +565,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Social preview metadata
+
+- Added description, canonical URL, Open Graph and Twitter/X card tags to `index.html`, using the supplied `og-image.png` and the domain configured in `CNAME`. Preserved the Flow browser title and existing icons.
+- Verification: parsed metadata for required tags and duplicates, confirmed consistent URLs/descriptions and checked image dimensions, local assets, script order, formatting and diff checks. Deployed social preview rendering was not tested.
 
 ### 2026-10-22 — Organize tests by responsibility
 
