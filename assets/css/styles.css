@@ -1955,7 +1955,7 @@ main {
 
 .rate-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) min(140px, 28%) 3em;
+  grid-template-columns: 8em minmax(0, 1fr) 3em;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;

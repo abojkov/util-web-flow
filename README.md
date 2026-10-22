@@ -535,6 +535,11 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-22 — Expand exchange-rate inputs
+
+- Reserved consistent widths for the left rate labels and right currency codes, then assigned all remaining row width to the rate input. Removed the 140px/28% input cap so longer decimal rates have more room while all rows stay aligned.
+- Verification: reviewed grid sizing and unchanged rate markup; formatting and diff checks passed. Browser layout was not retested.
+
 ### 2026-10-22 — Settings section hierarchy
 
 - Grouped Settings into reporting currency, synchronization with its rate editor, Add currency, Backups and Reset app. Each section uses a shared layout: 24px between sections, 12px between control groups and 4px between a section heading and description.
