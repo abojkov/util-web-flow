@@ -75,7 +75,7 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 
 - Default filter: **All Accounts**; optionally select a single account.
 - Current combined balance of active accounts in base reporting currency (EUR default).
-- Settings includes “Blur total balance,” saved as the boolean `hideTotalBalance` in IndexedDB Settings (default false). The Home card has a Show/Hide shortcut using the same saved preference, including when filtering to an individual account. Other financial amounts remain visible. This is display privacy, not encryption; stored/exported data and calculations are unchanged and full JSON backups include the preference.
+- The Home card’s Show/Hide button controls balance visibility, saved as the boolean `hideTotalBalance` in IndexedDB Settings (default false), including when filtering to an individual account. Other financial amounts remain visible. This is display privacy, not encryption; stored/exported data and calculations are unchanged and full JSON backups include the preference.
 - Monthly income, expenses and net cash flow (`income − expenses`).
 - Quick actions for income, expense and transfer.
 - Spending-by-category donut chart and recent transactions.
@@ -497,6 +497,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Balance visibility control on Home
+
+- Removed the duplicate Blur total balance checkbox and its event handler from Settings & backup. The Home card’s Show/Hide button remains the control for the existing saved preference.
+- Verification: JavaScript syntax, Settings markup/handler inspection, preserved Home control and preference checks, formatting and diff checks passed. Browser interaction and persistence were not retested.
 
 ### 2026-10-22 — Consistent conjunction punctuation
 
