@@ -1903,10 +1903,10 @@ main {
 }
 
 .rate-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) min(140px, 28%) 3em;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   padding: 10px 12px;
   border-bottom: 1px solid #edf2fa;
   font-size: 12px;
@@ -1918,8 +1918,15 @@ main {
 
 .rate-row label {
   display: grid;
-  gap: 2px;
-  min-width: 72px;
+  grid-template-columns: max-content max-content;
+  align-items: center;
+  gap: 2px 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.rate-row label > span {
+  grid-column: 1 / -1;
 }
 
 .rate-row span {
@@ -1933,7 +1940,7 @@ main {
 }
 
 .rate-input {
-  flex: 1;
+  width: 100%;
   min-width: 0;
   /* Smaller text causes iPhone browsers to zoom when the field receives focus. */
   font-size: 16px;

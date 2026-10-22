@@ -28,7 +28,7 @@ The application must be directly openable by opening `index.html` in a browser.
 - Do not use ES module imports that may fail under `file://`.
 - Prefer classic JavaScript scripts with explicit dependency ordering.
 - Keep all assets and dependencies local.
-- Do not introduce runtime network requests.
+- Runtime network requests are allowed only for optional public currency-rate synchronization. Fetch the full public rate list without account data, balances, transactions or user-specific currency parameters. Keep all other features offline and retain cached rates when synchronization fails.
 - Document browser-specific limitations, particularly IndexedDB persistence under `file://`.
 
 ## 3. Architecture
@@ -364,7 +364,7 @@ Before completing a task:
 - Test create, edit and delete flows where applicable.
 - Verify that records persist after page reload.
 - Check responsive behavior when browser testing is available.
-- Check that no runtime network dependencies were introduced.
+- Check that core features have no runtime network dependencies; optional currency synchronization must fail safely offline.
 
 Never claim a feature was tested unless it was actually tested.
 
@@ -432,6 +432,8 @@ Do not implement unrelated features or make major architectural decisions withou
 The highest priorities are financial correctness, data integrity, offline compatibility, usability and maintainability.
 
 ## 22. Writing and Grammar
+
+- Display all full dates as `dd.mm.yyyy`, including status messages and date ranges. Display times in 24-hour format. Keep stored/exported ISO dates and native browser date inputs unchanged.
 
 - Never place a comma immediately before “and” or “or” in app text or project documentation. Apply this rule to all future copy changes.
 - Preserve commas required by programming syntax and data formats. Do not rewrite user-entered content or imported financial records to enforce this writing rule.

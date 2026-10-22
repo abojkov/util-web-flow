@@ -8,6 +8,7 @@ $('#settings-shortcut').onclick = settingsModal
     }
     await processRecurring()
     await reload()
+    if (getSetting('syncCurrenciesOnStartup', true)) void syncCurrencyRates()
   } catch (err) {
     console.error(err)
     $('#view').innerHTML =

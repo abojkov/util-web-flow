@@ -74,7 +74,7 @@ function exchangeRateRows() {
   return editable
     .map(
       currency =>
-        `<div class="rate-row"><label><span>${currency}</span><small>1 EUR =</small></label><input class="rate-input" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`
+        `<div class="rate-row"><label><span>${currency}</span><small>1 EUR =</small><small data-currency-rate-source="${currency}">${currencyRateSource(currency)}</small></label><input class="rate-input" data-original-rate="${configured[currency] ?? ''}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`
     )
     .join('')
 }
@@ -1030,6 +1030,7 @@ function resetDataModal() {
           type,
         }))
         // Clear every store and restore starter categories in one atomic transaction.
+        cancelCurrencySync()
         await replaceAll({ categories })
         clearTimeout(txSearchTimer)
         state = createInitialState()
@@ -1050,23 +1051,31 @@ function resetDataModal() {
 function settingsModal() {
   modal(
     'Settings & backup',
-    `<div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset starter rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><form id="add-currency-form"><h3>Add currency</h3><p class="form-hint">Enter a three-letter currency code and your reference rate. Rates stay offline and are never fetched automatically. Amounts currently use two decimal places.</p><div class="field-row"><div class="field"><label for="new-currency-code">Currency code</label><input id="new-currency-code" name="code" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" placeholder="e.g. CAD" autocapitalize="characters" autocomplete="off"></div><div class="field"><label for="new-currency-rate">Units per 1 EUR</label><input id="new-currency-rate" name="rate" required type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter your rate"></div></div><div class="modal-footer"><button class="btn secondary" type="submit">Add currency</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div><div class="field" style="margin-top:18px"><h3>Reset app</h3><p class="form-hint">Start from zero by deleting all local financial data and resetting settings. Export a full JSON backup first if you want to keep a copy.</p><button type="button" class="btn danger" id="reset-all-data">Reset all data</button></div><p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`
+    `<div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><section class="field"><h3>Currency synchronization</h3><label><input type="checkbox" id="sync-on-startup" ${getSetting('syncCurrenciesOnStartup', true) ? 'checked' : ''}> Sync rates when the app opens</label><p class="form-hint" id="currency-sync-status" role="status">${escapeHtml(currencySyncStatus())}</p><button type="button" class="btn secondary" id="sync-currencies" ${currencySyncRequest ? 'disabled' : ''}>Sync now</button><button type="button" class="btn ghost" id="use-synced-rates">Use synced rates</button></section><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset starter rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><form id="add-currency-form"><h3>Add currency</h3><p class="form-hint">Enter a three-letter currency code and your reference rate. Leave the rate blank to use the cached synced rate when available. Entering a rate creates a manual override. Amounts currently use two decimal places.</p><div class="field-row"><div class="field"><label for="new-currency-code">Currency code</label><input id="new-currency-code" name="code" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" placeholder="e.g. CAD" autocapitalize="characters" autocomplete="off"></div><div class="field"><label for="new-currency-rate">Units per 1 EUR</label><input id="new-currency-rate" name="rate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter your rate"></div></div><div class="modal-footer"><button class="btn secondary" type="submit">Add currency</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div><div class="field" style="margin-top:18px"><h3>Reset app</h3><p class="form-hint">Start from zero by deleting all local financial data and resetting settings. Export a full JSON backup first if you want to keep a copy.</p><button type="button" class="btn danger" id="reset-all-data">Reset all data</button></div><p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`
   )
   $('#add-currency-form').onsubmit = async e => {
     e.preventDefault()
     const form = e.target
     const code = form.elements.code.value.trim().toUpperCase()
-    const rate = decimalValue(form.elements.rate.value)
+    const manualRate = form.elements.rate.value.trim() !== ''
+    const rate = manualRate
+      ? decimalValue(form.elements.rate.value)
+      : getSetting('currencySync', {}).rates?.[code]
     if (!/^[A-Z]{3}$/.test(code)) return toast('Enter a three-letter currency code.')
     if (Object.hasOwn(exchangeRates(), code))
       return toast('This currency already exists. Edit its reference rate above.')
     if (!Number.isFinite(rate) || rate <= 0)
-      return toast('Enter a positive reference rate in units per 1 EUR.')
+      return toast('Enter a positive reference rate or sync first to use an automatic rate.')
     const button = form.querySelector('button[type="submit"]')
     if (button.disabled) return
     button.disabled = true
     try {
-      await put('settings', { id: 'exchangeRates', value: { ...exchangeRates(), [code]: rate } })
+      await saveCurrencySettings({
+        exchangeRates: { ...exchangeRates(), [code]: rate },
+        manualCurrencyCodes: [
+          ...new Set([...manualCurrencyCodes(), ...(manualRate ? [code] : [])]),
+        ],
+      })
       await reload()
       settingsModal()
       toast(`${code} added. It is now available for accounts and reporting.`)
@@ -1075,6 +1084,30 @@ function settingsModal() {
       toast('Could not add currency. Please try again.')
     } finally {
       button.disabled = false
+    }
+  }
+  $('#sync-currencies').onclick = syncCurrencyRates
+  $('#sync-on-startup').onchange = async e => {
+    try {
+      await saveCurrencySettings({ syncCurrenciesOnStartup: e.target.checked })
+    } catch (error) {
+      e.target.checked = getSetting('syncCurrenciesOnStartup', true)
+      toast('Could not save startup sync preference.')
+    }
+  }
+  $('#use-synced-rates').onclick = async () => {
+    const cached = getSetting('currencySync', {}).rates
+    if (!cached) return toast('Sync rates first to use automatic reference rates.')
+    const next = { ...exchangeRates() }
+    const manual = manualCurrencyCodes().filter(code => !cached[code])
+    for (const code of Object.keys(next)) if (cached[code]) next[code] = cached[code]
+    try {
+      await saveCurrencySettings({ exchangeRates: next, manualCurrencyCodes: manual })
+      await reload()
+      settingsModal()
+      toast('Supported currencies now use synced rates. Other manual rates are preserved.')
+    } catch (error) {
+      toast('Could not apply synced rates. Please try again.')
     }
   }
   $('#reset-all-data').onclick = resetDataModal
@@ -1092,20 +1125,27 @@ function settingsModal() {
   $('#rates-form').onsubmit = async e => {
     e.preventDefault()
     const next = { ...exchangeRates() }
+    const manual = new Set(manualCurrencyCodes())
     for (const input of e.target.querySelectorAll('.rate-input')) {
       const value = decimalValue(input.value)
       if (!Number.isFinite(value) || value <= 0)
         return toast(`Enter a valid rate for ${input.name}`)
-      next[input.name] = value
+      if (value !== Number(input.dataset.originalRate)) {
+        manual.add(input.name)
+        next[input.name] = value
+      }
     }
     next.EUR = 1
-    await put('settings', { id: 'exchangeRates', value: next })
+    await saveCurrencySettings({ exchangeRates: next, manualCurrencyCodes: [...manual] })
     await reload()
     settingsModal()
     toast('Exchange rates saved')
   }
   $('#reset-rates').onclick = async () => {
-    await put('settings', { id: 'exchangeRates', value: { ...exchangeRates(), ...defaultRates } })
+    await saveCurrencySettings({
+      exchangeRates: { ...exchangeRates(), ...defaultRates },
+      manualCurrencyCodes: [...new Set([...manualCurrencyCodes(), 'USD'])],
+    })
     await reload()
     settingsModal()
     toast('Starter rates reset. Custom currency rates preserved.')
@@ -1202,6 +1242,7 @@ function settingsModal() {
         confirmText: 'Replace data',
         onCancel: settingsModal,
         onConfirm: async () => {
+          cancelCurrencySync()
           await replaceAll(data)
           closeModal()
           await reload()

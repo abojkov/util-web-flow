@@ -122,7 +122,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Saving validates the local calendar date and time, then stores the existing separate `date` and `time` properties without timezone conversion or schema changes. Native picker appearance varies by browser; recurring schedule fields remain separate.
 - Transfers retain an optional Payee (for example, a currency exchange store). Transaction list titles show Payee or “Transfer” when blank; details show Source account → Destination account, followed by date/time. Legacy `place` values remain supported. This applies to history and dashboard recent transactions without rewriting stored records.
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
-- Display full dates as `dd.mm.yyyy` in transaction rows, weekly range labels and recurring next-date labels using the shared `displayDate` helper. Native date/date-time picker appearance follows browser/OS locale; stored dates and CSV/JSON dates remain ISO `yyyy-mm-dd` for reliable sorting and interchange. Month/year headings retain their existing labels.
+- Display all full dates as `dd.mm.yyyy`, including transaction rows, weekly range labels, recurring next-date labels and currency sync status. Sync timestamps use local 24-hour `HH:mm:ss` time; source date ranges are formatted without timezone conversion using the shared `displayDate` helper. Native date/date-time picker appearance follows browser/OS locale; stored dates and CSV/JSON dates remain ISO `yyyy-mm-dd` for reliable sorting and interchange. Month/year headings retain their existing labels.
 - Support daily/calendar, weekly, monthly and chronological review. Transaction lists are newest first across every period and text/account/category filter: local date descending, then local time descending (missing time treated as midnight), then creation timestamp and ID for stable ties. Dashboard recent transactions use the same order. Unfiltered All history retains its latest-250 display limit after sorting.
 - Filter by date range, account, type, category/subcategory and search text. The Type dropdown supports All types, Income, Expenses and Transfers. Select Transfers + All history + All accounts with an empty text search to review every recorded transfer, newest first, without the unfiltered-history 250-row cap. Transfer mode hides/ignores category filters; selecting it clears category selections. Clear search resets Type to All types. Existing Payee/Description values remain untouched for manual review/editing. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories and expandable categories allow selecting only specific subcategories. Search period navigation changes with the selected period: monthly, weekly, yearly or no navigator for all history.
 - Validate positive amounts, valid account/category references, dates and transfer endpoints.
@@ -142,10 +142,18 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 
 ### Multi-currency
 
+- **Currency synchronization:** Settings & backup has Sync now plus Sync rates when the app opens (enabled by default). Startup synchronization runs after the local app loads and does not block opening the app. Disabling startup sync leaves manual Sync now available.
+- The app requests the complete public EUR reference-rate list from [Frankfurter](https://frankfurter.dev/) at the same fixed URL for every user. Requests omit credentials and referrers. No account names, amounts, transactions, notes or selected currency codes are sent. The service still sees the device's IP address and connection information.
+- A validated response and its source date range are cached in the `currencySync` IndexedDB setting. Settings shows the last successful sync time and source date range in the small muted hint beneath the startup toggle. Rate dates may differ by currency; these are reference rates rather than live trading quotes.
+- Synchronization updates only enabled currencies and preserves manual overrides. Existing saved rates are treated as manual overrides on upgrade. Use synced rates switches supported enabled currencies to automatic updates; unsupported manual currencies remain unchanged. Editing a rate creates a manual override. Add currency can use a cached rate when its rate field is blank.
+- The full cached list does not populate selectors automatically: fresh starts still offer only EUR and USD. All sync settings and cached rates are included in full JSON backups. Reset all data clears them and cancels an outstanding request; startup sync defaults to enabled on the next open.
+- Requests time out after 12 seconds. Offline, HTTP, malformed-response and storage failures retain previous rates and show a retry message in Settings. Direct `file://` fetch behavior depends on browser CORS/security rules; manual rates remain available if the browser blocks the request.
+- Existing transaction snapshots and transfer amounts are never rewritten by sync. New transactions and recurring occurrences use the rates available when they are recorded. Legacy records without snapshots retain their existing current-rate fallback. Recurring processing on startup runs before the background sync and therefore uses locally cached rates.
+
 - Each account has one native currency; base reporting currency is configurable (EUR default).
 - Currency selectors are built dynamically from local reference-rate codes, the reporting currency and all accounts, including archived accounts. Fresh installs and Reset all data start with only EUR and USD. Other currencies can be added in Settings. Existing saved rates and account currencies remain available; older accounts using GBP, CHF, MKD or SEK retain their previous fallback rates if no rate was saved.
 - Settings & backup includes Add currency: enter a three-letter code and an explicit positive rate in units per 1 EUR. Codes are normalized to uppercase; malformed codes, duplicates and invalid rates are rejected. Codes are format-validated rather than checked against a live ISO registry. Added codes become available for new accounts and reporting.
-- Reference rates and custom codes are saved together in the existing `exchangeRates` setting and included in full JSON backups. No schema migration or network request is required. There is no currency deletion action.
+- Reference rates and custom codes are saved together in the existing `exchangeRates` setting and included in full JSON backups. No schema migration is required; manual currency management works offline. There is no currency deletion action.
 - Reset starter rates resets only EUR and USD while preserving other currencies and their rates. Save rates retains entered rate precision, including values smaller than one millionth.
 - Changing the reporting currency is blocked when any existing transaction lacks a required historical rate for that target, including either side of a transfer. Existing snapshots are preserved rather than filled with fabricated historical rates. Legacy transactions without snapshots retain the existing configured-rate fallback.
 - Currency-specific decimal precision remains planned: the current ledger and amount formatter use two decimal places for every currency. This limitation is shown beside Add currency.
@@ -157,7 +165,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Transfers do not display a blue conversion/reporting note. Cross-currency exchange-rate and received-amount fields provide the calculation through two-way synchronization; same-currency transfers receive the sent amount automatically. Reporting rate snapshots remain stored for historical calculations.
 - Transfer form changes require no database migration; existing records remain unchanged until explicitly edited and saved.
 - Optional transfer fees remain planned.
-- Manual exchange-rate entry in Settings; automatic rates are not required and must not be fabricated.
+- Manual exchange-rate entry remains available alongside optional online reference-rate synchronization. Never fabricate missing rates.
 - Combined reporting uses a documented conversion policy; if a required rate is unavailable, show an explicit unavailable/incomplete state rather than an invented amount.
 - Non-base-currency transaction forms show the estimated base-currency reporting value and include an editable transaction-level exchange rate initialized from Settings.
 - Transactions keep an exchange-rate snapshot so historical reports do not silently change when Settings rates are updated later.
@@ -266,12 +274,12 @@ Schema details are illustrative, not authoritative. Prefer indexed lookups on da
 ## Technical architecture
 
 - HTML5, CSS3, vanilla JavaScript, IndexedDB.
-- No framework, bundler, backend, external CDN or runtime network dependency.
+- No framework, bundler, backend or external CDN. Core financial features have no runtime network dependency; optional currency synchronization uses a public HTTPS API.
 - Optional **development-only** formatting via Prettier (`npm install` then `npm run format`). This does not affect opening `index.html` directly and is not required to run the app.
 - `index.html` is the sole application entry page and must be **directly openable**, without a local HTTP server.
 - For `file://` compatibility, avoid ES module imports; use classic scripts in a documented dependency order.
 - Separate database operations, financial domain logic, UI rendering and event handling into maintainable files.
-- Keep all assets local and avoid accidental network requests.
+- Keep all assets local. The only runtime network request is optional currency-rate synchronization.
 - **Browser limitation:** `file://` origin behavior and IndexedDB persistence vary across browsers; detect failures and never claim guaranteed persistence without testing the target browser.
 - A successful save must mean data was committed to durable browser storage, not just added to an in-memory array.
 
@@ -302,7 +310,7 @@ README.md
 
 ### Privacy
 
-All financial records stay on-device by default. No cloud sync, account login, third-party analytics or transmission of financial information.
+All financial records stay on-device. No cloud sync, account login, third-party analytics or transmission of financial information. Optional rate synchronization requests only the full public rate list; the provider receives the IP address and standard connection information.
 
 ### Optional PIN lock
 
@@ -374,6 +382,7 @@ Explicitly excluded unless the product owner changes the requirements:
 | F21 | Accounts     | Account visibility                              | Partial — focused checks passed | Browser hide/show, reload and restore checks pending |
 | F22 | Data         | Reset all data with confirmation                | Partial — focused checks passed | Browser persistence and mobile checks pending        |
 | F23 | Currency     | Dynamic currency management                     | Partial — focused checks passed | Browser persistence and transfer checks pending      |
+| F24 | Currency     | Optional startup rate synchronization           | Partial — focused checks passed | Browser file access and offline checks pending       |
 
 ### Release phases
 
@@ -385,6 +394,15 @@ Explicitly excluded unless the product owner changes the requirements:
 6. **Stabilization:** F20, financial edge cases, migration/restore testing.
 
 ## Acceptance criteria and test scenarios
+
+### Currency synchronization checks
+
+- Fresh startup fetches a fixed public URL without user-specific query parameters, credentials or a referrer while the local UI remains usable.
+- A successful sync updates automatic enabled rates and source dates without adding all provider currencies to selectors. Historical snapshots and manual overrides stay unchanged.
+- Verify Sync now, saved startup toggle, Use synced rates, editing a manual override and adding a currency using its cached rate.
+- Reject malformed/duplicate/nonpositive rates and HTTP errors without changing stored rates. Network failure, timeout and storage failure retain existing data and permit retry.
+- Reset or restore during a pending request must cancel it so it cannot write into the replacement data.
+- Reopen under `file://` to verify cached settings and actual API CORS behavior; verify offline startup and mobile layout.
 
 ### Dynamic currency checks
 
@@ -515,6 +533,38 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Two-line rate labels
+
+- Placed the currency code on the first line with the reference quote and rate source together on the second line. Retained shared grid columns to keep rate inputs aligned.
+- Verification: reviewed label grid placement; formatting and diff checks passed. Browser appearance was not retested.
+
+### 2026-10-22 — Align exchange-rate inputs
+
+- Replaced independently sized flex rows with consistent grid columns for the inline label, input and currency suffix. Input widths and edges now share the same column sizes regardless of text width.
+- Verification: reviewed CSS column sizing; formatting and diff checks passed. Live browser layout remains unverified because macOS capture permission is unavailable.
+
+### 2026-10-22 — Compact exchange-rate rows
+
+- Kept the currency code, reference quote and rate source on one line. Narrowed rate inputs to 140px with room to shrink on small screens while retaining 16px input text to avoid iPhone focus zoom.
+- Verification: inspected rate-row CSS and markup; formatting and diff checks passed. Live browser and mobile layout verification remain blocked by macOS capture permissions.
+
+### 2026-10-22 — Sync date format fix
+
+- Applied the shared dotted date format to Last synced and both source-rate dates. Sync timestamps use local 24-hour time with padded fields; stored ISO values are unchanged.
+- Verification: sync tests including exact timestamp/range formatting and midnight padding, JavaScript syntax, formatting and diff checks passed. Browser appearance was not retested.
+
+### 2026-10-22 — Compact sync status
+
+- Replaced the explanatory paragraph under the startup sync toggle with the existing live sync status using the same form-hint font and styling.
+- Verification: source markup, JavaScript syntax, formatting and diff checks passed. Browser appearance was not retested.
+
+### 2026-10-22 — Optional public exchange-rate synchronization
+
+- Added nonblocking startup sync, Sync now, last-sync/source-date status and a saved startup toggle in Settings & backup. Uses Frankfurter's full public rate list without financial or user-specific request data.
+- Cached responses and enabled reference rates are saved atomically. Manual overrides, historical transaction snapshots and EUR/USD-only starter selectors are preserved. Use synced rates switches supported enabled currencies to automatic updates; Add currency supports cached rates.
+- Added validation, timeout/offline fallback and cancellation before reset/restore. Updated the project network rule to permit this optional public-data request.
+- Verification: automated sync, validation, privacy request shape, manual override, snapshot preservation, concurrency/cancellation, offline/HTTP/storage failure and atomic persistence checks; JavaScript syntax, asset/script order, formatting and diff checks. The live API response format was inspected. Direct browser testing was blocked by macOS screen-capture permission; actual `file://` CORS behavior, browser persistence and mobile layout remain unverified. Run `node --test tests/currency-sync.test.cjs` for the automated checks.
 
 ### 2026-10-22 — Remove account currency hint
 

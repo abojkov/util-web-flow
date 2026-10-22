@@ -61,3 +61,14 @@ async function replaceAll(data) {
   })
 }
 const storeNames = STORES
+
+async function putSettings(values) {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('settings', 'readwrite')
+    for (const [id, value] of Object.entries(values)) tx.objectStore('settings').put({ id, value })
+    tx.oncomplete = resolve
+    tx.onerror = () => reject(tx.error)
+    tx.onabort = () => reject(tx.error || new Error('Settings update was aborted'))
+  })
+}
