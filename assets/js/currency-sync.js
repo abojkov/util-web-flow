@@ -21,6 +21,19 @@ async function saveCurrencySettings(values) {
   }
 }
 
+function syncedCurrenciesToAdd() {
+  const sync = getSetting('currencySync', {})
+  if (sync.provider !== 'exchangerate.fun') return []
+  const enabled = new Set(availableCurrencies())
+  return Object.entries(sync.rates || {})
+    .filter(
+      ([code, rate]) =>
+        /^[A-Z]{3}$/.test(code) && Number.isFinite(rate) && rate > 0 && !enabled.has(code)
+    )
+    .map(([code]) => code)
+    .sort()
+}
+
 function currencyRateSource(code) {
   if (manualCurrencyCodes().includes(code)) return 'Manual'
   return getSetting('currencySync', {}).rates?.[code] ? 'Synced' : 'Local'
@@ -48,6 +61,7 @@ function updateCurrencySyncStatus() {
   if (status) status.textContent = currencySyncStatus()
   const button = $('#sync-currencies')
   if (button) button.disabled = !!currencySyncRequest
+  if (typeof updateAddCurrencyOptions === 'function') updateAddCurrencyOptions()
   for (const label of document.querySelectorAll('[data-currency-rate-source]'))
     label.textContent = currencyRateSource(label.dataset.currencyRateSource)
 }

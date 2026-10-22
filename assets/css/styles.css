@@ -1894,6 +1894,57 @@ main {
   margin: -3px 0 14px;
 }
 
+.settings-content {
+  display: grid;
+  gap: 24px;
+}
+
+.settings-section,
+.settings-section-form {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.settings-section-head {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-section-head h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.settings-content .form-hint {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.settings-content .field {
+  margin-bottom: 0;
+}
+
+.settings-content .rate-list {
+  margin-top: 0;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-actions > .btn {
+  flex: 1 1 150px;
+}
+
+.settings-backup-actions {
+  display: grid;
+  gap: 8px;
+}
+
 .rate-list {
   border: 1px solid #e4ecf7;
   border-radius: 12px;

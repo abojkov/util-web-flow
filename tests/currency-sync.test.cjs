@@ -320,3 +320,62 @@ test('date-only response is accepted with the same validation and EUR identity r
   assert.equal(s.run("getSetting('currencySync').firstDate"), '2026-10-22')
   assert.equal(s.run("getSetting('currencySync').sourceUpdatedAt"), null)
 })
+
+test('add-currency dropdown loads only current-provider codes and preserves valid selections across sync', async () => {
+  const s = setup()
+  vm.runInContext(source('modals'), s.context)
+  Object.assign(s.context, { modal() {}, toast() {}, reload: async () => {} })
+  s.run('settingsModal()')
+  const select = s.elements.get('#new-currency-code')
+  assert.equal(select.disabled, true)
+  assert.match(s.elements.get('#new-currency-hint').textContent, /Sync rates first/)
+  s.run("state.settings=[{id:'currencySync',value:{rates:{ABC:2,CAD:1.5}}}]")
+  assert.equal(s.run('syncedCurrenciesToAdd().length'), 0)
+  await s.context.syncCurrencyRates()
+  assert.equal(select.disabled, false)
+  assert.equal(s.run('JSON.stringify(syncedCurrenciesToAdd())'), '["CAD","MKD"]')
+  assert.ok(select.innerHTML.includes('value="CAD"'))
+  assert.ok(!select.innerHTML.includes('value="USD"'))
+  assert.ok(!select.innerHTML.includes('value="ABC"'))
+  select.value = 'CAD'
+  await s.context.syncCurrencyRates()
+  assert.equal(select.value, 'CAD')
+  s.run(
+    "state.accounts=[{id:'cad',currency:'CAD'},{id:'mkd',currency:'MKD'},{id:'custom',currency:'ABC'}];updateAddCurrencyOptions()"
+  )
+  assert.equal(select.value, '')
+  assert.equal(select.disabled, true)
+  assert.match(s.elements.get('#new-currency-hint').textContent, /already available/)
+  assert.ok(s.run('availableCurrencies()').includes('ABC'))
+})
+
+test('unsupported/tampered codes cannot be added even with manual rates; supported overrides can', async () => {
+  const s = setup()
+  vm.runInContext(source('modals'), s.context)
+  Object.assign(s.context, { modal() {}, toast() {}, reload: async () => {} })
+  s.run('settingsModal()')
+  const button = { disabled: false }
+  const form = {
+    elements: { code: { value: 'ABC' }, rate: { value: '123' } },
+    querySelector: () => button,
+  }
+  const submit = () =>
+    s.elements.get('#add-currency-form').onsubmit({ preventDefault() {}, target: form })
+  await submit()
+  assert.equal(s.writes(), 0)
+  await s.context.syncCurrencyRates()
+  const before = s.writes()
+  for (const code of ['ABC', 'USD', '<X>', '']) {
+    form.elements.code.value = code
+    await submit()
+    assert.equal(s.writes(), before)
+  }
+  form.elements.code.value = 'MKD'
+  form.elements.rate.value = '61.5'
+  await submit()
+  assert.equal(s.writes(), before + 1)
+  assert.equal(s.run('exchangeRates().MKD'), 61.5)
+  assert.equal(s.run("manualCurrencyCodes().includes('MKD')"), true)
+  await submit()
+  assert.equal(s.writes(), before + 1)
+})

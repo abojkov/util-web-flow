@@ -65,6 +65,7 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 - Touch-friendly targets, aligned forms, consistent spacing, responsive modals, accessible labels, clear empty/error/loading states.
 - Double-tap zoom is disabled throughout the app with `touch-action: manipulation`, allowing rapid taps on period arrows while retaining scrolling and pinch-to-zoom. Physical iPhone gesture verification is pending.
 - Settings exchange-rate inputs use 16px text to prevent iPhone focus zoom. On touch devices, dialogs initially focus Close so opening a form does not activate a keyboard or native picker; desktop dialogs retain first-field/action focus. Tapping an editable field still opens its keyboard normally. Physical iPhone verification is pending.
+- Settings uses distinct reporting, synchronization/rates, Add currency, Backups and Reset app sections. Use 24px between sections, 12px between control groups and 4px between a section heading and description. The dialog title remains in the modal header; section headings use a smaller 16px style.
 - Never reintroduce the earlier orange theme or add dark mode without approval.
 
 ## Functional requirements
@@ -152,7 +153,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 
 - Each account has one native currency; base reporting currency is configurable (EUR default).
 - Currency selectors are built dynamically from local reference-rate codes, the reporting currency and all accounts, including archived accounts. Fresh installs and Reset all data start with only EUR and USD. Other currencies can be added in Settings. Existing saved rates and account currencies remain available; older accounts using GBP, CHF, MKD or SEK retain their previous fallback rates if no rate was saved.
-- Settings & backup includes Add currency: enter a three-letter code and an explicit positive rate in units per 1 EUR. Codes are normalized to uppercase; malformed codes, duplicates and invalid rates are rejected. Codes are format-validated rather than checked against a live ISO registry. Added codes become available for new accounts and reporting.
+- Settings & backup includes Add currency: choose from the cached ExchangeRate.fun response. Only supported codes not already enabled are offered, sorted alphabetically. Sync first to load the list; once cached it works offline. A successful sync refreshes an open dropdown without discarding a still-valid selection. Adding an arbitrary code or an already enabled currency is rejected even if a manual rate is supplied. Existing custom/imported currencies are preserved. Leave the rate blank to use the synced rate or enter a positive manual override in units per 1 EUR.
 - Reference rates and custom codes are saved together in the existing `exchangeRates` setting and included in full JSON backups. No schema migration is required; manual currency management works offline. There is no currency deletion action.
 - Reset starter rates resets only EUR and USD while preserving other currencies and their rates. Save rates retains entered rate precision, including values smaller than one millionth.
 - Changing the reporting currency is blocked when any existing transaction lacks a required historical rate for that target, including either side of a transfer. Existing snapshots are preserved rather than filled with fabricated historical rates. Legacy transactions without snapshots retain the existing configured-rate fallback.
@@ -408,8 +409,8 @@ Explicitly excluded unless the product owner changes the requirements:
 
 - Fresh state and a completed full data reset offer only EUR and USD. Existing saved currencies remain available on ordinary app startup; older accounts retain their unsaved fallback rates.
 
-- Add a lowercase three-letter code with a positive rate; verify uppercase options in account creation and the reporting selector plus an editable Settings rate row.
-- Reject malformed codes, existing codes, zero, negative and nonfinite rates without changing saved settings. A storage failure shows an error and permits retry.
+- Sync first and choose a supported currency not already enabled; verify its options in account creation and the reporting selector plus an editable Settings rate row. Verify empty-list guidance before sync and when every supported currency has been added.
+- Reject unsupported codes, existing codes, zero, negative and nonfinite manual rates without changing saved settings. A storage failure shows an error and permits retry.
 - Verify conversions using the entered rate and preserve custom rates when resetting starter rates. Small positive rates must not be rounded to zero.
 - Retain currencies from imported and archived accounts in selectors.
 - Preserve custom rates through reload and full JSON backup/restore.
@@ -533,6 +534,29 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Settings section hierarchy
+
+- Grouped Settings into reporting currency, synchronization with its rate editor, Add currency, Backups and Reset app. Each section uses a shared layout: 24px between sections, 12px between control groups and 4px between a section heading and description.
+- Removed blanket modal heading/hint margin overrides. Settings-specific heading styles and action groups now distinguish sections from their contents without changing other dialog typography. Kept every existing control ID and action.
+- Verification: existing currency regression tests, generated Settings section/control checks, JavaScript syntax, formatting and diff checks passed. Live browser layout remains unverified because macOS capture permission is unavailable.
+
+### 2026-10-22 — Consistent modal section spacing
+
+- Removed default heading and hint paragraph margins throughout modal bodies, including Currency synchronization, Add currency and Reset app. Heading descriptions no longer introduce an extra top margin.
+- Replaced Add currency-specific spacing overrides with shared rules for forms in multi-section dialogs. Forms use natural content height; internal action rows use compact spacing while standalone dialog footers retain their existing layout.
+- Verification: reviewed shared selectors against modal markup, ran sync regression tests, JavaScript syntax, formatting and diff checks. Live browser layout remains unverified because macOS capture permission is unavailable.
+
+### 2026-10-22 — Compact Add currency spacing
+
+- Reduced the gap between the Add currency heading and hint plus the space above its button. Scoped the spacing to this form and removed its full-height minimum. Simplified the dropdown placeholder to Select; empty-state guidance remains in the hint.
+- Verification: sync regression tests, JavaScript syntax, scoped CSS review, formatting and diff checks passed. Browser appearance was not retested.
+
+### 2026-10-22 — Add only synced currencies
+
+- Replaced free-text currency creation with an alphabetically sorted dropdown sourced from the cached ExchangeRate.fun response, excluding currencies already available in the app.
+- Added pre-sync and all-added empty states plus live option refresh after synchronization. Submit validation rejects unsupported codes even with a manual rate. Existing custom currencies and their history are preserved.
+- Verification: sync regression tests plus supported-list, empty-cache, old-provider cache, invalid/tampered code, manual override, duplicate, dropdown refresh and saved-selection checks passed; syntax, formatting and diff checks passed. Live browser layout and persistence were not retested.
 
 ### 2026-10-22 — Switch exchange-rate provider
 

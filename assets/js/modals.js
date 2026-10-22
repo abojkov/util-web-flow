@@ -1048,11 +1048,101 @@ function resetDataModal() {
   })
 }
 
+function updateAddCurrencyOptions() {
+  const select = $('#new-currency-code')
+  if (!select) return
+  const codes = syncedCurrenciesToAdd()
+  const selected = select.value
+  select.innerHTML = `<option value="">Select</option>${codes.map(code => `<option value="${code}">${code}</option>`).join('')}`
+  select.value = codes.includes(selected) ? selected : ''
+  select.disabled = !codes.length
+  const hint = $('#new-currency-hint')
+  if (hint)
+    hint.textContent =
+      getSetting('currencySync', {}).provider !== 'exchangerate.fun'
+        ? 'Sync rates first to load supported currencies. A cached list remains available offline after a successful sync.'
+        : codes.length
+          ? 'Choose a currency from the synced list. Leave the rate blank to use its synced rate or enter a manual override. Amounts currently use two decimal places.'
+          : 'All currencies from the cached sync list are already available. Sync again to check for new currencies.'
+}
+
 function settingsModal() {
   modal(
     'Settings & backup',
-    `<div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><section class="field"><h3>Currency synchronization</h3><label><input type="checkbox" id="sync-on-startup" ${getSetting('syncCurrenciesOnStartup', true) ? 'checked' : ''}> Sync rates when the app opens</label><p class="form-hint" id="currency-sync-status" role="status">${escapeHtml(currencySyncStatus())}</p><button type="button" class="btn secondary" id="sync-currencies" ${currencySyncRequest ? 'disabled' : ''}>Sync now</button><button type="button" class="btn ghost" id="use-synced-rates">Use synced rates</button></section><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset starter rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><form id="add-currency-form"><h3>Add currency</h3><p class="form-hint">Enter a three-letter currency code and your reference rate. Leave the rate blank to use the cached synced rate when available. Entering a rate creates a manual override. Amounts currently use two decimal places.</p><div class="field-row"><div class="field"><label for="new-currency-code">Currency code</label><input id="new-currency-code" name="code" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" placeholder="e.g. CAD" autocapitalize="characters" autocomplete="off"></div><div class="field"><label for="new-currency-rate">Units per 1 EUR</label><input id="new-currency-rate" name="rate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter your rate"></div></div><div class="modal-footer"><button class="btn secondary" type="submit">Add currency</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div><div class="field" style="margin-top:18px"><h3>Reset app</h3><p class="form-hint">Start from zero by deleting all local financial data and resetting settings. Export a full JSON backup first if you want to keep a copy.</p><button type="button" class="btn danger" id="reset-all-data">Reset all data</button></div><p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`
+    `<div class="settings-content">
+      <section class="settings-section">
+        <div class="field">
+          <label for="base-currency">Base currency</label>
+          <select id="base-currency">${currencyOptions(base())}</select>
+        </div>
+        <div class="notice">Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div>
+      </section>
+
+      <section class="settings-section" aria-labelledby="currency-sync-heading">
+        <header class="settings-section-head">
+          <h3 id="currency-sync-heading">Currency synchronization</h3>
+        </header>
+        <div class="field">
+          <label><input type="checkbox" id="sync-on-startup" ${getSetting('syncCurrenciesOnStartup', true) ? 'checked' : ''}> Sync rates when the app opens</label>
+          <p class="form-hint" id="currency-sync-status" role="status">${escapeHtml(currencySyncStatus())}</p>
+        </div>
+        <div class="settings-actions">
+          <button type="button" class="btn secondary" id="sync-currencies" ${currencySyncRequest ? 'disabled' : ''}>Sync now</button>
+          <button type="button" class="btn ghost" id="use-synced-rates">Use synced rates</button>
+        </div>
+        <form id="rates-form" class="settings-section-form">
+          <div class="rate-list">${exchangeRateRows()}</div>
+          <div class="settings-actions">
+            <button type="button" class="btn ghost" id="reset-rates">Reset starter rates</button>
+            <button class="btn secondary" type="submit">Save rates</button>
+          </div>
+        </form>
+      </section>
+
+      <form id="add-currency-form" class="settings-section" aria-labelledby="add-currency-heading">
+        <header class="settings-section-head">
+          <h3 id="add-currency-heading">Add currency</h3>
+          <p class="form-hint" id="new-currency-hint"></p>
+        </header>
+        <div class="field-row">
+          <div class="field">
+            <label for="new-currency-code">Currency</label>
+            <select id="new-currency-code" name="code" required></select>
+          </div>
+          <div class="field">
+            <label for="new-currency-rate">Units per 1 EUR</label>
+            <input id="new-currency-rate" name="rate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter your rate">
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button class="btn secondary" type="submit">Add currency</button>
+        </div>
+      </form>
+
+      <section class="settings-section" aria-labelledby="backup-heading">
+        <header class="settings-section-head">
+          <h3 id="backup-heading">Backups</h3>
+          <p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p>
+        </header>
+        <div class="settings-backup-actions">
+          <button class="btn secondary" id="export-json">↓ Export full JSON backup</button>
+          <button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button>
+          <label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label>
+        </div>
+        <div class="notice">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div>
+      </section>
+
+      <section class="settings-section" aria-labelledby="reset-heading">
+        <header class="settings-section-head">
+          <h3 id="reset-heading">Reset app</h3>
+          <p class="form-hint">Start from zero by deleting all local financial data and resetting settings. Export a full JSON backup first if you want to keep a copy.</p>
+        </header>
+        <button type="button" class="btn danger" id="reset-all-data">Reset all data</button>
+      </section>
+    </div>
+    <p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`
   )
+  updateAddCurrencyOptions()
   $('#add-currency-form').onsubmit = async e => {
     e.preventDefault()
     const form = e.target
@@ -1061,9 +1151,10 @@ function settingsModal() {
     const rate = manualRate
       ? decimalValue(form.elements.rate.value)
       : getSetting('currencySync', {}).rates?.[code]
-    if (!/^[A-Z]{3}$/.test(code)) return toast('Enter a three-letter currency code.')
-    if (Object.hasOwn(exchangeRates(), code))
-      return toast('This currency already exists. Edit its reference rate above.')
+    if (!syncedCurrenciesToAdd().includes(code))
+      return toast(
+        'Choose an available currency from the synced list. Sync rates first if the list is empty.'
+      )
     if (!Number.isFinite(rate) || rate <= 0)
       return toast('Enter a positive reference rate or sync first to use an automatic rate.')
     const button = form.querySelector('button[type="submit"]')
