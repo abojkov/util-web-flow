@@ -35,7 +35,7 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 
 ## Core user journey
 
-1. Open `index.html` directly in a supported browser.
+1. Open `index.html` directly in a supported browser. On first launch, dismiss the Welcome to Flow dialog after reviewing the account, transaction and backup tips.
 2. Choose a base reporting currency (EUR by default).
 3. Create one or more accounts with native currencies and opening balances.
 4. Record income, expenses and transfers; optionally split income or expenses across categories.
@@ -72,6 +72,14 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 ## Functional requirements
 
 > **Status legend:** `Planned` = agreed requirement, not yet verified as implemented; `In progress` = actively being built; `Implemented` = confirmed in source and tested; `Blocked` = cannot proceed yet. See the feature tracker for the current status. This section describes intended behavior.
+
+### Welcome dialog
+
+- Show Welcome to Flow after local data initialization when the `welcomeSeen` setting is absent/false. This includes existing installations that have not dismissed it yet. Do not replace a dialog the user has already opened during startup.
+- Briefly explain accounts, income/expenses/transfers, EUR as the starter currency, JSON backups and local financial records with optional online currency-rate sync. No demo financial data is added.
+- Get started and Close both persist `welcomeSeen: true` in IndexedDB Settings. Subsequent opens skip the dialog. Repeated dismissal clicks are ignored while the preference is saving; a save failure still closes the dialog with an error message and leaves it eligible to appear again.
+- A full reset clears the preference and displays the welcome dialog immediately after the empty Home screen is rendered. Currency sync does not delay showing the welcome dialog. The preference is included in full JSON backups; no schema change is needed.
+- Status: automated startup, dismissal and reset checks passed. Live browser layout and persistence verification remain pending.
 
 ### Home dashboard
 
@@ -308,6 +316,18 @@ AGENTS.md
 README.md
 ```
 
+### Automated checks
+
+Run the full dependency-free Node suite with `node --test tests/*.test.cjs`, or pass one file for a focused run:
+
+- `tests/currency-sync.test.cjs`: API synchronization, validation, caching, source dates and startup sync.
+- `tests/currencies.test.cjs`: supported currency selection, creation and starter-currency behavior.
+- `tests/settings-modal.test.cjs`: Settings actions, targeted updates, scroll and focus.
+- `tests/storage.test.cjs`: atomic settings persistence and transaction aborts.
+- `tests/welcome.test.cjs`: first-launch welcome, dismissal and post-reset behavior.
+
+Reusable VM/browser stubs live in `tests/helpers/app-harness.cjs`; the shared API response fixture lives in `tests/fixtures/currency-rates.cjs`. These simulated checks do not verify actual browser layout or IndexedDB persistence.
+
 ## Privacy, security and backups
 
 ### Privacy
@@ -385,6 +405,7 @@ Explicitly excluded unless the product owner changes the requirements:
 | F22 | Data         | Reset all data with confirmation                | Partial — focused checks passed | Browser persistence and mobile checks pending        |
 | F23 | Currency     | Dynamic currency management                     | Partial — focused checks passed | Browser persistence and transfer checks pending      |
 | F24 | Currency     | Optional startup rate synchronization           | Partial — focused checks passed | Browser file access and offline checks pending       |
+| F25 | Onboarding   | Welcome dialog on first launch and reset        | Partial — focused checks passed | Browser layout and persistence checks pending        |
 
 ### Release phases
 
@@ -396,6 +417,14 @@ Explicitly excluded unless the product owner changes the requirements:
 6. **Stabilization:** F20, financial edge cases, migration/restore testing.
 
 ## Acceptance criteria and test scenarios
+
+### Welcome checks
+
+- First startup renders local data before showing welcome; optional rate synchronization remains independent.
+- Get started and Close both dismiss the dialog and save the preference. It stays hidden on subsequent opens after successful persistence.
+- Confirming a full data reset shows welcome again without introducing financial records. Cancelling reset leaves the preference unchanged.
+- Startup must not replace an already open dialog. Repeated dismissal clicks must not queue multiple writes. A preference save failure allows access to the app and shows an error.
+- Verify keyboard focus, touch layout and dismissal persistence after browser reload under `file://`.
 
 ### Currency synchronization checks
 
@@ -535,6 +564,18 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Organize tests by responsibility
+
+- Split synchronization, currency management, Settings modal, storage and welcome checks into separate test files. Extracted reusable app/modal harnesses and a shared rate-response fixture without changing application code.
+- Split the combined starter-currency/reset-welcome test into focused currency and welcome tests, preserving its assertions. Documented the complete suite command and focused test entry points.
+- Verification: all 22 tests passed across the five independent files; test/helper JavaScript syntax, formatting and diff checks passed. Browser behavior was not retested because this change only reorganizes tests.
+
+### 2026-10-22 — First-launch and reset welcome
+
+- Added a compact Welcome to Flow dialog after local initialization and after full data reset, with first steps, a backup reminder and a local-data/online-rates note.
+- Get started and Close save an IndexedDB dismissal preference so regular reopening skips it. Added duplicate-click protection and a nonblocking preference-save error path. Existing dialogs opened during startup are respected.
+- Verification: automated startup/seen-preference/open-dialog, both dismissal controls, duplicate clicks, storage failure and post-reset welcome checks passed alongside all currency regression tests. Syntax, local assets/script order, formatting and diff checks passed. Live browser layout and actual persistence remain unverified because macOS capture permission is unavailable.
 
 ### 2026-10-22 — Remove redundant starter-rate reset
 

@@ -1894,6 +1894,25 @@ main {
   margin: -3px 0 14px;
 }
 
+.welcome-content {
+  display: grid;
+  gap: 16px;
+}
+
+.welcome-content > p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.welcome-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: #53647e;
+  line-height: 1.5;
+}
+
 .settings-content {
   display: grid;
   gap: 24px;

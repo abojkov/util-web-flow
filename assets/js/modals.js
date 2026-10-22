@@ -1019,6 +1019,40 @@ function exportTimestamp() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
 }
 
+function welcomeModal() {
+  modal(
+    'Welcome to Flow',
+    `<div class="welcome-content">
+      <p>A simple space for your everyday finances.</p>
+      <ul class="welcome-steps">
+        <li>Add your first account. EUR is ready to use.</li>
+        <li>Record income, expenses and transfers.</li>
+        <li>Export a JSON backup from Settings &amp; backup to keep a copy.</li>
+      </ul>
+      <div class="notice">Your records stay on this device. Currency rates can sync online.</div>
+      <button type="button" class="btn" id="welcome-start">Get started</button>
+    </div>`
+  )
+  const start = $('#welcome-start')
+  const close = $('#close-modal')
+  const dismiss = async () => {
+    if (start.disabled) return
+    start.disabled = close.disabled = true
+    try {
+      await saveCurrencySettings({ welcomeSeen: true })
+      if ($('#welcome-start') === start) closeModal()
+    } catch (error) {
+      console.error(error)
+      if ($('#welcome-start') === start) closeModal()
+      toast('Could not save the welcome preference. You may see this message again.')
+    } finally {
+      start.disabled = close.disabled = false
+    }
+  }
+  start.onclick = dismiss
+  close.onclick = dismiss
+}
+
 function resetDataModal() {
   confirmAction({
     title: 'Reset all data?',
@@ -1049,6 +1083,7 @@ function resetDataModal() {
         closeModal()
         render()
         toast('All data reset. You can start fresh.')
+        welcomeModal()
       } catch (error) {
         console.error(error)
         toast('Could not reset data. Please try again.')
