@@ -535,6 +535,11 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-22 — Clarify reference-rate wording
+
+- Updated the reporting notice to explain that synced and manual reference rates are saved for offline use and that banks or exchange providers may apply different rates.
+- Verification: checked the provider's documented periodic updates, reviewed the copy diff and passed JavaScript syntax and formatting checks. Browser layout was not retested.
+
 ### 2026-10-22 — Expand exchange-rate inputs
 
 - Reserved consistent widths for the left rate labels and right currency codes, then assigned all remaining row width to the rate input. Removed the 140px/28% input cap so longer decimal rates have more room while all rows stay aligned.

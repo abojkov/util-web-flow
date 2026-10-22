@@ -1075,7 +1075,7 @@ function settingsModal() {
           <label for="base-currency">Base currency</label>
           <select id="base-currency">${currencyOptions(base())}</select>
         </div>
-        <div class="notice">Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div>
+        <div class="notice">Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Synced and manual reference rates are saved on this device for offline use. Your bank or exchange provider may apply a different rate.</div>
       </section>
 
       <section class="settings-section" aria-labelledby="currency-sync-heading">
