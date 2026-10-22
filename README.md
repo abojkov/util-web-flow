@@ -147,15 +147,15 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - The app requests the complete public EUR reference-rate list from [ExchangeRate.fun](https://exchangerate.fun/docs/) at `https://api.exchangerate.fun/latest?base=eur`, the same fixed URL for every user. Requests omit credentials and referrers. No account names, amounts, transactions, notes or selected currency codes are sent. The service still sees the device's IP address and connection information.
 - A validated response, provider identity and source timestamp/date are cached in the `currencySync` IndexedDB setting. Settings shows the last successful sync time and source date range in the small muted hint beneath the startup toggle. The API response supplies a shared source timestamp; its date is shown as Rate date in `dd.mm.yyyy` format. Older backups can still display their original source date ranges. These are reference rates rather than guaranteed execution quotes.
 - Synchronization updates only enabled currencies and preserves manual overrides. Existing saved rates are treated as manual overrides on upgrade. Use synced rates switches supported enabled currencies to automatic updates; unsupported manual currencies remain unchanged. Editing a rate creates a manual override. Add currency can use a cached rate when its rate field is blank.
-- The full cached list does not populate selectors automatically: fresh starts still offer only EUR and USD. All sync settings and cached rates are included in full JSON backups. Reset all data clears them and cancels an outstanding request; startup sync defaults to enabled on the next open.
+- The full cached list does not populate selectors automatically: fresh starts still offer only EUR. All sync settings and cached rates are included in full JSON backups. Reset all data clears them and cancels an outstanding request; startup sync defaults to enabled on the next open.
 - Requests time out after 12 seconds. Offline, HTTP, malformed-response and storage failures retain previous rates and show a retry message in Settings. Direct `file://` fetch behavior depends on browser CORS/security rules; manual rates remain available if the browser blocks the request.
 - Existing transaction snapshots and transfer amounts are never rewritten by sync. New transactions and recurring occurrences use the rates available when they are recorded. Legacy records without snapshots retain their existing current-rate fallback. Recurring processing on startup runs before the background sync and therefore uses locally cached rates.
 
 - Each account has one native currency; base reporting currency is configurable (EUR default).
-- Currency selectors are built dynamically from local reference-rate codes, the reporting currency and all accounts, including archived accounts. Fresh installs and Reset all data start with only EUR and USD. Other currencies can be added in Settings. Existing saved rates and account currencies remain available; older accounts using GBP, CHF, MKD or SEK retain their previous fallback rates if no rate was saved.
+- Currency selectors are built dynamically from local reference-rate codes, the reporting currency and all accounts, including archived accounts. Fresh installs and Reset all data start with only EUR. Other currencies can be added in Settings. Existing saved rates and account currencies remain available; older accounts using USD, GBP, CHF, MKD or SEK retain their previous fallback rates if no rate was saved.
 - Settings & backup includes Add currency: choose from the cached ExchangeRate.fun response. Only supported codes not already enabled are offered, sorted alphabetically. Sync first to load the list; once cached it works offline. A successful sync refreshes an open dropdown without discarding a still-valid selection. Adding an arbitrary code or an already enabled currency is rejected even if a manual rate is supplied. Existing custom/imported currencies are preserved. Leave the rate blank to use the synced rate or enter a positive manual override in units per 1 EUR.
 - Reference rates and custom codes are saved together in the existing `exchangeRates` setting and included in full JSON backups. No schema migration is required; manual currency management works offline. There is no currency deletion action.
-- Reset starter rates resets only EUR and USD while preserving other currencies and their rates. Save rates retains entered rate precision, including values smaller than one millionth.
+- Reset starter rates resets only EUR while preserving other currencies and their rates. Save rates retains entered rate precision, including values smaller than one millionth.
 - Changing the reporting currency is blocked when any existing transaction lacks a required historical rate for that target, including either side of a transfer. Existing snapshots are preserved rather than filled with fabricated historical rates. Legacy transactions without snapshots retain the existing configured-rate fallback.
 - Currency-specific decimal precision remains planned: the current ledger and amount formatter use two decimal places for every currency. This limitation is shown beside Add currency.
 - Same-currency transfers automatically receive the sent amount; no received-amount or exchange-rate input or conversion estimate is shown.
@@ -407,7 +407,7 @@ Explicitly excluded unless the product owner changes the requirements:
 
 ### Dynamic currency checks
 
-- Fresh state and a completed full data reset offer only EUR and USD. Existing saved currencies remain available on ordinary app startup; older accounts retain their unsaved fallback rates.
+- Fresh state and a completed full data reset offer only EUR. Existing saved currencies remain available on ordinary app startup; older accounts retain their unsaved fallback rates.
 
 - Sync first and choose a supported currency not already enabled; verify its options in account creation and the reporting selector plus an editable Settings rate row. Verify empty-list guidance before sync and when every supported currency has been added.
 - Reject unsupported codes, existing codes, zero, negative and nonfinite manual rates without changing saved settings. A storage failure shows an error and permits retry.
@@ -534,6 +534,12 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — EUR-only starter currency
+
+- Reduced the starter currency set to EUR for fresh installs and full resets. Sync caches other currencies without enabling them; USD can be added from the supported currency dropdown.
+- Reset starter rates now changes only EUR and preserves existing USD values and automatic/manual status. Saved rates and legacy USD accounts remain supported without rewriting transactions.
+- Verification: sync regression tests plus EUR-only initialization/reset, cached USD availability, saved USD preservation, legacy USD conversion and reset-rate checks passed; JavaScript syntax, formatting and diff checks passed. Live browser persistence was not retested.
 
 ### 2026-10-22 — Clarify reference-rate wording
 

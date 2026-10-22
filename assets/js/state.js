@@ -118,12 +118,12 @@ const categoryLabel = (categoryId, subcategoryId) => {
     s = subcat(categoryId, subcategoryId)
   return [c?.name, s?.name].filter(Boolean).join(' / ') || 'Other'
 }
-const defaultRates = { EUR: 1, USD: 1.09 }
+const defaultRates = { EUR: 1 }
 
 function exchangeRates() {
   const rates = { ...defaultRates, ...getSetting('exchangeRates', {}) }
   // Older accounts may rely on starter rates that were never saved to Settings.
-  const legacyRates = { GBP: 0.86, MKD: 61.5, CHF: 0.94, SEK: 11.2 }
+  const legacyRates = { USD: 1.09, GBP: 0.86, MKD: 61.5, CHF: 0.94, SEK: 11.2 }
   for (const currency of usedCurrencies()) {
     if (!Object.hasOwn(rates, currency) && Object.hasOwn(legacyRates, currency))
       rates[currency] = legacyRates[currency]

@@ -55,14 +55,14 @@ function setup() {
   }
 }
 
-test('sync caches full list but enables only EUR/USD and sends no user-specific data', async () => {
+test('sync caches full list but enables only EUR and sends no user-specific data', async () => {
   const s = setup()
   s.run("state.transactions=[{id:'private',amount:42,exchangeRates:{EUR:1,USD:1.09}}]")
   const snapshot = s.run('JSON.stringify(state.transactions)')
   await s.context.syncCurrencyRates()
-  assert.equal(s.run('exchangeRates().USD'), 1.2)
+  assert.equal(s.run('exchangeRates().USD'), undefined)
   assert.equal(s.run("getSetting('currencySync').rates.CAD"), 1.5)
-  assert.equal(s.run('JSON.stringify(availableCurrencies())'), '["EUR","USD"]')
+  assert.equal(s.run('JSON.stringify(availableCurrencies())'), '["EUR"]')
   assert.equal(s.run('JSON.stringify(state.transactions)'), snapshot)
   const request = s.request()
   assert.equal(request.url, 'https://api.exchangerate.fun/latest?base=eur')
@@ -108,7 +108,7 @@ test('invalid rates, response metadata and HTTP/network/storage errors preserve 
     s.context.fetch = async () => ({ ok: true, json: async () => response })
     await s.context.syncCurrencyRates()
     assert.equal(s.writes(), 0)
-    assert.equal(s.run('exchangeRates().USD'), 1.09)
+    assert.equal(s.run('exchangeRates().USD'), undefined)
     assert.match(s.run('currencySyncStatus()'), /Sync failed/)
   }
   for (const failure of ['http', 'network', 'storage']) {
@@ -124,7 +124,7 @@ test('invalid rates, response metadata and HTTP/network/storage errors preserve 
       }
     await s.context.syncCurrencyRates()
     assert.equal(s.run('state.settings.length'), 0)
-    assert.equal(s.run('exchangeRates().USD'), 1.09)
+    assert.equal(s.run('exchangeRates().USD'), undefined)
     assert.match(s.run('currencySyncStatus()'), /Sync failed/)
   }
 })
@@ -164,7 +164,8 @@ test('timeout keeps prior rates and allows retry', async () => {
   assert.match(s.run('currencySyncStatus()'), /Sync failed/)
   s.context.fetch = async () => ({ ok: true, json: async () => payload })
   await s.context.syncCurrencyRates()
-  assert.equal(s.run('exchangeRates().USD'), 1.2)
+  assert.equal(s.run("getSetting('currencySync').rates.USD"), 1.2)
+  assert.equal(s.run('exchangeRates().USD'), undefined)
 })
 
 test('settings apply cached rates and preserve manual rates absent from provider', async () => {
@@ -235,7 +236,7 @@ test('cached currency addition is automatic; editing a rate creates an override 
   assert.equal(s.run('exchangeRates().CAD'), 1.5)
   assert.equal(s.run("manualCurrencyCodes().includes('CAD')"), false)
   const inputs = [
-    { name: 'USD', value: '1.2', dataset: { originalRate: '1.2' } },
+    { name: 'EUR', value: '1', dataset: { originalRate: '1' } },
     { name: 'CAD', value: '1.6', dataset: { originalRate: '1.5' } },
   ]
   await s.elements
@@ -333,15 +334,15 @@ test('add-currency dropdown loads only current-provider codes and preserves vali
   assert.equal(s.run('syncedCurrenciesToAdd().length'), 0)
   await s.context.syncCurrencyRates()
   assert.equal(select.disabled, false)
-  assert.equal(s.run('JSON.stringify(syncedCurrenciesToAdd())'), '["CAD","MKD"]')
+  assert.equal(s.run('JSON.stringify(syncedCurrenciesToAdd())'), '["CAD","MKD","USD"]')
   assert.ok(select.innerHTML.includes('value="CAD"'))
-  assert.ok(!select.innerHTML.includes('value="USD"'))
+  assert.ok(select.innerHTML.includes('value="USD"'))
   assert.ok(!select.innerHTML.includes('value="ABC"'))
   select.value = 'CAD'
   await s.context.syncCurrencyRates()
   assert.equal(select.value, 'CAD')
   s.run(
-    "state.accounts=[{id:'cad',currency:'CAD'},{id:'mkd',currency:'MKD'},{id:'custom',currency:'ABC'}];updateAddCurrencyOptions()"
+    "state.accounts=[{id:'cad',currency:'CAD'},{id:'mkd',currency:'MKD'},{id:'usd',currency:'USD'},{id:'custom',currency:'ABC'}];updateAddCurrencyOptions()"
   )
   assert.equal(select.value, '')
   assert.equal(select.disabled, true)
@@ -365,7 +366,7 @@ test('unsupported/tampered codes cannot be added even with manual rates; support
   assert.equal(s.writes(), 0)
   await s.context.syncCurrencyRates()
   const before = s.writes()
-  for (const code of ['ABC', 'USD', '<X>', '']) {
+  for (const code of ['ABC', 'EUR', '<X>', '']) {
     form.elements.code.value = code
     await submit()
     assert.equal(s.writes(), before)
@@ -378,4 +379,49 @@ test('unsupported/tampered codes cannot be added even with manual rates; support
   assert.equal(s.run("manualCurrencyCodes().includes('MKD')"), true)
   await submit()
   assert.equal(s.writes(), before + 1)
+})
+
+test('EUR is the only starter before/after sync and full reset; existing USD rates and accounts survive upgrades', async () => {
+  const s = setup()
+  assert.equal(s.run('JSON.stringify(availableCurrencies())'), '["EUR"]')
+  await s.context.syncCurrencyRates()
+  assert.equal(s.run('JSON.stringify(availableCurrencies())'), '["EUR"]')
+  assert.ok(s.run('syncedCurrenciesToAdd()').includes('USD'))
+  s.run("state.settings.find(item=>item.id==='exchangeRates').value.USD=1.3")
+  assert.equal(s.run('exchangeRates().USD'), 1.3)
+  s.run("state.settings=[];state.accounts=[{id:'old',currency:'USD'}]")
+  assert.equal(s.run('exchangeRates().USD'), 1.09)
+  assert.equal(s.run("amount(convertedWithRates(109,'USD','EUR'))"), 100)
+  vm.runInContext(source('modals'), s.context)
+  let confirmation,
+    replacement,
+    id = 0
+  Object.assign(s.context, {
+    crypto: { randomUUID: () => `starter-${++id}` },
+    confirmAction: options => {
+      confirmation = options
+    },
+    replaceAll: async data => {
+      replacement = data
+    },
+    toast() {},
+  })
+  s.run('resetDataModal()')
+  await confirmation.onConfirm()
+  assert.ok(replacement.categories.length > 0)
+  assert.equal(s.run('state.accounts.length'), 0)
+  assert.equal(s.run('state.settings.length'), 0)
+  assert.equal(s.run('JSON.stringify(availableCurrencies())'), '["EUR"]')
+})
+
+test('resetting starter rates leaves an enabled automatic USD rate unchanged', async () => {
+  const s = setup()
+  vm.runInContext(source('modals'), s.context)
+  Object.assign(s.context, { modal() {}, toast() {}, reload: async () => {} })
+  s.run(
+    "state.settings=[{id:'exchangeRates',value:{EUR:1,USD:1.2}},{id:'manualCurrencyCodes',value:[]}];settingsModal()"
+  )
+  await s.elements.get('#reset-rates').onclick()
+  assert.equal(s.run('exchangeRates().USD'), 1.2)
+  assert.equal(s.run("manualCurrencyCodes().includes('USD')"), false)
 })

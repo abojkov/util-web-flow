@@ -1235,7 +1235,7 @@ function settingsModal() {
   $('#reset-rates').onclick = async () => {
     await saveCurrencySettings({
       exchangeRates: { ...exchangeRates(), ...defaultRates },
-      manualCurrencyCodes: [...new Set([...manualCurrencyCodes(), 'USD'])],
+      manualCurrencyCodes: manualCurrencyCodes(),
     })
     await reload()
     settingsModal()

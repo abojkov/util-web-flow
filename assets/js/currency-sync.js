@@ -123,7 +123,7 @@ async function syncCurrencyRates() {
       rates[code] = rate
     }
     rates.EUR = 1
-    if (!rates.USD) throw new Error('Incomplete rate response')
+    if (!Object.keys(data.rates).length) throw new Error('Incomplete rate response')
     if (currencySyncRequest !== controller || controller.signal.aborted) return
     const next = { ...exchangeRates() }
     const manual = manualCurrencyCodes()
