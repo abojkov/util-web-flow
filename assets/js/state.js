@@ -1,5 +1,5 @@
 // Update this value when releasing a new app version.
-const APP_VERSION = '1.0.8'
+const APP_VERSION = '1.1.0'
 
 const $ = s => document.querySelector(s),
   uid = () => crypto.randomUUID(),
