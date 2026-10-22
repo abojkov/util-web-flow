@@ -62,17 +62,15 @@ function toast(s) {
   }, 3500)
 }
 
-const currencies = ['EUR', 'USD', 'GBP', 'MKD', 'CHF', 'SEK']
-
 function currencyOptions(current) {
-  return currencies
+  return availableCurrencies()
     .map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`)
     .join('')
 }
 
 function exchangeRateRows() {
   const configured = exchangeRates()
-  const editable = usedCurrencies().length ? usedCurrencies() : currencies
+  const editable = availableCurrencies()
   return editable
     .map(
       currency =>
@@ -1052,10 +1050,41 @@ function resetDataModal() {
 function settingsModal() {
   modal(
     'Settings & backup',
-    `<div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div><div class="field" style="margin-top:18px"><h3>Reset app</h3><p class="form-hint">Start from zero by deleting all local financial data and resetting settings. Export a full JSON backup first if you want to keep a copy.</p><button type="button" class="btn danger" id="reset-all-data">Reset all data</button></div><p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`
+    `<div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset starter rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><form id="add-currency-form"><h3>Add currency</h3><p class="form-hint">Enter a three-letter currency code and your reference rate. Rates stay offline and are never fetched automatically. Amounts currently use two decimal places.</p><div class="field-row"><div class="field"><label for="new-currency-code">Currency code</label><input id="new-currency-code" name="code" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" placeholder="e.g. CAD" autocapitalize="characters" autocomplete="off"></div><div class="field"><label for="new-currency-rate">Units per 1 EUR</label><input id="new-currency-rate" name="rate" required type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter your rate"></div></div><div class="modal-footer"><button class="btn secondary" type="submit">Add currency</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div><div class="field" style="margin-top:18px"><h3>Reset app</h3><p class="form-hint">Start from zero by deleting all local financial data and resetting settings. Export a full JSON backup first if you want to keep a copy.</p><button type="button" class="btn danger" id="reset-all-data">Reset all data</button></div><p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`
   )
+  $('#add-currency-form').onsubmit = async e => {
+    e.preventDefault()
+    const form = e.target
+    const code = form.elements.code.value.trim().toUpperCase()
+    const rate = decimalValue(form.elements.rate.value)
+    if (!/^[A-Z]{3}$/.test(code)) return toast('Enter a three-letter currency code.')
+    if (Object.hasOwn(exchangeRates(), code))
+      return toast('This currency already exists. Edit its reference rate above.')
+    if (!Number.isFinite(rate) || rate <= 0)
+      return toast('Enter a positive reference rate in units per 1 EUR.')
+    const button = form.querySelector('button[type="submit"]')
+    if (button.disabled) return
+    button.disabled = true
+    try {
+      await put('settings', { id: 'exchangeRates', value: { ...exchangeRates(), [code]: rate } })
+      await reload()
+      settingsModal()
+      toast(`${code} added. It is now available for accounts and reporting.`)
+    } catch (error) {
+      console.error(error)
+      toast('Could not add currency. Please try again.')
+    } finally {
+      button.disabled = false
+    }
+  }
   $('#reset-all-data').onclick = resetDataModal
   $('#base-currency').onchange = async e => {
+    if (!canReportInCurrency(e.target.value)) {
+      e.target.value = base()
+      return toast(
+        'Cannot use this reporting currency: a configured or historical transaction rate is missing.'
+      )
+    }
     await put('settings', { id: 'baseCurrency', value: e.target.value })
     await reload()
     settingsModal()
@@ -1067,7 +1096,7 @@ function settingsModal() {
       const value = decimalValue(input.value)
       if (!Number.isFinite(value) || value <= 0)
         return toast(`Enter a valid rate for ${input.name}`)
-      next[input.name] = Math.round(value * 1000000) / 1000000
+      next[input.name] = value
     }
     next.EUR = 1
     await put('settings', { id: 'exchangeRates', value: next })
@@ -1076,10 +1105,10 @@ function settingsModal() {
     toast('Exchange rates saved')
   }
   $('#reset-rates').onclick = async () => {
-    await put('settings', { id: 'exchangeRates', value: { ...defaultRates } })
+    await put('settings', { id: 'exchangeRates', value: { ...exchangeRates(), ...defaultRates } })
     await reload()
     settingsModal()
-    toast('Exchange rates reset')
+    toast('Starter rates reset. Custom currency rates preserved.')
   }
   $('#export-json').onclick = async () => {
     const data = { format: 'flow-backup', version: 1, exportedAt: new Date().toISOString() }

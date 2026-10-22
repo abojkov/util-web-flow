@@ -118,10 +118,23 @@ const categoryLabel = (categoryId, subcategoryId) => {
     s = subcat(categoryId, subcategoryId)
   return [c?.name, s?.name].filter(Boolean).join(' / ') || 'Other'
 }
-const defaultRates = { EUR: 1, USD: 1.09, GBP: 0.86, MKD: 61.5, CHF: 0.94, SEK: 11.2 }
+const defaultRates = { EUR: 1, USD: 1.09 }
 
 function exchangeRates() {
-  return { ...defaultRates, ...getSetting('exchangeRates', {}) }
+  const rates = { ...defaultRates, ...getSetting('exchangeRates', {}) }
+  // Older accounts may rely on starter rates that were never saved to Settings.
+  const legacyRates = { GBP: 0.86, MKD: 61.5, CHF: 0.94, SEK: 11.2 }
+  for (const currency of usedCurrencies()) {
+    if (!Object.hasOwn(rates, currency) && Object.hasOwn(legacyRates, currency))
+      rates[currency] = legacyRates[currency]
+  }
+  return rates
+}
+
+function availableCurrencies() {
+  return [...new Set([...Object.keys(exchangeRates()), ...usedCurrencies()])]
+    .filter(code => /^[A-Z]{3}$/.test(code))
+    .sort()
 }
 
 function usedCurrencies() {
@@ -134,6 +147,23 @@ function usedCurrencies() {
     if (to?.currency) values.add(to.currency)
   }
   return [...values].filter(Boolean).sort()
+}
+
+function canReportInCurrency(currency) {
+  const configured = exchangeRates()
+  if (!Number.isFinite(configured[currency]) || configured[currency] <= 0) return false
+  return state.transactions.every(transaction => {
+    const rates = transactionRates(transaction)
+    const accounts = [account(transaction.accountId)]
+    if (transaction.type === 'transfer') accounts.push(account(transaction.toAccountId))
+    return accounts.every(item => {
+      if (!item) return false
+      if (item.currency === currency) return true
+      return [rates[item.currency], rates[currency]].every(
+        rate => Number.isFinite(rate) && rate > 0
+      )
+    })
+  })
 }
 
 function payeeOptions() {

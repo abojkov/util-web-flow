@@ -143,7 +143,12 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 ### Multi-currency
 
 - Each account has one native currency; base reporting currency is configurable (EUR default).
-- Support ISO currencies including EUR, USD, GBP, CHF, MKD, with correct decimal precision.
+- Currency selectors are built dynamically from local reference-rate codes, the reporting currency and all accounts, including archived accounts. Fresh installs and Reset all data start with only EUR and USD. Other currencies can be added in Settings. Existing saved rates and account currencies remain available; older accounts using GBP, CHF, MKD or SEK retain their previous fallback rates if no rate was saved.
+- Settings & backup includes Add currency: enter a three-letter code and an explicit positive rate in units per 1 EUR. Codes are normalized to uppercase; malformed codes, duplicates and invalid rates are rejected. Codes are format-validated rather than checked against a live ISO registry. Added codes become available for new accounts and reporting.
+- Reference rates and custom codes are saved together in the existing `exchangeRates` setting and included in full JSON backups. No schema migration or network request is required. There is no currency deletion action.
+- Reset starter rates resets only EUR and USD while preserving other currencies and their rates. Save rates retains entered rate precision, including values smaller than one millionth.
+- Changing the reporting currency is blocked when any existing transaction lacks a required historical rate for that target, including either side of a transfer. Existing snapshots are preserved rather than filled with fabricated historical rates. Legacy transactions without snapshots retain the existing configured-rate fallback.
+- Currency-specific decimal precision remains planned: the current ledger and amount formatter use two decimal places for every currency. This limitation is shown beside Add currency.
 - Same-currency transfers automatically receive the sent amount; no received-amount or exchange-rate input or conversion estimate is shown.
 - Cross-currency transfers require a positive rate. Pairs involving the main currency quote 1 main-currency unit = X other units. For other pairs, the currency with the higher unit value (lower valid Settings rate per EUR) is quoted first: MKD ↔ USD uses 1 USD = X MKD in both directions. When reference rates are missing, existing transfers use their saved destination/source amount ratio to choose a readable quote. New transfers with missing rates start blank and use destination units per source unit until valid reference rates are configured. Quote direction is automatic; there is no manual reversal control. No missing reference rate is invented. Editing rate or received amount does not change the automatically determined quote direction.
 - Every cross-currency transfer has editable rate and received fields. When quoting destination currency first, received = sent ÷ rate and rate = sent ÷ received; otherwise received = sent × rate and rate = received ÷ sent. Generated rate text uses up to 10 significant digits without scientific notation; manually entered precision is retained. Received amounts use two decimal places. Existing saved received amounts are preserved when opening/editing/copying and the stored `transferRate` remains received ÷ sent, independent of display orientation. Reporting snapshots are separate.
@@ -158,7 +163,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Transactions keep an exchange-rate snapshot so historical reports do not silently change when Settings rates are updated later.
 - All-accounts current balance estimates convert each active account's current native balance using the current configured rates in Settings.
 - Historical transaction reports use transaction exchange-rate snapshots so old transaction values do not silently change when Settings rates are updated later.
-- Settings show editable local reference rates for currencies used in the app and the conversion formula.
+- Settings show editable local reference rates for all available currencies and the conversion formula.
 - Monetary UI values use one shared format: grouped number with two decimal places, followed by the uppercase currency code (for example, `1,234.50 EUR`, `10.00 MKD`). Symbols such as €/$ are not used for formatted amounts. Exchange-rate quotes retain their extra precision and use the same trailing currency-code convention. Stored amounts and CSV/JSON numerical values are unchanged.
 - Preserve original values and historical conversion information.
 - Use integer minor units where appropriate or an exact decimal strategy; avoid ordinary JS floating-point math for money.
@@ -368,6 +373,7 @@ Explicitly excluded unless the product owner changes the requirements:
 | F20 | Quality      | Error states, accessibility, responsive QA      | Planned                         | Browser verification                                 |
 | F21 | Accounts     | Account visibility                              | Partial — focused checks passed | Browser hide/show, reload and restore checks pending |
 | F22 | Data         | Reset all data with confirmation                | Partial — focused checks passed | Browser persistence and mobile checks pending        |
+| F23 | Currency     | Dynamic currency management                     | Partial — focused checks passed | Browser persistence and transfer checks pending      |
 
 ### Release phases
 
@@ -379,6 +385,18 @@ Explicitly excluded unless the product owner changes the requirements:
 6. **Stabilization:** F20, financial edge cases, migration/restore testing.
 
 ## Acceptance criteria and test scenarios
+
+### Dynamic currency checks
+
+- Fresh state and a completed full data reset offer only EUR and USD. Existing saved currencies remain available on ordinary app startup; older accounts retain their unsaved fallback rates.
+
+- Add a lowercase three-letter code with a positive rate; verify uppercase options in account creation and the reporting selector plus an editable Settings rate row.
+- Reject malformed codes, existing codes, zero, negative and nonfinite rates without changing saved settings. A storage failure shows an error and permits retry.
+- Verify conversions using the entered rate and preserve custom rates when resetting starter rates. Small positive rates must not be rounded to zero.
+- Retain currencies from imported and archived accounts in selectors.
+- Preserve custom rates through reload and full JSON backup/restore.
+- Reject a reporting-currency change when any transaction snapshot lacks its required historical rates. Keep existing snapshots and ledger amounts unchanged.
+- Verify account creation and transfers using a new currency on mobile and desktop; amounts currently retain two-decimal precision.
 
 ### Reset data checks
 
@@ -497,6 +515,24 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Remove account currency hint
+
+- Removed the Settings & backup hint beneath Currency in the account form.
+- Verification: confirmed the hint is absent; JavaScript syntax, formatting and diff checks passed. Browser layout was not retested.
+
+### 2026-10-22 — EUR and USD starter currencies
+
+- Reduced starter currencies to EUR and USD for fresh installs and full data resets. Other currencies remain available through Add currency.
+- Preserved saved currency settings and historical records. Older accounts using the removed starter currencies retain their previous fallback reference rates when no rates were saved. Reset starter rates changes only EUR and USD.
+- Verification: focused fresh-state, full-reset, saved-rate preservation and legacy-account conversion checks passed alongside JavaScript syntax, formatting and diff checks. Live browser persistence was not retested.
+
+### 2026-10-22 — Dynamic currencies
+
+- Replaced the fixed selector list with currencies discovered from reference rates and existing accounts. Added a validated Add currency form in Settings & backup with an explicit user-entered rate.
+- Rate editing includes every available currency. Reset starter rates preserves custom rates and saving rates no longer rounds small positive values to zero.
+- Guarded reporting-currency changes against missing historical snapshot rates; preserved existing transaction amounts and snapshots. Documented the existing two-decimal precision limitation.
+- Verification: focused automated discovery, normalization, invalid/duplicate code and rate, conversion/snapshot, small-rate, reset preservation, JSON settings round-trip, historical-rate guard and storage-failure checks passed. Syntax, local assets/script order, formatting and diff checks passed. Live browser persistence, full backup restoration, responsive layout and new-currency transfer interaction remain unverified.
 
 ### 2026-10-22 — Balance visibility control on Home
 
