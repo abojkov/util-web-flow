@@ -721,7 +721,7 @@ function transactions() {
       <div class="search-panel-head">
         <div>
           <h3>Search transactions</h3>
-          <p>Find transactions by text, type, period, account, and category.</p>
+          <p>Find transactions by text, type, period, account and category.</p>
         </div>
         ${clearSearch}
       </div>
@@ -949,7 +949,7 @@ function accounts() {
     ? `<div class="account-sections">${sections(active)}</div>`
     : empty(
         'Create your first account',
-        'Add a bank, cash, or savings account to get started.',
+        'Add a bank, cash or savings account to get started.',
         icons.accounts
       )
   const archivedSection = archived.length
@@ -1078,7 +1078,7 @@ function more() {
       </section>
       <section class="settings-tile">
         <h3>⚙ Settings & backup</h3>
-        <p>Currency, data export and import, and privacy options.</p>
+        <p>Currency preferences, data imports/exports and privacy options.</p>
         <button class="btn secondary" id="open-settings">Open settings</button>
       </section>
     </div>

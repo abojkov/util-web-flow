@@ -11,6 +11,6 @@ $('#settings-shortcut').onclick = settingsModal
   } catch (err) {
     console.error(err)
     $('#view').innerHTML =
-      '<div class="panel">Could not open local database. Try opening the app through localhost or HTTPS, and check browser storage permissions.</div>'
+      '<div class="panel">Could not open local database. Try opening the app through localhost or HTTPS and check browser storage permissions.</div>'
   }
 })()

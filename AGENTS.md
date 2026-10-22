@@ -4,7 +4,7 @@
 
 Money Manager is a modern, mobile-first, fully offline personal finance application inspired by Realbyte Money Manager.
 
-The application allows users to manage accounts, income, expenses, transfers, budgets, recurring transactions, and financial statistics.
+The application allows users to manage accounts, income, expenses, transfers, budgets, recurring transactions and financial statistics.
 
 The application must have its own original design and implementation.
 
@@ -57,9 +57,9 @@ Recommended structure:
 └── AGENTS.md
 ```
 
-Keep database operations, business logic, and UI rendering separated.
+Keep database operations, business logic and UI rendering separated.
 
-Avoid unnecessary global variables, duplicated code, and tightly coupled components.
+Avoid unnecessary global variables, duplicated code and tightly coupled components.
 
 Do not introduce architectural complexity without a clear benefit.
 
@@ -73,7 +73,7 @@ The application uses a premium, modern blue-and-white design.
 - Blue as the primary accent color.
 - White and very light gray backgrounds.
 - Subtle borders and shadows.
-- Rounded cards, inputs, and modals.
+- Rounded cards, inputs and modals.
 - Clean typography and consistent spacing.
 - Modern financial dashboard aesthetics.
 
@@ -129,7 +129,7 @@ Balances must be calculated consistently from opening balances and recorded tran
 
 ## 6. Multi-Currency Support
 
-Support multiple currencies, including EUR, USD, GBP, CHF, and MKD.
+Support multiple currencies, including EUR, USD, GBP, CHF and MKD.
 
 - Every account has a native currency.
 - Users can select a base reporting currency.
@@ -169,7 +169,7 @@ Transfers must identify both source and destination accounts.
 - Transfers decrease the source account and increase the destination account.
 - Transfers must not be counted as ordinary income or expenses.
 - Do not double-count transactions.
-- Validate amounts, dates, accounts, and category relationships.
+- Validate amounts, dates, accounts and category relationships.
 - Use atomic IndexedDB transactions when updating related records.
 
 ### Split Transactions
@@ -177,7 +177,7 @@ Transfers must identify both source and destination accounts.
 Support splitting income and expenses into multiple categories.
 
 - A split transaction remains one financial transaction.
-- Each split has its own category, optional subcategory, amount, and description.
+- Each split has its own category, optional subcategory, amount and description.
 - Split amounts must sum exactly to the transaction total.
 - Account balances must only change by the transaction total.
 - Statistics and budgets must use individual split amounts.
@@ -189,7 +189,7 @@ Support customizable income and expense categories.
 
 - Unlimited custom categories and subcategories.
 - Custom icons and colors.
-- Create, edit, delete, and reorder.
+- Create, edit, delete and reorder.
 - Optional starter categories.
 - Prevent deletion from silently corrupting historical transactions.
 - Preserve category relationships in reports and backups.
@@ -257,7 +257,7 @@ Combined balances use the selected base currency. Individual account views use t
 
 Support:
 
-- Daily, weekly, monthly, yearly, and custom date ranges.
+- Daily, weekly, monthly, yearly and custom date ranges.
 - Income versus expenses.
 - Expense distribution by category.
 - Category and subcategory breakdowns.
@@ -312,7 +312,7 @@ Support:
 - Import validation.
 - Duplicate detection.
 
-Backups must preserve IDs, relationships, currencies, and settings.
+Backups must preserve IDs, relationships, currencies and settings.
 
 Validate imported data before modifying the database.
 
@@ -361,7 +361,7 @@ Before completing a task:
 - Validate relevant financial calculations.
 - Test empty states.
 - Test invalid inputs.
-- Test create, edit, and delete flows where applicable.
+- Test create, edit and delete flows where applicable.
 - Verify that records persist after page reload.
 - Check responsive behavior when browser testing is available.
 - Check that no runtime network dependencies were introduced.
@@ -398,7 +398,7 @@ Treat README.md as the living product specification
 and source of truth for application functionality.
 
 Whenever you implement a feature, modify existing
-functionality, change the database schema, or fix
+functionality, change the database schema or fix
 a bug affecting documented behavior:
 
 - Update the relevant README.md sections.
@@ -429,4 +429,9 @@ For every task:
 
 Do not implement unrelated features or make major architectural decisions without approval.
 
-The highest priorities are financial correctness, data integrity, offline compatibility, usability, and maintainability.
+The highest priorities are financial correctness, data integrity, offline compatibility, usability and maintainability.
+
+## 22. Writing and Grammar
+
+- Never place a comma immediately before “and” or “or” in app text or project documentation. Apply this rule to all future copy changes.
+- Preserve commas required by programming syntax and data formats. Do not rewrite user-entered content or imported financial records to enforce this writing rule.

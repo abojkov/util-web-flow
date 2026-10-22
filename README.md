@@ -1,6 +1,6 @@
 # Flow Money Manager
 
-> A modern, blue-themed, mobile-first, offline personal finance application built with HTML, CSS, vanilla JavaScript, and IndexedDB.
+> A modern, blue-themed, mobile-first, offline personal finance application built with HTML, CSS, vanilla JavaScript and IndexedDB.
 
 **Project status:** Active development
 **Specification version:** 1.0
@@ -17,7 +17,7 @@
 5. [Financial business rules](#financial-business-rules)
 6. [Data model](#data-model)
 7. [Technical architecture](#technical-architecture)
-8. [Privacy, security, and backups](#privacy-security-and-backups)
+8. [Privacy, security and backups](#privacy-security-and-backups)
 9. [Non-goals](#non-goals)
 10. [Development roadmap and feature tracker](#development-roadmap-and-feature-tracker)
 11. [Acceptance criteria and test scenarios](#acceptance-criteria-and-test-scenarios)
@@ -27,21 +27,21 @@
 
 ## Vision and scope
 
-Flow Money Manager is an original personal finance app inspired by the functionality of Realbyte Money Manager, not a reproduction of its proprietary assets or interface. It helps one user track financial accounts, income, expenses, transfers, budgets, recurring activity, and statistics. The app must run locally without a backend, user registration, subscription, or runtime internet connection.
+Flow Money Manager is an original personal finance app inspired by the functionality of Realbyte Money Manager, not a reproduction of its proprietary assets or interface. It helps one user track financial accounts, income, expenses, transfers, budgets, recurring activity and statistics. The app must run locally without a backend, user registration, subscription or runtime internet connection.
 
 **Principles:** financial correctness; user-owned data; dependable offline behavior; excellent mobile usability; clear reporting; small, reviewable changes.
 
-**First-run state:** no accounts, transactions, balances, or budgets. Optional starter categories are acceptable. No demo financial data.
+**First-run state:** no accounts, transactions, balances or budgets. Optional starter categories are acceptable. No demo financial data.
 
 ## Core user journey
 
 1. Open `index.html` directly in a supported browser.
 2. Choose a base reporting currency (EUR by default).
 3. Create one or more accounts with native currencies and opening balances.
-4. Record income, expenses, and transfers; optionally split income or expenses across categories.
-5. Review account balances, transaction history, and calendar.
+4. Record income, expenses and transfers; optionally split income or expenses across categories.
+5. Review account balances, transaction history and calendar.
 6. Set independent monthly overall and category budgets.
-7. Inspect charts and filter by date, account, category, and currency.
+7. Inspect charts and filter by date, account, category and currency.
 8. Configure recurring entries and optionally a PIN lock.
 9. Export a JSON backup or CSV file; restore/import with validation.
 
@@ -75,9 +75,9 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 
 - Default filter: **All Accounts**; optionally select a single account.
 - Current combined balance of active accounts in base reporting currency (EUR default).
-- Settings includes “Blur total balance,” saved as the boolean `hideTotalBalance` in IndexedDB Settings (default false). The Home card has a Show/Hide shortcut using the same saved preference, including when filtering to an individual account. Other financial amounts remain visible. This is display privacy, not encryption; stored/exported data and calculations are unchanged, and full JSON backups include the preference.
-- Monthly income, expenses, and net cash flow (`income − expenses`).
-- Quick actions for income, expense, and transfer.
+- Settings includes “Blur total balance,” saved as the boolean `hideTotalBalance` in IndexedDB Settings (default false). The Home card has a Show/Hide shortcut using the same saved preference, including when filtering to an individual account. Other financial amounts remain visible. This is display privacy, not encryption; stored/exported data and calculations are unchanged and full JSON backups include the preference.
+- Monthly income, expenses and net cash flow (`income − expenses`).
+- Quick actions for income, expense and transfer.
 - Spending-by-category donut chart and recent transactions.
 - Month navigation for historical income/expense activity.
 - **Important:** current account balance is not the same as income/expenses for the selected month.
@@ -85,18 +85,18 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 
 ### Accounts
 
-Supported types: cash, bank, savings, investment, loan, and custom. **Credit cards are excluded.**
+Supported types: cash, bank, savings, investment, loan and custom. **Credit cards are excluded.**
 
 Account fields: unique ID, name, type, native currency, opening balance, optional description, icon/color, archived flag, visibility (`visible`, default true), sort order, created/updated timestamps.
 
-- Create, edit, list, archive, and restore accounts.
-- Archived accounts appear in a collapsible section with an account count, closed by default. Its blue outlined header places a rotating chevron beside the label and shows “Tap to expand” / “Tap to collapse” hints, with hover and keyboard-focus feedback. Tap/click its heading (or use Enter/Space when focused) to expand/collapse it. Expansion survives Manage/Done and account updates while on Accounts, and resets when leaving the page or reloading. Expand and enable Manage to access archived editing, sorting, and Restore controls. The section is omitted when no accounts are archived.
-- Accounts open in a clean viewing mode with balances inline beside each account name, including on mobile. The top Manage button switches to management mode, revealing account/type sorting, visibility, editing, and Archive/Restore controls; Done hides them. Add account is always visible in both modes, including an empty list. Hidden/Archived badges remain visible in viewing mode. Management mode survives account changes while on Accounts and resets when leaving the page or reopening the app; it is not stored in backups.
-- Active accounts have configurable visibility. Archived accounts are always hidden: their visibility checkbox is disabled, and archived rows omit both the Hidden badge and eye button. Restoring an account automatically sets it visible, even if it was hidden before archiving. Older/imported archived accounts are treated as hidden regardless of a missing or conflicting `visible` value. Uncheck “Visible in account selectors” in the account create/edit form to hide it from transaction source/destination buttons, account filter dropdowns, and new recurring-schedule account selectors. Accounts without a `visible` field remain visible.
-- Hidden accounts remain listed on Accounts with a compact Hidden badge and crossed-out eye indicator and remain included in active balances, transaction history/search, statistics, budgets, and complete JSON backups. Existing recurring rules continue normally. Recheck the visibility option to show the account again. Each account row also has an eye button immediately before Archive/Restore: click to toggle visibility without confirmation. An eye means visible; a crossed-out eye means hidden. Both controls use the same saved visibility property; archived accounts cannot change visibility until restored.
+- Create, edit, list, archive and restore accounts.
+- Archived accounts appear in a collapsible section with an account count, closed by default. Its blue outlined header places a rotating chevron beside the label and shows “Tap to expand” / “Tap to collapse” hints, with hover and keyboard-focus feedback. Tap/click its heading (or use Enter/Space when focused) to expand/collapse it. Expansion survives Manage/Done and account updates while on Accounts and resets when leaving the page or reloading. Expand and enable Manage to access archived editing, sorting and Restore controls. The section is omitted when no accounts are archived.
+- Accounts open in a clean viewing mode with balances inline beside each account name, including on mobile. The top Manage button switches to management mode, revealing account/type sorting, visibility, editing and Archive/Restore controls; Done hides them. Add account is always visible in both modes, including an empty list. Hidden/Archived badges remain visible in viewing mode. Management mode survives account changes while on Accounts and resets when leaving the page or reopening the app; it is not stored in backups.
+- Active accounts have configurable visibility. Archived accounts are always hidden: their visibility checkbox is disabled and archived rows omit both the Hidden badge and eye button. Restoring an account automatically sets it visible, even if it was hidden before archiving. Older/imported archived accounts are treated as hidden regardless of a missing or conflicting `visible` value. Uncheck “Visible in account selectors” in the account create/edit form to hide it from transaction source/destination buttons, account filter dropdowns and new recurring-schedule account selectors. Accounts without a `visible` field remain visible.
+- Hidden accounts remain listed on Accounts with a compact Hidden badge and crossed-out eye indicator and remain included in active balances, transaction history/search, statistics, budgets and complete JSON backups. Existing recurring rules continue normally. Recheck the visibility option to show the account again. Each account row also has an eye button immediately before Archive/Restore: click to toggle visibility without confirmation. An eye means visible; a crossed-out eye means hidden. Both controls use the same saved visibility property; archived accounts cannot change visibility until restored.
 - Editing or copying a transaction retains its assigned hidden account in the collapsed field without offering that account among selectable buttons. If every active account is hidden, new transaction/schedule creation explains that an account must be made visible. A filter pointing at an account that becomes hidden resets to All accounts.
 - Visibility adds an optional account property; no IndexedDB version change or destructive migration is required.
-- Accounts are grouped by account type and can be reordered within each type group. Group headers also have up/down controls to reorder account types. Type order is shared by active and archived sections, saved in the `accountTypeOrder` setting, and preserved by complete JSON backups. Moves swap with the neighboring displayed group; boundary controls are disabled. Individual accounts also disable Move up on the first row and Move down on the last row within each active/archived type group; single-account groups disable both. Account pickers, dropdowns, and account summaries use the same type order first, then saved account `sortOrder` within each type, with alphabetical ties. Accounts without a saved `sortOrder` follow ordered accounts within their type. Without a saved type order, the existing Cash, Bank, Savings, Investment, Loan, Other order is used; new/custom types follow deterministically.
+- Accounts are grouped by account type and can be reordered within each type group. Group headers also have up/down controls to reorder account types. Type order is shared by active and archived sections, saved in the `accountTypeOrder` setting and preserved by complete JSON backups. Moves swap with the neighboring displayed group; boundary controls are disabled. Individual accounts also disable Move up on the first row and Move down on the last row within each active/archived type group; single-account groups disable both. Account pickers, dropdowns and account summaries use the same type order first, then saved account `sortOrder` within each type, with alphabetical ties. Accounts without a saved `sortOrder` follow ordered accounts within their type. Without a saved type order, the existing Cash, Bank, Savings, Investment, Loan, Other order is used; new/custom types follow deterministically.
 - An archived account is not available for new ordinary transactions and is excluded from the current _active-account_ total by default; historical transactions and reports remain available.
 - Prevent unsafe deletion of accounts referenced by transactions.
 - Account balance is derived from opening balance and transaction ledger; **no manual balance adjustment feature**.
@@ -115,24 +115,24 @@ Three types:
 
 Core fields: ID, type, amount, date, time, source account, optional destination account and received amount, category/subcategory where applicable, payee, description, optional attachment references, created/updated timestamps.
 
-- Create, edit, delete, list, search, filter, and inspect transaction details.
-- Transaction category fields use the same inline expand/select/collapse flow as account selection, including split rows. Categories appear as separate buttons in saved order; a separate chevron expands a category’s ordered subcategories without selecting it. Expanding a category closes any other expanded category within that picker; clicking the open category’s chevron closes it. Split-row pickers operate independently. In split rows, the category and amount fields stay side by side while expanded category choices span the full row underneath both fields. Every expanded parent category spans the full picker width. Multiple subcategories wrap into a responsive grid; a single subcategory stays compact (130px maximum available width) and left-aligned underneath the full-width parent. Parent categories remain selectable. The collapsed field displays Category / Subcategory when applicable; selecting returns keyboard focus to the field, and Escape closes the picker. Existing selections initialize correctly when editing/copying; empty category lists explain where to create categories. Save validation checks transaction type and parent/subcategory relationships.
-- Transaction account selectors initially show only the selected account name in a compact field; currency remains visible on the expanded account buttons. Tapping the field expands compact square buttons (72px minimum, 6px grid spacing) listing all active accounts in the configured order, with account name, currency, and a blue selected state. Selecting an account updates the field, collapses the buttons, and returns focus to the field. Reopen it to change the selection; Escape within the buttons collapses the picker. Account fields share the standard selectors’ SVG arrow and the normal fields’ blue focus border and soft shadow, including while expanded. Both source and transfer destination use the same picker; buttons support keyboard focus and expose selection with `aria-pressed`. Archived accounts remain excluded.
+- Create, edit, delete, list, search, filter and inspect transaction details.
+- Transaction category fields use the same inline expand/select/collapse flow as account selection, including split rows. Categories appear as separate buttons in saved order; a separate chevron expands a category’s ordered subcategories without selecting it. Expanding a category closes any other expanded category within that picker; clicking the open category’s chevron closes it. Split-row pickers operate independently. In split rows, the category and amount fields stay side by side while expanded category choices span the full row underneath both fields. Every expanded parent category spans the full picker width. Multiple subcategories wrap into a responsive grid; a single subcategory stays compact (130px maximum available width) and left-aligned underneath the full-width parent. Parent categories remain selectable. The collapsed field displays Category / Subcategory when applicable; selecting returns keyboard focus to the field and Escape closes the picker. Existing selections initialize correctly when editing/copying; empty category lists explain where to create categories. Save validation checks transaction type and parent/subcategory relationships.
+- Transaction account selectors initially show only the selected account name in a compact field; currency remains visible on the expanded account buttons. Tapping the field expands compact square buttons (72px minimum, 6px grid spacing) listing all active accounts in the configured order, with account name, currency and a blue selected state. Selecting an account updates the field, collapses the buttons and returns focus to the field. Reopen it to change the selection; Escape within the buttons collapses the picker. Account fields share the standard selectors’ SVG arrow and the normal fields’ blue focus border and soft shadow, including while expanded. Both source and transfer destination use the same picker; buttons support keyboard focus and expose selection with `aria-pressed`. Archived accounts remain excluded.
 - Transaction forms show Date & time first, then Amount, followed by Account. They use one native “Date & time” (`datetime-local`) input, initialized from the saved local date/time or the current local date/time for new records. Copy options retain their original/current date-time behavior.
 - Saving validates the local calendar date and time, then stores the existing separate `date` and `time` properties without timezone conversion or schema changes. Native picker appearance varies by browser; recurring schedule fields remain separate.
-- Transfers retain an optional Payee (for example, a currency exchange store). Transaction list titles show Payee, or “Transfer” when blank; details show Source account → Destination account, followed by date/time. Legacy `place` values remain supported. This applies to history and dashboard recent transactions without rewriting stored records.
+- Transfers retain an optional Payee (for example, a currency exchange store). Transaction list titles show Payee or “Transfer” when blank; details show Source account → Destination account, followed by date/time. Legacy `place` values remain supported. This applies to history and dashboard recent transactions without rewriting stored records.
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
-- Display full dates as `dd.mm.yyyy` in transaction rows, weekly range labels, and recurring next-date labels using the shared `displayDate` helper. Native date/date-time picker appearance follows browser/OS locale; stored dates and CSV/JSON dates remain ISO `yyyy-mm-dd` for reliable sorting and interchange. Month/year headings retain their existing labels.
-- Support daily/calendar, weekly, monthly, and chronological review. Transaction lists are newest first across every period and text/account/category filter: local date descending, then local time descending (missing time treated as midnight), then creation timestamp and ID for stable ties. Dashboard recent transactions use the same order. Unfiltered All history retains its latest-250 display limit after sorting.
-- Filter by date range, account, type, category/subcategory, and search text. The Type dropdown supports All types, Income, Expenses, and Transfers. Select Transfers + All history + All accounts with an empty text search to review every recorded transfer, newest first, without the unfiltered-history 250-row cap. Transfer mode hides/ignores category filters; selecting it clears category selections. Clear search resets Type to All types. Existing Payee/Description values remain untouched for manual review/editing. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories, and expandable categories allow selecting only specific subcategories. Search period navigation changes with the selected period: monthly, weekly, yearly, or no navigator for all history.
-- Validate positive amounts, valid account/category references, dates, and transfer endpoints.
-- Changes must consistently update all dependent balances, charts, and budgets.
+- Display full dates as `dd.mm.yyyy` in transaction rows, weekly range labels and recurring next-date labels using the shared `displayDate` helper. Native date/date-time picker appearance follows browser/OS locale; stored dates and CSV/JSON dates remain ISO `yyyy-mm-dd` for reliable sorting and interchange. Month/year headings retain their existing labels.
+- Support daily/calendar, weekly, monthly and chronological review. Transaction lists are newest first across every period and text/account/category filter: local date descending, then local time descending (missing time treated as midnight), then creation timestamp and ID for stable ties. Dashboard recent transactions use the same order. Unfiltered All history retains its latest-250 display limit after sorting.
+- Filter by date range, account, type, category/subcategory and search text. The Type dropdown supports All types, Income, Expenses and Transfers. Select Transfers + All history + All accounts with an empty text search to review every recorded transfer, newest first, without the unfiltered-history 250-row cap. Transfer mode hides/ignores category filters; selecting it clears category selections. Clear search resets Type to All types. Existing Payee/Description values remain untouched for manual review/editing. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories and expandable categories allow selecting only specific subcategories. Search period navigation changes with the selected period: monthly, weekly, yearly or no navigator for all history.
+- Validate positive amounts, valid account/category references, dates and transfer endpoints.
+- Changes must consistently update all dependent balances, charts and budgets.
 - Deletions must be intentional and confirmable.
 
 #### Split transactions
 
 - Allow income and expense transactions to contain multiple category allocations.
-- Each split has a category, optional subcategory, amount, and optional description.
+- Each split has a category, optional subcategory, amount and optional description.
 - Enabling splits hides and disables the main category field; only individual split categories are used. Disabling splits restores the main field and its prior selection. Editing/copying split transactions starts with the main field hidden.
 - Split transaction records retain `categoryId: null` and `subcategoryId: null` at the parent level. The existing schema already supports this, so no database migration or rewriting existing records is required.
 - Split transactions use a branching icon representing one amount divided into categories and show a clickable purple Split badge alongside the blue Note badge when present. It expands a breakdown below the transaction details, with one line per category/subcategory and its amount in the account’s native currency. Clicking again collapses it; the dashboard and transaction history share this behavior.
@@ -146,7 +146,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Support ISO currencies including EUR, USD, GBP, CHF, MKD, with correct decimal precision.
 - Same-currency transfers automatically receive the sent amount; no received-amount or exchange-rate input or conversion estimate is shown.
 - Cross-currency transfers require a positive rate. Pairs involving the main currency quote 1 main-currency unit = X other units. For other pairs, the currency with the higher unit value (lower valid Settings rate per EUR) is quoted first: MKD ↔ USD uses 1 USD = X MKD in both directions. When reference rates are missing, existing transfers use their saved destination/source amount ratio to choose a readable quote. New transfers with missing rates start blank and use destination units per source unit until valid reference rates are configured. Quote direction is automatic; there is no manual reversal control. No missing reference rate is invented. Editing rate or received amount does not change the automatically determined quote direction.
-- Every cross-currency transfer has editable rate and received fields. When quoting destination currency first, received = sent ÷ rate and rate = sent ÷ received; otherwise received = sent × rate and rate = received ÷ sent. Generated rate text uses up to 10 significant digits without scientific notation; manually entered precision is retained. Received amounts use two decimal places. Existing saved received amounts are preserved when opening/editing/copying, and the stored `transferRate` remains received ÷ sent, independent of display orientation. Reporting snapshots are separate.
+- Every cross-currency transfer has editable rate and received fields. When quoting destination currency first, received = sent ÷ rate and rate = sent ÷ received; otherwise received = sent × rate and rate = received ÷ sent. Generated rate text uses up to 10 significant digits without scientific notation; manually entered precision is retained. Received amounts use two decimal places. Existing saved received amounts are preserved when opening/editing/copying and the stored `transferRate` remains received ÷ sent, independent of display orientation. Reporting snapshots are separate.
 - Editing or copying an existing cross-currency transfer initializes the rate from its stored received/source amounts, preserving historical amounts. New currency pairs prepopulate the editable rate from Settings when available; missing or invalid reference rates leave the field blank.
 - Editing the sent amount retains the entered rate and recalculates the received amount.
 - Transfers do not display a blue conversion/reporting note. Cross-currency exchange-rate and received-amount fields provide the calculation through two-way synchronization; same-currency transfers receive the sent amount automatically. Reporting rate snapshots remain stored for historical calculations.
@@ -166,7 +166,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 ### Categories and subcategories
 
 - Unlimited custom income and expense categories and nested subcategories (one subcategory level initially).
-- Custom names, icons, colors, and ordering.
+- Custom names, icons, colors and ordering.
 - Manage categories constrains its grid to the dialog width. On mobile, compact 30px category icons and 28px-wide sort/edit/delete buttons keep all four actions together on the right in the first row. The name column shrinks and wraps as needed; subcategory chips wrap within the dialog. Desktop sizing and layout are unchanged by these compact mobile styles.
 - Moving a category up/down preserves the category dialog's scroll position and focuses the moved category's corresponding sort button without scrolling. Subcategory sorting retains its existing inline behavior.
 - Optional editable starter categories; no seeded financial records.
@@ -177,7 +177,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 Budget lists show Overall first, then saved category order; category dropdowns use the same category ordering.
 
 - Overall monthly expense budget and category-specific monthly budgets.
-- Display spent, remaining, percentage used, and overspending warning.
+- Display spent, remaining, percentage used and overspending warning.
 - Split expenses contribute to their corresponding category budgets.
 - Transfers and income do not count as spending.
 - **No carry-over:** unused budget and overspending do not affect the next month.
@@ -188,20 +188,20 @@ Budget lists show Overall first, then saved category order; category dropdowns u
 Rules are listed by next date/time ascending, then label and ID, including paused rules. Category dropdowns follow saved category order.
 
 - Recurring **income and expense** rules (not recurring transfers initially).
-- Daily, weekly, monthly, and yearly frequencies.
+- Daily, weekly, monthly and yearly frequencies.
 - Start date, optional end date, amount, account, category, active/paused state.
 - When opened, process due occurrences deterministically, including missed dates, with duplicate prevention.
-- Support pause, resume, edit, and cancel; distinguish edits to one generated occurrence from future rule changes.
+- Support pause, resume, edit and cancel; distinguish edits to one generated occurrence from future rule changes.
 - No background processing while the HTML app is closed; reminders depend on browser support and are not promised.
 
 ### Statistics and reports
 
-- Daily, weekly, monthly, yearly, and custom date ranges.
+- Daily, weekly, monthly, yearly and custom date ranges.
 - Donut chart for expense categories; drill down to subcategories.
 - Bar charts comparing income and expenses across periods.
 - Trend charts and account balance history.
 - Budget progress and historical comparisons.
-- Filter by account, category, period, and reporting currency.
+- Filter by account, category, period and reporting currency.
 - Transfers excluded from ordinary income/expense summaries.
 - No dedicated net-worth dashboard.
 
@@ -223,7 +223,7 @@ Rules are listed by next date/time ascending, then label and ID, including pause
 7. **Period correctness:** budgets are independent by calendar month; reports use consistent date/time boundaries.
 8. **Correction behavior:** edit or reverse legitimate ledger entries rather than creating a manual balance-adjustment transaction.
 9. **Data migration safety:** never reset or silently discard financial records during upgrades.
-10. **Reporting clarity:** distinguish total assets/active balances, monthly cash flow, and liabilities; do not sum debt as positive wealth without defined semantics.
+10. **Reporting clarity:** distinguish total assets/active balances, monthly cash flow and liabilities; do not sum debt as positive wealth without defined semantics.
 
 ## Data model
 
@@ -256,17 +256,17 @@ settings
   key, value
 ```
 
-Schema details are illustrative, not authoritative. Prefer indexed lookups on dates, account IDs, category IDs, and recurrence identifiers. Maintain a schema version and incremental, non-destructive migrations.
+Schema details are illustrative, not authoritative. Prefer indexed lookups on dates, account IDs, category IDs and recurrence identifiers. Maintain a schema version and incremental, non-destructive migrations.
 
 ## Technical architecture
 
 - HTML5, CSS3, vanilla JavaScript, IndexedDB.
-- No framework, bundler, backend, external CDN, or runtime network dependency.
+- No framework, bundler, backend, external CDN or runtime network dependency.
 - Optional **development-only** formatting via Prettier (`npm install` then `npm run format`). This does not affect opening `index.html` directly and is not required to run the app.
 - `index.html` is the sole application entry page and must be **directly openable**, without a local HTTP server.
 - For `file://` compatibility, avoid ES module imports; use classic scripts in a documented dependency order.
-- Separate database operations, financial domain logic, UI rendering, and event handling into maintainable files.
-- Keep all assets local, and avoid accidental network requests.
+- Separate database operations, financial domain logic, UI rendering and event handling into maintainable files.
+- Keep all assets local and avoid accidental network requests.
 - **Browser limitation:** `file://` origin behavior and IndexedDB persistence vary across browsers; detect failures and never claim guaranteed persistence without testing the target browser.
 - A successful save must mean data was committed to durable browser storage, not just added to an in-memory array.
 
@@ -293,22 +293,22 @@ AGENTS.md
 README.md
 ```
 
-## Privacy, security, and backups
+## Privacy, security and backups
 
 ### Privacy
 
-All financial records stay on-device by default. No cloud sync, account login, third-party analytics, or transmission of financial information.
+All financial records stay on-device by default. No cloud sync, account login, third-party analytics or transmission of financial information.
 
 ### Optional PIN lock
 
-- Disabled by default; 4- or 6-digit PIN, inactivity timeout, change/disable after verification, and retry delays.
+- Disabled by default; 4- or 6-digit PIN, inactivity timeout, change/disable after verification and retry delays.
 - Never store the plaintext PIN; use an appropriate password-derived verifier.
 - **A PIN gate does not encrypt IndexedDB.** Do not market it as encryption or protection from users with local storage access. Encryption at rest would require a separate design and recovery policy.
 
 ### JSON backup and restore
 
-- Export accounts, transactions, splits, categories, budgets, recurring rules, exchange rates, settings, and supported attachments.
-- Include backup format version, export timestamp, and integrity/validation metadata.
+- Export accounts, transactions, splits, categories, budgets, recurring rules, exchange rates, settings and supported attachments.
+- Include backup format version, export timestamp and integrity/validation metadata.
 - Validate backup structure and references before import; do not overwrite without explicit confirmation.
 - Document whether restoration replaces or merges data; avoid accidental duplicate records.
 
@@ -316,7 +316,7 @@ All financial records stay on-device by default. No cloud sync, account login, t
 
 - Open Settings & backup from the header gear or More → Open settings, then choose **Reset all data**.
 - A custom confirmation lists the data to delete and recommends exporting a full JSON backup first. Cancel returns to Settings without deleting anything.
-- **Delete all data** clears all accounts (including archived accounts), transactions, budgets, recurring schedules, categories, and settings in this browser's app database. Starter categories are restored; base currency and other preferences return to defaults.
+- **Delete all data** clears all accounts (including archived accounts), transactions, budgets, recurring schedules, categories and settings in this browser's app database. Starter categories are restored; base currency and other preferences return to defaults.
 - All stores are replaced in one atomic IndexedDB transaction. The app returns to the current month's empty Home screen with All Accounts selected only after the transaction commits. Repeated confirmation clicks are disabled while saving; storage errors are shown and allow retry.
 - There is no undo except restoring a previously exported backup. Downloaded backups and data in other browsers are unaffected. No database schema change is required.
 - Status: focused automated checks passed; actual browser persistence and mobile layout verification remain pending.
@@ -324,20 +324,20 @@ All financial records stay on-device by default. No cloud sync, account login, t
 ### CSV
 
 - CSV transaction rows are ordered newest first by transaction date/time, consistently with transaction history.
-- Export transactions in spreadsheet-compatible format with dates, account/currency, categories, splits, and transfer representation documented.
-- Import transactions using column mapping, validation, preview, and duplicate detection.
+- Export transactions in spreadsheet-compatible format with dates, account/currency, categories, splits and transfer representation documented.
+- Import transactions using column mapping, validation, preview and duplicate detection.
 - Do not claim CSV contains a complete application backup.
 
 ## Non-goals
 
 Explicitly excluded unless the product owner changes the requirements:
 
-- Credit cards, statements, credit limits, and credit-card installments.
+- Credit cards, statements, credit limits and credit-card installments.
 - Manual balance adjustments.
 - Budget carry-over.
 - Dark mode or system theme switching.
 - Dedicated net-worth dashboard.
-- Backend server, mandatory accounts, cloud sync, or bank API connections.
+- Backend server, mandatory accounts, cloud sync or bank API connections.
 - Online-only functionality or mandatory internet access.
 
 ## Development roadmap and feature tracker
@@ -383,8 +383,8 @@ Explicitly excluded unless the product owner changes the requirements:
 ### Reset data checks
 
 - Opening reset confirmation or cancelling leaves every record unchanged.
-- Confirming deletes records in all six stores and restores only starter categories, with no accounts, transactions, budgets, recurring rules, or saved settings.
-- Home shows the current month, All Accounts, default EUR, and empty financial states; old searches and filters are cleared.
+- Confirming deletes records in all six stores and restores only starter categories, with no accounts, transactions, budgets, recurring rules or saved settings.
+- Home shows the current month, All Accounts, default EUR and empty financial states; old searches and filters are cleared.
 - After reopening the app, deleted records and recurring schedules remain absent.
 - A failed/aborted reset preserves prior records and shows an error; repeated clicks cannot queue multiple resets.
 - Verify the confirmation is usable on mobile and desktop and that a backup exported before reset can be restored.
@@ -396,11 +396,11 @@ Explicitly excluded unless the product owner changes the requirements:
 - A 6,150 MKD → EUR transfer at the same quoted rate receives 100 EUR.
 - For USD → MKD, sending 100 at rate 56 fills received with 5,600; editing received to 5,700 updates the rate to 57. The info line includes a main-currency estimate.
 - Changing the amount or either account updates rate visibility and the preview.
-- Empty, zero, negative, or nonfinite cross-currency rates cannot be saved.
+- Empty, zero, negative or nonfinite cross-currency rates cannot be saved.
 
 ### Account visibility checks
 
-- Hide/show an account in its editor; confirm source/destination pickers, account filters, and new recurring selectors reflect the setting.
+- Hide/show an account in its editor; confirm source/destination pickers, account filters and new recurring selectors reflect the setting.
 - Confirm a hidden account’s balance and transactions still contribute to totals/statistics and are searchable.
 - Edit an old transaction belonging to a hidden account without changing its account; verify its account ID is preserved.
 - Reload and JSON backup/restore must retain visibility; older accounts without the property must remain visible. Browser persistence/restore verification is pending.
@@ -410,9 +410,9 @@ Explicitly excluded unless the product owner changes the requirements:
 - [ ] At 320–430px widths, Manage categories keeps New inside the dialog and all four compact category action buttons on the first row at the right, including long category/subcategory names and many subcategories. Check desktop category sizing/layout remains unchanged. Confirm all actions and scroll-preserving sorting still work.
 
 - [ ] Scroll down in Manage categories and repeatedly move income/expense categories up/down: the dialog retains its scroll position and focus follows the moved category's sort button. Boundary moves do not change order; subcategory sorting still works inline.
-- [ ] Archived accounts start collapsed, show the correct count, expand/collapse by touch and keyboard, retain expansion through Manage/Done and account updates, and close after navigation away/reload. No section appears without archived accounts.
+- [ ] Archived accounts start collapsed, show the correct count, expand/collapse by touch and keyboard, retain expansion through Manage/Done and account updates and close after navigation away/reload. No section appears without archived accounts.
 
-- [ ] Accounts always show Add account; other management controls are initially hidden. Manage reveals them, Done hides them, and balances stay inline at iPhone widths with long names/large amounts. Verify sorting, visibility, editing, archive/restore in management mode, empty-list creation, and return-to-page reset.
+- [ ] Accounts always show Add account; other management controls are initially hidden. Manage reveals them, Done hides them and balances stay inline at iPhone widths with long names/large amounts. Verify sorting, visibility, editing, archive/restore in management mode, empty-list creation and return-to-page reset.
 - [ ] On iPhone, opening Settings or a data-entry dialog does not activate a field/keyboard automatically; tapping an exchange-rate field opens the decimal keyboard without zooming. Desktop dialogs still focus their first field/action.
 - [ ] On iPhone, rapidly tap the previous/next period arrow two or three times: each tap changes the period once without zooming; scrolling and pinch-to-zoom still work.
 - [ ] Opening `index.html` requires no server or internet and loads all local assets.
@@ -438,28 +438,28 @@ Explicitly excluded unless the product owner changes the requirements:
 
 Whenever Codex or another agent changes the application:
 
-1. **Read** `AGENTS.md`, this README, and the relevant implementation before coding.
+1. **Read** `AGENTS.md`, this README and the relevant implementation before coding.
 2. **Identify scope**: which requirements and feature IDs are affected.
 3. **Implement narrowly**, preserving financial data and unrelated behavior.
 4. **Test** the affected flow and financial calculations; distinguish automated tests from manual verification.
-5. **Update this README in the same change** if functionality, architecture, data model, constraints, status, or user-facing behavior changed.
+5. **Update this README in the same change** if functionality, architecture, data model, constraints, status or user-facing behavior changed.
 6. **Update the feature tracker** only when code evidence and appropriate verification justify the new status; do not mark a feature implemented just because a UI placeholder exists.
 7. **Update acceptance criteria** when new rules or edge cases are introduced.
 8. **Record product decisions** and any unresolved questions below.
-9. **Append a concise change-log entry** with date, affected feature IDs, summary, and verification.
-10. **Report** what changed, what was tested, what remains incomplete, and any storage/migration risks.
+9. **Append a concise change-log entry** with date, affected feature IDs, summary and verification.
+10. **Report** what changed, what was tested, what remains incomplete and any storage/migration risks.
 
 Do not erase agreed requirements simply because they are not implemented. Do not claim tests were run if they were not. Do not silently change excluded features. Keep documentation accurate and readable; avoid wholesale rewrites for small changes.
 
 **Suggested one-time Codex instruction to add to `AGENTS.md`:**
 
-> Treat README.md as the living product specification. For every feature addition, behavior change, bug fix affecting documented behavior, schema change, or status change, update the relevant README sections, feature tracker, acceptance criteria, and change log in the same task. Never mark a feature implemented without verifying it against the code and tests.
+> Treat README.md as the living product specification. For every feature addition, behavior change, bug fix affecting documented behavior, schema change or status change, update the relevant README sections, feature tracker, acceptance criteria and change log in the same task. Never mark a feature implemented without verifying it against the code and tests.
 
 ### Initial repository audit task
 
 Before treating any feature as complete, ask Codex:
 
-> Audit the current repository against README.md. Do not implement new features. For each feature ID, identify the implementation files and whether the feature is functional, partial, absent, or unverified. Update the feature tracker with evidence and accurate statuses, then summarize the highest-priority gaps. Do not delete existing data or make unrelated changes.
+> Audit the current repository against README.md. Do not implement new features. For each feature ID, identify the implementation files and whether the feature is functional, partial, absent or unverified. Update the feature tracker with evidence and accurate statuses, then summarize the highest-priority gaps. Do not delete existing data or make unrelated changes.
 
 ## Decisions and open questions
 
@@ -487,103 +487,109 @@ Before treating any feature as complete, ask Codex:
 
 ### Open questions requiring a future decision
 
-- How should loan accounts represent liabilities, repayments, and interest?
+- How should loan accounts represent liabilities, repayments and interest?
 - How should investment valuations be entered without manual balance adjustments?
-- Which rate/date convention should historical multi-currency reporting use, and how should missing rates be handled?
+- Which rate/date convention should historical multi-currency reporting use and how should missing rates be handled?
 - Should archived accounts count in historical all-account balance snapshots even when excluded from current active totals?
 - What are the exact semantics of recurring edits to one occurrence versus future occurrences?
-- Should JSON restoration support merge, replace, or both, and how are conflicts resolved?
+- Should JSON restoration support merge, replace or both and how are conflicts resolved?
 - Which browser/OS combinations are officially supported for direct `file://` IndexedDB persistence?
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
 
+### 2026-10-22 — Consistent conjunction punctuation
+
+- Removed commas immediately before “and” or “or” from app copy and project documentation.
+- Added a permanent writing rule to AGENTS.md for future copy changes. User-entered content and imported records are preserved.
+- Verification: source scan for the prohibited punctuation plus JavaScript syntax checks and diff review passed. Browser rendering was not retested for these text-only changes.
+
 ### 2026-10-22 — Reset all data
 
 - Added Reset all data to Settings & backup with an explicit deletion confirmation and backup reminder. Cancel returns to Settings.
 - Atomically clears all six stores and restores starter categories, then returns to an empty Home screen with default settings and filters. Added abort handling to database replacement and disabled confirmation controls while resetting.
-- Verification: focused automated checks for cancellation, commit timing, repeated clicks, all-store replacement, default state/categories, storage failure preservation, and transaction abort handling passed; JavaScript syntax, local assets/script order, formatting, and diff checks passed. Browser layout, actual IndexedDB persistence after reload, and backup restoration were not retested.
+- Verification: focused automated checks for cancellation, commit timing, repeated clicks, all-store replacement, default state/categories, storage failure preservation and transaction abort handling passed; JavaScript syntax, local assets/script order, formatting and diff checks passed. Browser layout, actual IndexedDB persistence after reload and backup restoration were not retested.
 
 ### 2026-10-21 — Remove obsolete entry page
 
 - Removed `flow-money-manager-offline.html`, the unused older entry page with the previous logo. Use `index.html`, which loads the local application assets and current logo.
-- Verification: no application references to the removed page; local asset existence, script dependency order, JavaScript syntax, and diff checks passed. Browser behavior and IndexedDB persistence were not retested.
+- Verification: no application references to the removed page; local asset existence, script dependency order, JavaScript syntax and diff checks passed. Browser behavior and IndexedDB persistence were not retested.
 
 ### 2026-10-21 — Add Prettier formatting and multiline view templates
 
-- Added `.prettierrc.json`, `.prettierignore`, and a dev-only `package.json` with `format` / `format:check` scripts.
-- Settings: 2-space indent, single quotes, no semicolons, 100-character print width, and embedded HTML/CSS formatting in template literals where Prettier can infer structure.
+- Added `.prettierrc.json`, `.prettierignore` and a dev-only `package.json` with `format` / `format:check` scripts.
+- Settings: 2-space indent, single quotes, no semicolons, 100-character print width and embedded HTML/CSS formatting in template literals where Prettier can infer structure.
 - Refactored `assets/js/views.js` HTML template literals to multiline form. Prettier does not break single-line HTML strings automatically; multiline templates are required for readable markup and stable formatting on save.
-- Ran Prettier across JS, CSS, HTML, and Markdown sources. Runtime app behavior is unchanged; `node_modules/` is gitignored.
+- Ran Prettier across JS, CSS, HTML and Markdown sources. Runtime app behavior is unchanged; `node_modules/` is gitignored.
 - Verification: JavaScript syntax checks and `npm run format:check` passed. Browser regression testing was not run.
 
 ### 2026-10-17 — Fix category manager mobile overflow
 
 - Constrained category grids to available width and allowed long category names/subcategory chips to wrap. Mobile rows use smaller category icons and compact controls on the first row at the right, with a shrinking/wrapping name column and reduced list padding; desktop sizing is unchanged.
-- Verification: JavaScript syntax, generated category markup/escaping/action-group checks, compact style scoping and row-width checks, local asset/script-order checks, and diff checks passed. Live mobile layout, touch actions, and IndexedDB persistence remain unverified.
+- Verification: JavaScript syntax, generated category markup/escaping/action-group checks, compact style scoping and row-width checks, local asset/script-order checks and diff checks passed. Live mobile layout, touch actions and IndexedDB persistence remain unverified.
 
 ### 2026-10-17 — Preserve scroll when sorting categories
 
-- Retained the category dialog's scroll offset after sorting rebuilds it, and restored focus to the moved category's matching sort button with scrolling prevented. Account and subcategory sorting are unchanged.
+- Retained the category dialog's scroll offset after sorting rebuilds it and restored focus to the moved category's matching sort button with scrolling prevented. Account and subcategory sorting are unchanged.
 - Verification: JavaScript syntax and focused sorting/scroll/focus/boundary checks passed; diff checks passed. Live browser scrolling and IndexedDB persistence remain unverified.
 
 ### 2026-10-17 — Collapsible archived accounts
 
-- Moved archived accounts into a native details/summary section with a count, closed by default. The clickable blue outlined header groups its chevron, label, and count together and includes expand/collapse hints plus hover/focus feedback. Expansion is temporary UI state retained during account management and reset on navigation away/reload.
+- Moved archived accounts into a native details/summary section with a count, closed by default. The clickable blue outlined header groups its chevron, label and count together and includes expand/collapse hints plus hover/focus feedback. Expansion is temporary UI state retained during account management and reset on navigation away/reload.
 - Existing inline balances and archived management actions remain available when expanded.
-- Verification: JavaScript syntax, focused collapsed/expanded/empty rendering and state checks, local asset/script-order checks, and diff checks passed. Live browser touch/keyboard/layout and IndexedDB interaction remain unverified.
+- Verification: JavaScript syntax, focused collapsed/expanded/empty rendering and state checks, local asset/script-order checks and diff checks passed. Live browser touch/keyboard/layout and IndexedDB interaction remain unverified.
 
 ### 2026-10-17 — Accounts viewing and management modes
 
-- Added a Manage/Done toggle above Accounts (labeled Manage because it covers sorting, visibility, editing, and archiving). Sorting, visibility, editing, and archive/restore controls appear in management mode. Add account stays visible in both modes, including empty lists.
+- Added a Manage/Done toggle above Accounts (labeled Manage because it covers sorting, visibility, editing and archiving). Sorting, visibility, editing and archive/restore controls appear in management mode. Add account stays visible in both modes, including empty lists.
 - Kept mobile balances on the same row as account details and placed management actions underneath. Management mode is temporary UI state and resets on navigation away/reload; financial data and calculations are unchanged.
-- Verification: focused rendering/toggle/reset checks, Add account visibility for populated/empty lists in both modes, JavaScript syntax, asset/script-order checks, and diff checks passed. Live mobile layout and IndexedDB interaction verification remain pending.
+- Verification: focused rendering/toggle/reset checks, Add account visibility for populated/empty lists in both modes, JavaScript syntax, asset/script-order checks and diff checks passed. Live mobile layout and IndexedDB interaction verification remain pending.
 
 ### 2026-10-17 — Prevent form focus zoom on mobile
 
 - Set Settings exchange-rate input text to 16px instead of inheriting the rate row's 12px text.
 - Dialogs initially focus Close on devices with a coarse pointer, avoiding automatic keyboard/picker activation; desktop first-field/action focus is retained. Pinch-to-zoom remains available.
-- Verification: JavaScript syntax, focused dialog focus branches, rate-input style, local asset references, and script ordering checks passed. Physical iPhone focus/keyboard/zoom behavior remains unverified.
+- Verification: JavaScript syntax, focused dialog focus branches, rate-input style, local asset references and script ordering checks passed. Physical iPhone focus/keyboard/zoom behavior remains unverified.
 
 ### 2026-10-17 — Prevent double-tap zoom
 
 - Added root-level `touch-action: manipulation` so rapid repeated taps, including month navigation, do not trigger double-tap zoom. Scrolling and pinch-to-zoom remain allowed; viewport zoom is unrestricted.
-- Verification: root CSS rule, viewport configuration, JavaScript syntax, local asset references, and script ordering checks passed. Physical iPhone double/triple taps and pinch gestures remain unverified.
+- Verification: root CSS rule, viewport configuration, JavaScript syntax, local asset references and script ordering checks passed. Physical iPhone double/triple taps and pinch gestures remain unverified.
 
 ### 2026-10-17 — Remove manual quote reversal
 
-- Removed the Reverse quote button, click handler, and manual direction state. Automatic Settings/historical quote direction, rate/received synchronization, and saved amounts are retained.
-- Verification: JavaScript syntax, removal checks, and automatic transfer quote/calculation/save regressions passed; browser visual verification remains pending.
+- Removed the Reverse quote button, click handler and manual direction state. Automatic Settings/historical quote direction, rate/received synchronization and saved amounts are retained.
+- Verification: JavaScript syntax, removal checks and automatic transfer quote/calculation/save regressions passed; browser visual verification remains pending.
 
 ### 2026-10-17 — Transfer quotes with missing currency settings
 
 - Existing transfer quotes can choose their orientation from historical amount ratios when a currency reference is unavailable. Added Reverse quote for all cross-currency pairs, including new pairs with missing rates, without fabricating a default rate. Reversal preserves valid received amounts and the stored destination/source rate convention.
-- Verification: JavaScript syntax and focused missing-reference, historical fallback, manual reversal, synchronization, and save checks passed; browser visual verification remains pending.
+- Verification: JavaScript syntax and focused missing-reference, historical fallback, manual reversal, synchronization and save checks passed; browser visual verification remains pending.
 
 ### 2026-10-17 — Readable non-main-currency transfer quotes
 
 - Non-main pairs now quote the higher-value currency unit first using Settings rates, keeping MKD ↔ USD expressed as 1 USD = X MKD. Main-currency pair conventions remain unchanged. Generated quotes avoid long floating-point tails with 10 significant digits; both directions retain two-way field calculations and authoritative saved received amounts.
-- Verification: JavaScript syntax and focused quote orientation, reciprocal calculations, formatting, historical amount preservation, and save checks passed; browser visual verification remains pending.
+- Verification: JavaScript syntax and focused quote orientation, reciprocal calculations, formatting, historical amount preservation and save checks passed; browser visual verification remains pending.
 
 ### 2026-10-17 — Transfer fields without duplicate conversion note
 
-- Removed the blue Amount received/Main-currency estimate note from all transfer forms. Exchange-rate and received-amount fields retain defaults, two-way calculations, validation, and saved values. Income/expense reporting previews remain unchanged.
-- Verification: JavaScript syntax and focused hidden-note, field synchronization, transfer save/validation, and ordinary transaction preview checks passed; browser visual verification remains pending.
+- Removed the blue Amount received/Main-currency estimate note from all transfer forms. Exchange-rate and received-amount fields retain defaults, two-way calculations, validation and saved values. Income/expense reporting previews remain unchanged.
+- Verification: JavaScript syntax and focused hidden-note, field synchronization, transfer save/validation and ordinary transaction preview checks passed; browser visual verification remains pending.
 
 ### 2026-10-17 — Consistent monetary currency formatting
 
-- Standardized the shared formatter to amount followed by uppercase currency code, with two decimals for every currency. This applies to balances, transaction/split amounts, budgets, statistics, recurring entries, and conversion previews. Removed the now-duplicated base currency code from transaction reporting equivalents.
-- Verification: JavaScript syntax, supported-currency/negative/grouping/zero/rounding checks, conversion and transaction rendering checks, and sorting/export regressions passed; browser visual verification remains pending.
+- Standardized the shared formatter to amount followed by uppercase currency code, with two decimals for every currency. This applies to balances, transaction/split amounts, budgets, statistics, recurring entries and conversion previews. Removed the now-duplicated base currency code from transaction reporting equivalents.
+- Verification: JavaScript syntax, supported-currency/negative/grouping/zero/rounding checks, conversion and transaction rendering checks and sorting/export regressions passed; browser visual verification remains pending.
 
 ### 2026-10-17 — Editable received amount in both transfer directions
 
-- All cross-currency transfers now show an editable received-amount field, including transfers into the main currency. Received edits respect the main-currency quote direction, and saved destination amounts remain authoritative with the stored destination/source rate derived from them. Same-currency transfers still receive the sent amount automatically.
-- Verification: JavaScript syntax and focused incoming/outgoing rate/received synchronization, edit/default, validation, and save checks passed; browser visual verification and IndexedDB reload persistence remain untested.
+- All cross-currency transfers now show an editable received-amount field, including transfers into the main currency. Received edits respect the main-currency quote direction and saved destination amounts remain authoritative with the stored destination/source rate derived from them. Same-currency transfers still receive the sent amount automatically.
+- Verification: JavaScript syntax and focused incoming/outgoing rate/received synchronization, edit/default, validation and save checks passed; browser visual verification and IndexedDB reload persistence remain untested.
 
 ### 2026-10-17 — Omit redundant main-currency self-conversion
 
 - Cross-currency transfer previews no longer show a main-currency estimate when sending from the main currency (for example, EUR → MKD with EUR reporting). The received amount/calculation remains visible. Sources in another currency retain the reporting estimate; same-currency transfers remain without a preview.
-- Verification: JavaScript syntax and focused source/main-currency, account-switching, received amount, and transfer regression checks passed; browser visual verification remains pending.
+- Verification: JavaScript syntax and focused source/main-currency, account-switching, received amount and transfer regression checks passed; browser visual verification remains pending.
 
 ### 2026-10-17 — No conversion preview for same-currency transfers
 
@@ -598,42 +604,42 @@ Before treating any feature as complete, ask Codex:
 ### 2026-10-16 — Transfer payee title and account route
 
 - Transfer rows now use Payee as the title, falling back to “Transfer” when empty, with source → destination account names below. The transfer Payee field remains available for currency exchange merchants and other context.
-- Verification: JavaScript syntax, transfer/ordinary rendering, empty/legacy values, escaping, and transaction sorting checks passed; browser visual verification remains pending.
+- Verification: JavaScript syntax, transfer/ordinary rendering, empty/legacy values, escaping and transaction sorting checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Transaction type filter for manual transfer review
 
 - Added All types/Income/Expenses/Transfers filtering alongside the existing period and account filters. Filtered All history shows all matches; transfer filtering does not depend on payee/description text or categories. No financial records are modified automatically.
-- Verification: JavaScript syntax, transfer/all-history/filter combination checks, and sorting regressions passed; browser visual verification remains pending.
+- Verification: JavaScript syntax, transfer/all-history/filter combination checks and sorting regressions passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Dot-separated display dates
 
-- Changed the shared date formatter to `dd.mm.yyyy` (for example, 16.10.2026). Transaction, weekly range, and recurring labels inherit the change; stored/exported ISO dates remain unchanged.
+- Changed the shared date formatter to `dd.mm.yyyy` (for example, 16.10.2026). Transaction, weekly range and recurring labels inherit the change; stored/exported ISO dates remain unchanged.
 - Verification: JavaScript syntax and shared formatter checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Day/month/year display dates
 
-- Added a shared date display helper and applied `dd/mm/yyyy` to transaction dates, weekly period endpoints, and recurring next dates without timezone conversion. Storage, date inputs, sorting, CSV/JSON formats, and scheduling retain ISO dates. Native picker presentation remains browser-controlled.
-- Verification: JavaScript syntax, date formatting/render checks, and transaction/export sorting regressions passed; browser visual verification remains pending.
+- Added a shared date display helper and applied `dd/mm/yyyy` to transaction dates, weekly period endpoints and recurring next dates without timezone conversion. Storage, date inputs, sorting, CSV/JSON formats and scheduling retain ISO dates. Native picker presentation remains browser-controlled.
+- Verification: JavaScript syntax, date formatting/render checks and transaction/export sorting regressions passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Split transaction icon
 
-- Added a local branching SVG for multi-category income/expense transactions in history and dashboard lists. Single-category entries retain category icons, and transfers retain their transfer icon.
+- Added a local branching SVG for multi-category income/expense transactions in history and dashboard lists. Single-category entries retain category icons and transfers retain their transfer icon.
 - Verification: JavaScript syntax and rendered split/ordinary/transfer icon checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Distinct Split badge color
 
-- Changed the Split badge to purple, including expanded, hover, and focus states, to distinguish it from the blue Note badge.
+- Changed the Split badge to purple, including expanded, hover and focus states, to distinguish it from the blue Note badge.
 - Verification: JavaScript syntax and badge class/color-state checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Split breakdown in transaction lists
 
 - Added a Split badge using the Note badge style. It toggles an inline list of split category/subcategory names and native-currency amounts, one allocation per line, in transaction history and dashboard recent transactions. Note and Split disclosures operate independently; totals and stored records are unchanged.
-- Verification: JavaScript syntax, rendered breakdown/escaping checks, badge toggle/focus checks, and transaction/category regressions passed. Live browser layout and keyboard interaction remain untested.
+- Verification: JavaScript syntax, rendered breakdown/escaping checks, badge toggle/focus checks and transaction/category regressions passed. Live browser layout and keyboard interaction remain untested.
 
 ### 2026-10-16 — Central app version constant
 
 - Added `APP_VERSION` at the top of `assets/js/state.js`. Change this value to update the version displayed at the bottom of Settings; no other UI file needs editing. Database and backup format versions remain independent.
-- Verification: JavaScript syntax, script ordering, and Settings rendering with both the current and a substituted version passed; live browser rendering remains untested.
+- Verification: JavaScript syntax, script ordering and Settings rendering with both the current and a substituted version passed; live browser rendering remains untested.
 
 ### 2026-10-16 — Settings bottom spacing
 
@@ -661,34 +667,34 @@ Before treating any feature as complete, ask Codex:
 - Save logic now reads the parent category only for non-split entries; split entries keep null parent category/subcategory IDs using the existing database structure.
 - Verification: JavaScript syntax and focused split-toggle/save/validation and category regressions passed; live browser layout and IndexedDB reload persistence remain untested.
 
-### 2026-10-16 — Consistent budget, recurring, and CSV ordering
+### 2026-10-16 — Consistent budget, recurring and CSV ordering
 
 - Budget and recurring category dropdowns now follow saved category order with alphabetical ties. Both budget displays show Overall first, then category order, with missing categories last.
 - Recurring entries display by next scheduled date and time ascending (legacy missing times use noon, matching generation), then label and ID. Paused entries follow the same date ordering; missing dates appear last. This changes display order only, not schedule processing.
-- CSV export now uses the same newest-first date/time ordering as transaction history. Sorting uses copied arrays and preserves financial values, IDs, export columns, and stored order.
+- CSV export now uses the same newest-first date/time ordering as transaction history. Sorting uses copied arrays and preserves financial values, IDs, export columns and stored order.
 - Verification: JavaScript syntax and focused budget/dropdown/recurring/CSV ordering and empty-state checks passed, plus transaction and category regressions. Live browser layout and persistence remain untested.
 
 ### 2026-10-16 — Consistent newest-first transaction ordering
 
 - Fixed monthly and filtered transaction results being shown in database order. All periods and search/filter results now sort by transaction date and time descending before any display limit, with safe fallbacks for older records missing time/creation timestamps. Dashboard recent transactions use the same comparator. Financial records and calculations are unchanged.
-- Verification: JavaScript syntax and focused chronological, same-day, missing-value, filter/period, and display-limit checks passed; live browser rendering and persistence remain untested.
+- Verification: JavaScript syntax and focused chronological, same-day, missing-value, filter/period and display-limit checks passed; live browser rendering and persistence remain untested.
 
 ### 2026-10-16 — Transaction category and subcategory picker
 
 - Replaced category dropdowns in ordinary and split transactions with inline fields that expand into ordered category choices and collapse after selection. Parent categories remain selectable; separate chevrons reveal subcategories. Transfers have no category picker.
 - Opening a category closes any other expanded category within that picker; split-row pickers operate independently. Expanded parent categories span the full picker width. Multiple subcategories use a responsive grid, while a single subcategory remains compact and left-aligned underneath.
-- Preserved category/subcategory relationships and edit/copy selections, with validation of transaction type and parent relationships. Empty states, selected labels, keyboard focus return, and Escape dismissal are supported.
-- Acceptance: select parents and subcategories, verify collapsed labels and saved IDs, switch transaction types, and check split rows, empty states, accordion behavior, and single/multiple-subcategory layouts.
-- Verification: JavaScript syntax, focused markup/interaction/validation checks, layout rule checks, and transfer regressions passed. Live browser touch/layout and IndexedDB reload persistence remain untested. Consolidated the recent category-picker documentation into this entry.
+- Preserved category/subcategory relationships and edit/copy selections, with validation of transaction type and parent relationships. Empty states, selected labels, keyboard focus return and Escape dismissal are supported.
+- Acceptance: select parents and subcategories, verify collapsed labels and saved IDs, switch transaction types and check split rows, empty states, accordion behavior and single/multiple-subcategory layouts.
+- Verification: JavaScript syntax, focused markup/interaction/validation checks, layout rule checks and transfer regressions passed. Live browser touch/layout and IndexedDB reload persistence remain untested. Consolidated the recent category-picker documentation into this entry.
 
 ### 2026-10-16 — Text-only transaction account buttons
 
-- Removed icons from source/destination account choices inside the transaction modal. Buttons retain the account name, currency, compact sizing, and selected state; other account wallet icons remain unchanged.
+- Removed icons from source/destination account choices inside the transaction modal. Buttons retain the account name, currency, compact sizing and selected state; other account wallet icons remain unchanged.
 - Verification: JavaScript syntax and focused picker checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Consistent account wallet icon
 
-- Reused the shared wallet SVG in transaction account buttons, account rows, dashboard account previews, and account empty states, replacing the remaining square glyphs.
+- Reused the shared wallet SVG in transaction account buttons, account rows, dashboard account previews and account empty states, replacing the remaining square glyphs.
 - Verification: JavaScript syntax and shared-icon reference checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Accounts navigation icon
@@ -703,9 +709,9 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-10-16 — Consistent account ordering in selectors
 
-- Updated shared account sorting to apply saved type order before within-type account order. Transaction source/destination buttons, account filter dropdowns, recurring account choices, and dashboard account summaries now follow the Accounts page ordering.
+- Updated shared account sorting to apply saved type order before within-type account order. Transaction source/destination buttons, account filter dropdowns, recurring account choices and dashboard account summaries now follow the Accounts page ordering.
 - Older backups without a type-order setting use the default type order; missing account sort values fall back to alphabetical ordering after explicitly ordered accounts within the type. No import or database migration is needed.
-- Verification: JavaScript syntax and focused default/custom order, selector rendering, visibility, and missing-sort checks passed. Live browser interaction and reload persistence remain untested.
+- Verification: JavaScript syntax and focused default/custom order, selector rendering, visibility and missing-sort checks passed. Live browser interaction and reload persistence remain untested.
 
 ### 2026-10-16 — Account type sorting
 
@@ -715,7 +721,7 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-10-16 — Matching account status badges
 
-- Archived and Hidden badges now share the same compact font size, padding, line height, and corner radius.
+- Archived and Hidden badges now share the same compact font size, padding, line height and corner radius.
 - Verification: JavaScript syntax and shared badge styling checks passed; browser visual verification remains pending.
 
 ### 2026-10-16 — Simpler archived account rows
@@ -727,7 +733,7 @@ Before treating any feature as complete, ask Codex:
 
 - Archiving now saves hidden visibility; restoring saves visible visibility. Archived rows always show the crossed-out eye and Hidden state, including older/imported records with missing or conflicting flags.
 - Disabled archived visibility controls and guarded checkbox saves and eye actions against enabling archived accounts.
-- Verification: JavaScript syntax and focused archive/restore, disabled-control, legacy-record, and edit-save checks passed. Browser interactions and persistence after reload remain untested.
+- Verification: JavaScript syntax and focused archive/restore, disabled-control, legacy-record and edit-save checks passed. Browser interactions and persistence after reload remain untested.
 
 ### 2026-10-16 — Archive button layout regression
 
@@ -752,27 +758,27 @@ Before treating any feature as complete, ask Codex:
 ### 2026-10-16 — Quick account visibility toggle
 
 - Added an eye/crossed-out-eye button immediately before Archive/Restore, toggling visibility without confirmation and sharing the account editor checkbox setting. Writes preserve other account properties; failed writes show an error and allow retry.
-- Verification: JavaScript syntax, icon/order checks, and focused toggle success/failure checks passed. Browser interaction and persistence after reload remain untested.
+- Verification: JavaScript syntax, icon/order checks and focused toggle success/failure checks passed. Browser interaction and persistence after reload remain untested.
 
 ### 2026-10-16 — Account visibility
 
 - Added a saved visibility checkbox and Hidden account badge, separate from archiving. Account choices exclude hidden accounts while financial calculations and history retain them. Existing transaction assignments are preserved during editing/copying; old accounts default to visible.
-- Verification: JavaScript syntax and focused checks passed for hide/show saving, picker/filter exclusion, historical edit safety, all-hidden empty state, balance/statistics/history inclusion, legacy defaults, and JSON serialization. Browser interactions and IndexedDB persistence after reload remain untested.
+- Verification: JavaScript syntax and focused checks passed for hide/show saving, picker/filter exclusion, historical edit safety, all-hidden empty state, balance/statistics/history inclusion, legacy defaults and JSON serialization. Browser interactions and IndexedDB persistence after reload remain untested.
 
 ### 2026-10-16 — Smaller account choices
 
-- Reduced account button minimum size from 88px to 72px, tightened grid spacing and padding, and reduced icon/text sizes so more accounts fit per row. Names, currencies, selected states, and keyboard focus remain available.
+- Reduced account button minimum size from 88px to 72px, tightened grid spacing and padding and reduced icon/text sizes so more accounts fit per row. Names, currencies, selected states and keyboard focus remain available.
 - Verification: reviewed the CSS diff and checked picker size/spacing rules; browser rendering remains untested.
 
 ### 2026-10-16 — Smooth logo corners
 
 - Brand images now crop past the PNG’s transparent padding and irregular outer edge, with one proportional 25% container radius shared by mobile and desktop. This replaces overlapping asset/CSS curves that flattened the bottom corners. The original PNG and app icons remain unchanged.
-- Verification: inspected the supplied screenshot and logo asset, checked shared desktop/mobile sizing and clipping rules, and reviewed the diff. Live browser rendering remains unverified.
+- Verification: inspected the supplied screenshot and logo asset, checked shared desktop/mobile sizing and clipping rules and reviewed the diff. Live browser rendering remains unverified.
 
 ### 2026-10-16 — Transparent logo container on mobile
 
 - Removed the white fill from the shared brand-icon container so the transparent logo edges blend with the mobile header and desktop sidebar backgrounds. The existing logo asset and dimensions are unchanged.
-- Verification: confirmed the PNG has transparency, checked desktop/mobile CSS rules and local asset references, and reviewed the diff. Live mobile browser rendering remains untested.
+- Verification: confirmed the PNG has transparency, checked desktop/mobile CSS rules and local asset references and reviewed the diff. Live mobile browser rendering remains untested.
 
 ### 2026-10-16 — Account field name only
 
@@ -781,19 +787,19 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-10-16 — Account field visual consistency
 
-- Account selection fields now share the standard dropdown SVG chevron, spacing, and input focus border/shadow for mouse and keyboard focus and while expanded.
-- Verification: JavaScript syntax, shared CSS rule checks, and focused picker regression checks passed; visual browser verification remains pending.
+- Account selection fields now share the standard dropdown SVG chevron, spacing and input focus border/shadow for mouse and keyboard focus and while expanded.
+- Verification: JavaScript syntax, shared CSS rule checks and focused picker regression checks passed; visual browser verification remains pending.
 
 ### 2026-10-16 — Collapsible account selection
 
 - Source and destination account fields expand inline to show account buttons and collapse after selection. The selected account remains visible in the field; no nested modal is opened.
-- Verification: JavaScript syntax and focused interaction/form checks passed; native browser layout, touch behavior, and reload persistence remain untested.
+- Verification: JavaScript syntax and focused interaction/form checks passed; native browser layout, touch behavior and reload persistence remain untested.
 
 ### 2026-10-16 — Transaction account buttons
 
 - Replaced source and transfer destination account dropdowns with responsive square account buttons. Selection updates the existing account IDs and currency calculations; same-account transfer validation is unchanged.
 - Acceptance: selecting a button updates its selected state and the transfer preview; saved transactions use the selected source and destination IDs.
-- Verification: JavaScript syntax and focused picker/form checks passed; browser layout, touch behavior, and persistence after reload remain untested.
+- Verification: JavaScript syntax and focused picker/form checks passed; browser layout, touch behavior and persistence after reload remain untested.
 
 ### 2026-10-16 — Transaction field order
 
@@ -802,15 +808,15 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-10-16 — Combined transaction date and time
 
-- Replaced separate transaction date/time controls with one labeled Date & time input and extended existing mobile date/time styles. Existing records, reports, CSV/JSON formats, and copy options retain separate local date/time values.
-- Acceptance: new/edit/copy forms use one date-time control; saving preserves the selected local calendar day and time; blank, invalid dates, and invalid times are rejected.
-- Verification: JavaScript syntax, focused form/save validation, and regression checks passed; native browser picker, responsive rendering, and IndexedDB reload checks remain untested.
+- Replaced separate transaction date/time controls with one labeled Date & time input and extended existing mobile date/time styles. Existing records, reports, CSV/JSON formats and copy options retain separate local date/time values.
+- Acceptance: new/edit/copy forms use one date-time control; saving preserves the selected local calendar day and time; blank, invalid dates and invalid times are rejected.
+- Verification: JavaScript syntax, focused form/save validation and regression checks passed; native browser picker, responsive rendering and IndexedDB reload checks remain untested.
 
 ### 2026-10-16 — README consolidation
 
 - Combined the product specification and transfer documentation into this single README.md, preserving acceptance criteria and changelog history.
 - Removed the superseded README.txt.
-- Verification: checked preserved specification content, local Markdown links, and references to the old filename; no application code changed.
+- Verification: checked preserved specification content, local Markdown links and references to the old filename; no application code changed.
 
 ### 2026-10-16 — Transfer amount and exchange-rate form
 
@@ -820,7 +826,7 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-10-16 — Consistent EUR transfer quotes
 
-- EUR transfers now quote 1 EUR = X other currency in both directions, with matching preview, save calculation, and edit initialization. Stored `transferRate` remains destination units per source unit.
+- EUR transfers now quote 1 EUR = X other currency in both directions, with matching preview, save calculation and edit initialization. Stored `transferRate` remains destination units per source unit.
 - Verified with syntax and focused form checks; browser persistence and responsive checks remain pending.
 
 ### 2026-10-16 — Transfer rate defaults from Settings
@@ -833,7 +839,7 @@ Before treating any feature as complete, ask Codex:
 - Transfers such as USD → MKD expose editable exchange-rate and received-amount fields. Rate edits calculate received = sent × rate; received edits calculate rate = received ÷ sent. Source amount edits retain the rate and update received.
 - The information line shows a main-currency estimate using the historical reporting snapshot when available, otherwise Settings reference rates. The transfer pair rate does not replace reporting reference rates.
 - Main-currency pairs quote 1 main-currency unit = X other currency; same-currency transfers still receive the sent amount automatically.
-- Focused form tests cover synchronization, defaults, historical rates, rounding, saving, invalid inputs, and field visibility; JavaScript syntax checks passed. Browser persistence and responsive checks remain pending.
+- Focused form tests cover synchronization, defaults, historical rates, rounding, saving, invalid inputs and field visibility; JavaScript syntax checks passed. Browser persistence and responsive checks remain pending.
 
 ### 2026-10-16 — Editable received amount for outgoing main-currency transfers
 
@@ -852,7 +858,7 @@ Before treating any feature as complete, ask Codex:
 
 - Added a copy action inside the edit transaction modal.
 - Copy opens a prefilled New transaction form so the user can change fields before saving.
-- Saved copies become distinct transactions with new IDs and timestamps while preserving edited values, splits, transfer details, and exchange-rate snapshots.
+- Saved copies become distinct transactions with new IDs and timestamps while preserving edited values, splits, transfer details and exchange-rate snapshots.
 - **Verification:** JavaScript syntax checks and source inspection.
 
 ### 2026-10-14 — Modal form cancel cleanup
@@ -871,7 +877,7 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-10-14 — Export filename timestamps
 
-- Updated JSON backup and CSV transaction export filenames to include local hours, minutes, and seconds.
+- Updated JSON backup and CSV transaction export filenames to include local hours, minutes and seconds.
 - Export names now use `flow-backup-YYYY-MM-DD-HHMMSS.json` and `flow-transactions-YYYY-MM-DD-HHMMSS.csv`.
 - **Verification:** JavaScript syntax checks and source inspection.
 
@@ -903,7 +909,7 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-10-14 — Numeric amount keyboards
 
-- Added explicit decimal input keyboard hints to amount, budget, opening balance, split, transfer received, recurring amount, and exchange-rate fields.
+- Added explicit decimal input keyboard hints to amount, budget, opening balance, split, transfer received, recurring amount and exchange-rate fields.
 - Decimal fields now use text inputs with decimal keyboard hints so comma decimals are accepted consistently.
 - **Verification:** JavaScript syntax checks and source inspection.
 
@@ -925,7 +931,7 @@ Before treating any feature as complete, ask Codex:
 - Added a hover state to make the `Note` badge read as clickable.
 - Fixed the open `Note` badge hover contrast so white text is not shown on a pale background.
 - Preserved multiline description formatting inside the note popover.
-- Kept descriptions stored, editable, and searchable.
+- Kept descriptions stored, editable and searchable.
 - **Verification:** JavaScript syntax checks.
 
 ### 2026-10-13 — App install name
@@ -946,7 +952,7 @@ Before treating any feature as complete, ask Codex:
 - Separated expense and income filters in the search view and made both groups collapsed by default.
 - Kept the category UI compact by showing parent badges first and expanding subcategories only on demand.
 - Parent category filters include all subcategories and split transactions when any split belongs to the selected category.
-- Search period navigation now switches between month, week, and year controls and is hidden for all-history search.
+- Search period navigation now switches between month, week and year controls and is hidden for all-history search.
 - **Verification:** JavaScript syntax checks and source inspection.
 
 ### 2026-10-13 — App logo
@@ -971,9 +977,9 @@ Before treating any feature as complete, ask Codex:
 
 - Added transaction search on the Transactions page.
 - Search matches payee/place and description/note text within the selected period and account filter.
-- Added search period filters for monthly, weekly, yearly, and all-history search.
+- Added search period filters for monthly, weekly, yearly and all-history search.
 - Kept the search term in local UI state and preserved cursor position while filtering.
-- Updated search behavior so filtering starts at 2 characters, one-character input does not narrow results, and blank input clears the search state.
+- Updated search behavior so filtering starts at 2 characters, one-character input does not narrow results and blank input clears the search state.
 - **Verification:** JavaScript syntax checks.
 
 ### 2026-10-13 — Multiline transaction descriptions
@@ -1030,16 +1036,16 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-10-13 — Transaction detail fields
 
-- Added transaction time, payee, and description fields to the implementation and documented transaction model.
+- Added transaction time, payee and description fields to the implementation and documented transaction model.
 - Added payee reuse suggestions from existing transaction and recurring payees.
 - Renamed the previous note behavior to description while preserving existing `note` values as legacy fallback data.
 - **Verification:** JavaScript syntax checks and source search for updated transaction/export paths.
 
 ### 2026-10-13 — Specification v1.0
 
-- Consolidated agreed product scope, navigation, blue design, financial rules, and excluded features.
+- Consolidated agreed product scope, navigation, blue design, financial rules and excluded features.
 - Added a conservative feature tracker pending repository audit.
-- Added acceptance tests, agent update workflow, and unresolved architectural decisions.
+- Added acceptance tests, agent update workflow and unresolved architectural decisions.
 - **Verification:** documentation only; no claim of current implementation completeness.
 
 ---
