@@ -1,4 +1,4 @@
-const CURRENCY_RATE_URL = 'https://api.frankfurter.dev/v2/rates'
+const CURRENCY_RATE_URL = 'https://api.exchangerate.fun/latest?base=eur'
 let currencySyncRequest = null
 let currencySyncError = ''
 
@@ -36,7 +36,11 @@ function currencySyncStatus() {
   const time = [updated.getHours(), updated.getMinutes(), updated.getSeconds()]
     .map(value => String(value).padStart(2, '0'))
     .join(':')
-  return `Last synced: ${date}, ${time}. Rate dates: ${displayDate(sync.firstDate)} to ${displayDate(sync.lastDate)}.`
+  const rateDates =
+    sync.firstDate === sync.lastDate
+      ? `Rate date: ${displayDate(sync.firstDate)}`
+      : `Rate dates: ${displayDate(sync.firstDate)} to ${displayDate(sync.lastDate)}`
+  return `Last synced: ${date}, ${time}. ${rateDates}.`
 }
 
 function updateCurrencySyncStatus() {
@@ -63,25 +67,46 @@ async function syncCurrencyRates() {
       referrerPolicy: 'no-referrer',
     })
     if (!response.ok) throw new Error('Rate service unavailable')
-    const rows = await response.json()
-    if (!Array.isArray(rows) || !rows.length) throw new Error('Invalid rate response')
-    const rates = {}
-    const dates = []
-    for (const row of rows) {
+    const data = await response.json()
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      Array.isArray(data) ||
+      String(data.base).toUpperCase() !== 'EUR' ||
+      !data.rates ||
+      typeof data.rates !== 'object' ||
+      Array.isArray(data.rates)
+    )
+      throw new Error('Invalid rate response')
+    let rateDate
+    let sourceUpdatedAt
+    if (data.timestamp !== undefined) {
+      if (!Number.isSafeInteger(data.timestamp) || data.timestamp <= 0)
+        throw new Error('Invalid rate timestamp')
+      const sourceDate = new Date(data.timestamp * 1000)
+      if (!Number.isFinite(sourceDate.getTime())) throw new Error('Invalid rate timestamp')
+      sourceUpdatedAt = sourceDate.toISOString()
+      rateDate = sourceUpdatedAt.slice(0, 10)
+    } else {
+      // The published documentation also describes a date-only response.
+      rateDate = data.date
       if (
-        row.base !== 'EUR' ||
-        !/^[A-Z]{3}$/.test(row.quote) ||
-        !Number.isFinite(row.rate) ||
-        row.rate <= 0 ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(row.date) ||
-        !Number.isFinite(Date.parse(row.date + 'T00:00:00Z')) ||
-        new Date(row.date + 'T00:00:00Z').toISOString().slice(0, 10) !== row.date ||
-        (row.quote === 'EUR' && row.rate !== 1) ||
-        Object.hasOwn(rates, row.quote)
+        !/^\d{4}-\d{2}-\d{2}$/.test(rateDate) ||
+        !Number.isFinite(Date.parse(rateDate + 'T00:00:00Z')) ||
+        new Date(rateDate + 'T00:00:00Z').toISOString().slice(0, 10) !== rateDate
+      )
+        throw new Error('Invalid rate date')
+    }
+    const rates = {}
+    for (const [code, rate] of Object.entries(data.rates)) {
+      if (
+        !/^[A-Z]{3}$/.test(code) ||
+        !Number.isFinite(rate) ||
+        rate <= 0 ||
+        (code === 'EUR' && rate !== 1)
       )
         throw new Error('Invalid rate response')
-      rates[row.quote] = row.rate
-      dates.push(row.date)
+      rates[code] = rate
     }
     rates.EUR = 1
     if (!rates.USD) throw new Error('Incomplete rate response')
@@ -91,15 +116,16 @@ async function syncCurrencyRates() {
     for (const code of Object.keys(next)) {
       if (!manual.includes(code) && rates[code]) next[code] = rates[code]
     }
-    dates.sort()
     await saveCurrencySettings({
       exchangeRates: next,
       manualCurrencyCodes: manual,
       currencySync: {
         rates,
         updatedAt: new Date().toISOString(),
-        firstDate: dates[0],
-        lastDate: dates[dates.length - 1],
+        provider: 'exchangerate.fun',
+        sourceUpdatedAt: sourceUpdatedAt || null,
+        firstDate: rateDate,
+        lastDate: rateDate,
       },
     })
     for (const input of document.querySelectorAll('#rates-form .rate-input')) {

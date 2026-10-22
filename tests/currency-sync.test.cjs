@@ -4,11 +4,11 @@ const fs = require('node:fs')
 const path = require('node:path')
 const vm = require('node:vm')
 const source = name => fs.readFileSync(path.join(__dirname, '../assets/js', name + '.js'), 'utf8')
-const rows = [
-  { base: 'EUR', quote: 'EUR', rate: 1, date: '2026-10-21' },
-  { base: 'EUR', quote: 'USD', rate: 1.2, date: '2026-10-21' },
-  { base: 'EUR', quote: 'CAD', rate: 1.5, date: '2026-10-20' },
-]
+const payload = {
+  base: 'EUR',
+  timestamp: Date.UTC(2026, 9, 21, 12) / 1000,
+  rates: { USD: 1.2, CAD: 1.5, MKD: 61.604208 },
+}
 function setup() {
   const elements = new Map()
   let request,
@@ -34,7 +34,7 @@ function setup() {
     clearTimeout() {},
     fetch: async (url, options) => {
       request = { url, options }
-      return { ok: true, json: async () => rows }
+      return { ok: true, json: async () => payload }
     },
     putSettings: async () => {
       writes++
@@ -65,12 +65,12 @@ test('sync caches full list but enables only EUR/USD and sends no user-specific 
   assert.equal(s.run('JSON.stringify(availableCurrencies())'), '["EUR","USD"]')
   assert.equal(s.run('JSON.stringify(state.transactions)'), snapshot)
   const request = s.request()
-  assert.equal(request.url, 'https://api.frankfurter.dev/v2/rates')
+  assert.equal(request.url, 'https://api.exchangerate.fun/latest?base=eur')
   assert.deepEqual(Object.keys(request.options).sort(), ['credentials', 'referrerPolicy', 'signal'])
   assert.equal(request.options.credentials, 'omit')
   assert.equal(request.options.referrerPolicy, 'no-referrer')
   assert.equal(s.writes(), 1)
-  assert.match(s.run('currencySyncStatus()'), /20\.10\.2026 to 21\.10\.2026/)
+  assert.match(s.run('currencySyncStatus()'), /Rate date: 21\.10\.2026/)
 })
 
 test('existing and explicit manual overrides survive sync; automatic currencies update', async () => {
@@ -85,15 +85,24 @@ test('existing and explicit manual overrides survive sync; automatic currencies 
   assert.equal(s.run('exchangeRates().USD'), 1.8)
 })
 
-test('invalid rates, duplicate codes, invalid dates and HTTP/network/storage errors preserve data', async () => {
+test('invalid rates, response metadata and HTTP/network/storage errors preserve data', async () => {
   for (const response of [
     [],
-    [...rows, rows[1]],
-    [rows[0]],
-    rows.map(r => ({ ...r, rate: 0 })),
-    rows.map(r => ({ ...r, base: 'USD' })),
-    rows.map(r => ({ ...r, date: 'bad' })),
-    rows.map(r => ({ ...r, rate: Infinity })),
+    null,
+    {},
+    { ...payload, rates: {} },
+    { ...payload, rates: [] },
+    { ...payload, rates: { USD: 0 } },
+    { ...payload, rates: { USD: Infinity } },
+    { ...payload, rates: { USD: '1.2' } },
+    { ...payload, rates: { USD: 1.2, EUR: 2 } },
+    { ...payload, rates: { USD: 1.2, '<X>': 1 } },
+    { ...payload, base: 'USD' },
+    { ...payload, timestamp: -1 },
+    { ...payload, timestamp: 'bad' },
+    { ...payload, timestamp: 1e20 },
+    { ...payload, timestamp: undefined, date: '2026-02-30' },
+    { ...payload, timestamp: undefined, date: 'bad' },
   ]) {
     const s = setup()
     s.context.fetch = async () => ({ ok: true, json: async () => response })
@@ -135,7 +144,7 @@ test('in-flight sync is deduplicated and cancellation blocks late writes after d
   assert.equal(requests, 1)
   s.context.cancelCurrencySync()
   s.run('state=createInitialState()')
-  finish({ ok: true, json: async () => rows })
+  finish({ ok: true, json: async () => payload })
   await pending
   assert.equal(s.writes(), 0)
   assert.equal(s.run('state.settings.length'), 0)
@@ -153,7 +162,7 @@ test('timeout keeps prior rates and allows retry', async () => {
   assert.equal(s.writes(), 0)
   assert.equal(s.run('currencySyncRequest'), null)
   assert.match(s.run('currencySyncStatus()'), /Sync failed/)
-  s.context.fetch = async () => ({ ok: true, json: async () => rows })
+  s.context.fetch = async () => ({ ok: true, json: async () => payload })
   await s.context.syncCurrencyRates()
   assert.equal(s.run('exchangeRates().USD'), 1.2)
 })
@@ -286,4 +295,28 @@ test('sync status uses dotted dates and local 24-hour time with padded fields', 
     s.run('currencySyncStatus()'),
     'Last synced: 02.01.2026, 00:05:09. Rate dates: 01.01.2026 to 02.01.2026.'
   )
+})
+
+test('new provider replaces old automatic quotes and records source metadata without changing snapshots', async () => {
+  const s = setup()
+  s.run(
+    "state.accounts=[{id:'mkd',currency:'MKD'}];state.settings=[{id:'exchangeRates',value:{EUR:1,USD:1.1,MKD:61.738}},{id:'manualCurrencyCodes',value:[]},{id:'currencySync',value:{rates:{EUR:1,MKD:61.738}}}];state.transactions=[{id:'old',exchangeRates:{EUR:1,MKD:61.738}}]"
+  )
+  await s.context.syncCurrencyRates()
+  assert.equal(s.run('exchangeRates().MKD'), 61.604208)
+  assert.equal(s.run('state.transactions[0].exchangeRates.MKD'), 61.738)
+  assert.equal(s.run("getSetting('currencySync').provider"), 'exchangerate.fun')
+  assert.equal(s.run("getSetting('currencySync').sourceUpdatedAt"), '2026-10-21T12:00:00.000Z')
+})
+
+test('date-only response is accepted with the same validation and EUR identity rate', async () => {
+  const s = setup()
+  s.context.fetch = async () => ({
+    ok: true,
+    json: async () => ({ base: 'EUR', date: '2026-10-22', rates: payload.rates }),
+  })
+  await s.context.syncCurrencyRates()
+  assert.equal(s.run('exchangeRates().EUR'), 1)
+  assert.equal(s.run("getSetting('currencySync').firstDate"), '2026-10-22')
+  assert.equal(s.run("getSetting('currencySync').sourceUpdatedAt"), null)
 })

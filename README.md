@@ -143,8 +143,8 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 ### Multi-currency
 
 - **Currency synchronization:** Settings & backup has Sync now plus Sync rates when the app opens (enabled by default). Startup synchronization runs after the local app loads and does not block opening the app. Disabling startup sync leaves manual Sync now available.
-- The app requests the complete public EUR reference-rate list from [Frankfurter](https://frankfurter.dev/) at the same fixed URL for every user. Requests omit credentials and referrers. No account names, amounts, transactions, notes or selected currency codes are sent. The service still sees the device's IP address and connection information.
-- A validated response and its source date range are cached in the `currencySync` IndexedDB setting. Settings shows the last successful sync time and source date range in the small muted hint beneath the startup toggle. Rate dates may differ by currency; these are reference rates rather than live trading quotes.
+- The app requests the complete public EUR reference-rate list from [ExchangeRate.fun](https://exchangerate.fun/docs/) at `https://api.exchangerate.fun/latest?base=eur`, the same fixed URL for every user. Requests omit credentials and referrers. No account names, amounts, transactions, notes or selected currency codes are sent. The service still sees the device's IP address and connection information.
+- A validated response, provider identity and source timestamp/date are cached in the `currencySync` IndexedDB setting. Settings shows the last successful sync time and source date range in the small muted hint beneath the startup toggle. The API response supplies a shared source timestamp; its date is shown as Rate date in `dd.mm.yyyy` format. Older backups can still display their original source date ranges. These are reference rates rather than guaranteed execution quotes.
 - Synchronization updates only enabled currencies and preserves manual overrides. Existing saved rates are treated as manual overrides on upgrade. Use synced rates switches supported enabled currencies to automatic updates; unsupported manual currencies remain unchanged. Editing a rate creates a manual override. Add currency can use a cached rate when its rate field is blank.
 - The full cached list does not populate selectors automatically: fresh starts still offer only EUR and USD. All sync settings and cached rates are included in full JSON backups. Reset all data clears them and cancels an outstanding request; startup sync defaults to enabled on the next open.
 - Requests time out after 12 seconds. Offline, HTTP, malformed-response and storage failures retain previous rates and show a retry message in Settings. Direct `file://` fetch behavior depends on browser CORS/security rules; manual rates remain available if the browser blocks the request.
@@ -533,6 +533,12 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Switch exchange-rate provider
+
+- Replaced the runtime provider with `https://api.exchangerate.fun/latest?base=eur`. Adapted validation to its EUR-based rates map and Unix timestamp, with support for the documented date-only format.
+- Cached the provider identity and source timestamp. A successful sync replaces automatic current rates and the provider cache while preserving manual overrides and historical snapshots. Existing cached rates remain usable until a successful sync.
+- Verification: retrieved the live endpoint and validated its response through the sync code; automated provider-switch, timestamp/date parsing, EUR identity, invalid-response, failure fallback and existing sync regression checks passed. Syntax, asset/script order, formatting and diff checks passed. Browser CORS, layout and persistence remain unverified because macOS capture permissions are unavailable.
 
 ### 2026-10-22 — Two-line rate labels
 
