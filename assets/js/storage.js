@@ -57,6 +57,7 @@ async function replaceAll(data) {
     }
     tx.oncomplete = res
     tx.onerror = () => rej(tx.error)
+    tx.onabort = () => rej(tx.error || new Error('Data replacement was aborted'))
   })
 }
 const storeNames = STORES

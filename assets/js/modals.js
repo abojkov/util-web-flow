@@ -1010,11 +1010,51 @@ function exportTimestamp() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
 }
 
+function resetDataModal() {
+  confirmAction({
+    title: 'Reset all data?',
+    message:
+      'Permanently delete all accounts, transactions, budgets, recurring schedules, custom categories, and settings in this browser? Starter categories will be restored and settings will return to defaults. This cannot be undone without a JSON backup. Cancel and export a full JSON backup first if you want to keep your data.',
+    confirmText: 'Delete all data',
+    onCancel: settingsModal,
+    onConfirm: async () => {
+      const buttons = ['#confirm-ok', '#confirm-cancel', '#close-modal'].map(selector =>
+        $(selector)
+      )
+      if (buttons[0].disabled) return
+      buttons.forEach(button => (button.disabled = true))
+      try {
+        const categories = defaults.map(([name, icon, color, type]) => ({
+          id: uid(),
+          name,
+          icon,
+          color,
+          type,
+        }))
+        // Clear every store and restore starter categories in one atomic transaction.
+        await replaceAll({ categories })
+        clearTimeout(txSearchTimer)
+        state = createInitialState()
+        state.categories = categories
+        closeModal()
+        render()
+        toast('All data reset. You can start fresh.')
+      } catch (error) {
+        console.error(error)
+        toast('Could not reset data. Please try again.')
+      } finally {
+        buttons.forEach(button => (button.disabled = false))
+      }
+    },
+  })
+}
+
 function settingsModal() {
   modal(
     'Settings & backup',
-    `<div class="field"><label><input type="checkbox" id="hide-total-balance" ${totalBalanceHidden() ? 'checked' : ''}> Blur total balance</label><p class="form-hint">Hide the Home balance at a glance. Saved on this device; other amounts stay visible.</p></div><div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts, and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div><p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`
+    `<div class="field"><label><input type="checkbox" id="hide-total-balance" ${totalBalanceHidden() ? 'checked' : ''}> Blur total balance</label><p class="form-hint">Hide the Home balance at a glance. Saved on this device; other amounts stay visible.</p></div><div class="field"><label>Base currency</label><select id="base-currency">${currencyOptions(base())}</select></div><div class="notice">Dashboard totals, charts, and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Rates are stored locally and are not live market rates.</div><form id="rates-form"><div class="rate-list">${exchangeRateRows()}</div><div class="modal-footer rate-actions"><button type="button" class="btn ghost" id="reset-rates">Reset rates</button><button class="btn secondary" type="submit">Save rates</button></div></form><div style="display:grid;gap:12px;margin-top:18px"><button class="btn secondary" id="export-json">↓ Export full JSON backup</button><button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button><label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label></div><p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p><div class="notice" style="margin-top:14px">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div><div class="field" style="margin-top:18px"><h3>Reset app</h3><p class="form-hint">Start from zero by deleting all local financial data and resetting settings. Export a full JSON backup first if you want to keep a copy.</p><button type="button" class="btn danger" id="reset-all-data">Reset all data</button></div><p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`
   )
+  $('#reset-all-data').onclick = resetDataModal
   $('#hide-total-balance').onchange = async e => {
     const checkbox = e.target
     checkbox.disabled = true

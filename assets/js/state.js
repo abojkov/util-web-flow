@@ -37,7 +37,7 @@ const defaults = [
   ['Interest', '↗', '#60a5fa', 'income'],
   ['Other Income', '◈', '#94a3b8', 'income'],
 ]
-let state = {
+const createInitialState = () => ({
   page: 'home',
   accounts: [],
   accountsEditing: false,
@@ -62,7 +62,8 @@ let state = {
   txType: 'expense',
   statsPeriod: 'month',
   statsAccount: 'all',
-}
+})
+let state = createInitialState()
 const getSetting = (k, d) => state.settings.find(x => x.id === k)?.value ?? d
 const totalBalanceHidden = () => getSetting('hideTotalBalance', false) === true
 const escapeHtml = v =>

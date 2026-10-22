@@ -5,7 +5,7 @@
 **Project status:** Active development
 **Specification version:** 1.0
 **App version:** maintained in `APP_VERSION` at the top of `assets/js/state.js`; Settings reads this constant.
-**Last specification update:** 2026-10-17
+**Last specification update:** 2026-10-22
 **Implementation status:** Not audited against the current local repository. Feature descriptions below are requirements, not assertions that the feature works.
 
 ## Table of contents
@@ -312,6 +312,15 @@ All financial records stay on-device by default. No cloud sync, account login, t
 - Validate backup structure and references before import; do not overwrite without explicit confirmation.
 - Document whether restoration replaces or merges data; avoid accidental duplicate records.
 
+### Reset all data
+
+- Open Settings & backup from the header gear or More → Open settings, then choose **Reset all data**.
+- A custom confirmation lists the data to delete and recommends exporting a full JSON backup first. Cancel returns to Settings without deleting anything.
+- **Delete all data** clears all accounts (including archived accounts), transactions, budgets, recurring schedules, categories, and settings in this browser's app database. Starter categories are restored; base currency and other preferences return to defaults.
+- All stores are replaced in one atomic IndexedDB transaction. The app returns to the current month's empty Home screen with All Accounts selected only after the transaction commits. Repeated confirmation clicks are disabled while saving; storage errors are shown and allow retry.
+- There is no undo except restoring a previously exported backup. Downloaded backups and data in other browsers are unaffected. No database schema change is required.
+- Status: focused automated checks passed; actual browser persistence and mobile layout verification remain pending.
+
 ### CSV
 
 - CSV transaction rows are ordered newest first by transaction date/time, consistently with transaction history.
@@ -358,6 +367,7 @@ Explicitly excluded unless the product owner changes the requirements:
 | F19 | Security     | Optional PIN lock                               | Planned                         | Clear security limitations                           |
 | F20 | Quality      | Error states, accessibility, responsive QA      | Planned                         | Browser verification                                 |
 | F21 | Accounts     | Account visibility                              | Partial — focused checks passed | Browser hide/show, reload and restore checks pending |
+| F22 | Data         | Reset all data with confirmation                | Partial — focused checks passed | Browser persistence and mobile checks pending        |
 
 ### Release phases
 
@@ -369,6 +379,15 @@ Explicitly excluded unless the product owner changes the requirements:
 6. **Stabilization:** F20, financial edge cases, migration/restore testing.
 
 ## Acceptance criteria and test scenarios
+
+### Reset data checks
+
+- Opening reset confirmation or cancelling leaves every record unchanged.
+- Confirming deletes records in all six stores and restores only starter categories, with no accounts, transactions, budgets, recurring rules, or saved settings.
+- Home shows the current month, All Accounts, default EUR, and empty financial states; old searches and filters are cleared.
+- After reopening the app, deleted records and recurring schedules remain absent.
+- A failed/aborted reset preserves prior records and shows an error; repeated clicks cannot queue multiple resets.
+- Verify the confirmation is usable on mobile and desktop and that a backup exported before reset can be restored.
 
 ### Transfer form checks
 
@@ -478,6 +497,12 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Reset all data
+
+- Added Reset all data to Settings & backup with an explicit deletion confirmation and backup reminder. Cancel returns to Settings.
+- Atomically clears all six stores and restores starter categories, then returns to an empty Home screen with default settings and filters. Added abort handling to database replacement and disabled confirmation controls while resetting.
+- Verification: focused automated checks for cancellation, commit timing, repeated clicks, all-store replacement, default state/categories, storage failure preservation, and transaction abort handling passed; JavaScript syntax, local assets/script order, formatting, and diff checks passed. Browser layout, actual IndexedDB persistence after reload, and backup restoration were not retested.
 
 ### 2026-10-21 — Remove obsolete entry page
 
