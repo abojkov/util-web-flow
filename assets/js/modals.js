@@ -1147,7 +1147,6 @@ function settingsModal() {
         <form id="rates-form" class="settings-section-form">
           <div class="rate-list">${exchangeRateRows()}</div>
           <div class="settings-actions">
-            <button type="button" class="btn ghost" id="reset-rates">Reset starter rates</button>
             <button class="btn secondary" type="submit" id="save-rates">Save rates</button>
           </div>
         </form>
@@ -1292,15 +1291,6 @@ function settingsModal() {
       savedCodes: [...e.target.querySelectorAll('.rate-input')].map(input => input.name),
     })
     toast('Exchange rates saved')
-  }
-  $('#reset-rates').onclick = async () => {
-    await saveCurrencySettings({
-      exchangeRates: { ...exchangeRates(), ...defaultRates },
-      manualCurrencyCodes: manualCurrencyCodes(),
-    })
-    render()
-    refreshSettingsCurrencyControls({ savedCodes: Object.keys(defaultRates) })
-    toast('Starter rates reset. Custom currency rates preserved.')
   }
   $('#export-json').onclick = async () => {
     const data = { format: 'flow-backup', version: 1, exportedAt: new Date().toISOString() }

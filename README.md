@@ -65,7 +65,7 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 - Touch-friendly targets, aligned forms, consistent spacing, responsive modals, accessible labels, clear empty/error/loading states.
 - Double-tap zoom is disabled throughout the app with `touch-action: manipulation`, allowing rapid taps on period arrows while retaining scrolling and pinch-to-zoom. Physical iPhone gesture verification is pending.
 - Settings exchange-rate inputs use 16px text to prevent iPhone focus zoom. On touch devices, dialogs initially focus Close so opening a form does not activate a keyboard or native picker; desktop dialogs retain first-field/action focus. Tapping an editable field still opens its keyboard normally. Physical iPhone verification is pending.
-- Settings updates happen in place after changing the base currency, adding a currency, saving/resetting rates or applying synced rates. The modal body and existing inputs remain mounted, preserving scroll, focus and unfinished edits in unrelated fields. Adding a currency inserts one sorted rate row and clears only the Add currency fields. Explicit rate save/reset actions update only their affected fields. Opening Settings initially keeps normal dialog focus behavior.
+- Settings updates happen in place after changing the base currency, adding a currency, saving rates or applying synced rates. The modal body and existing inputs remain mounted, preserving scroll, focus and unfinished edits in unrelated fields. Adding a currency inserts one sorted rate row and clears only the Add currency fields. Explicit rate saves update only their affected fields. Opening Settings initially keeps normal dialog focus behavior.
 - Settings uses distinct reporting, synchronization/rates, Add currency, Backups and Reset app sections. Use 24px between sections, 12px between control groups and 4px between a section heading and description. The dialog title remains in the modal header; section headings use a smaller 16px style.
 - Never reintroduce the earlier orange theme or add dark mode without approval.
 
@@ -156,7 +156,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Currency selectors are built dynamically from local reference-rate codes, the reporting currency and all accounts, including archived accounts. Fresh installs and Reset all data start with only EUR. Other currencies can be added in Settings. Existing saved rates and account currencies remain available; older accounts using USD, GBP, CHF, MKD or SEK retain their previous fallback rates if no rate was saved.
 - Settings & backup includes Add currency: choose from the cached ExchangeRate.fun response. Only supported codes not already enabled are offered, sorted alphabetically. Sync first to load the list; once cached it works offline. A successful sync refreshes an open dropdown without discarding a still-valid selection. Adding an arbitrary code or an already enabled currency is rejected even if a manual rate is supplied. Existing custom/imported currencies are preserved. Leave the rate blank to use the synced rate or enter a positive manual override in units per 1 EUR.
 - Reference rates and custom codes are saved together in the existing `exchangeRates` setting and included in full JSON backups. No schema migration is required; manual currency management works offline. There is no currency deletion action.
-- Reset starter rates resets only EUR while preserving other currencies and their rates. Save rates retains entered rate precision, including values smaller than one millionth.
+- EUR remains fixed at 1. Save rates retains entered rate precision, including values smaller than one millionth. Use synced rates applies cached provider rates to supported currencies; manual rate editing remains available.
 - Changing the reporting currency is blocked when any existing transaction lacks a required historical rate for that target, including either side of a transfer. Existing snapshots are preserved rather than filled with fabricated historical rates. Legacy transactions without snapshots retain the existing configured-rate fallback.
 - Currency-specific decimal precision remains planned: the current ledger and amount formatter use two decimal places for every currency. This limitation is shown beside Add currency.
 - Same-currency transfers automatically receive the sent amount; no received-amount or exchange-rate input or conversion estimate is shown.
@@ -412,7 +412,7 @@ Explicitly excluded unless the product owner changes the requirements:
 
 - Sync first and choose a supported currency not already enabled; verify its options in account creation and the reporting selector plus an editable Settings rate row. Verify empty-list guidance before sync and when every supported currency has been added.
 - Reject unsupported codes, existing codes, zero, negative and nonfinite manual rates without changing saved settings. A storage failure shows an error and permits retry.
-- Verify conversions using the entered rate and preserve custom rates when resetting starter rates. Small positive rates must not be rounded to zero.
+- Verify conversions using the entered rate and preserve unsupported manual rates when applying synced rates. Small positive rates must not be rounded to zero.
 - Retain currencies from imported and archived accounts in selectors.
 - Preserve custom rates through reload and full JSON backup/restore.
 - Reject a reporting-currency change when any transaction snapshot lacks its required historical rates. Keep existing snapshots and ledger amounts unchanged.
@@ -535,6 +535,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-22 — Remove redundant starter-rate reset
+
+- Removed Reset starter rates and its handler because EUR is the only starter currency and its rate is fixed at 1. Sync now, Use synced rates and Save rates remain available.
+- Removed obsolete reset-rate tests and updated current documentation. Verification: all remaining currency tests, JavaScript syntax, formatting and diff checks passed. Browser layout was not retested.
 
 ### 2026-10-22 — Update Settings controls in place
 

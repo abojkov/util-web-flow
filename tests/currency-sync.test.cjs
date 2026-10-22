@@ -415,18 +415,6 @@ test('EUR is the only starter before/after sync and full reset; existing USD rat
   assert.equal(s.run('JSON.stringify(availableCurrencies())'), '["EUR"]')
 })
 
-test('resetting starter rates leaves an enabled automatic USD rate unchanged', async () => {
-  const s = setup()
-  vm.runInContext(source('modals'), s.context)
-  Object.assign(s.context, { modal() {}, toast() {}, reload: async () => {} })
-  s.run(
-    "state.settings=[{id:'exchangeRates',value:{EUR:1,USD:1.2}},{id:'manualCurrencyCodes',value:[]}];settingsModal()"
-  )
-  await s.elements.get('#reset-rates').onclick()
-  assert.equal(s.run('exchangeRates().USD'), 1.2)
-  assert.equal(s.run("manualCurrencyCodes().includes('USD')"), false)
-})
-
 function scrollingSettings() {
   const s = setup()
   const frames = []
@@ -502,13 +490,7 @@ function scrollingSettings() {
 }
 
 test('Settings actions preserve the modal body, scroll and focused controls in place', async () => {
-  for (const action of [
-    'reset-rates',
-    'use-synced-rates',
-    'add-currency-submit',
-    'save-rates',
-    'base-currency',
-  ]) {
+  for (const action of ['use-synced-rates', 'add-currency-submit', 'save-rates', 'base-currency']) {
     const s = scrollingSettings()
     await s.context.syncCurrencyRates()
     s.run('settingsModal()')
