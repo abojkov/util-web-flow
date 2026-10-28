@@ -1016,7 +1016,7 @@ function download(content, filename, type) {
 function exportTimestamp() {
   const d = new Date()
   const pad = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`
 }
 
 function welcomeModal() {
@@ -1346,7 +1346,7 @@ function settingsModal() {
     })
     download(
       JSON.stringify(data, null, 2),
-      'flow-backup-' + exportTimestamp() + '.json',
+      'flow-bckp-' + exportTimestamp() + '.json',
       'application/json'
     )
     toast('Backup exported')
@@ -1396,7 +1396,7 @@ function settingsModal() {
       .join('\r\n')
     download(
       '\ufeff' + csv,
-      'flow-transactions-' + exportTimestamp() + '.csv',
+      'flow-trns-' + exportTimestamp() + '.csv',
       'text/csv;charset=utf-8'
     )
     toast('CSV exported')

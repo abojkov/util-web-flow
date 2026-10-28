@@ -343,6 +343,7 @@ All financial records stay on-device. No cloud sync, account login, third-party 
 
 ### JSON backup and restore
 
+- Export filenames use `flow-bckp-YYYYMMDD-HHmm.json`, with the device's local date and 24-hour time captured at export. Filename formatting is implemented and verified with focused automated checks.
 - Export accounts, transactions, splits, categories, budgets, recurring rules, exchange rates, settings and supported attachments.
 - Include backup format version, export timestamp and integrity/validation metadata.
 - Validate backup structure and references before import; do not overwrite without explicit confirmation.
@@ -359,6 +360,7 @@ All financial records stay on-device. No cloud sync, account login, third-party 
 
 ### CSV
 
+- Export filenames use `flow-trns-YYYYMMDD-HHmm.csv`, with the device's local date and 24-hour time captured at export. Filename formatting is implemented and verified with focused automated checks.
 - CSV transaction rows are ordered newest first by transaction date/time, consistently with transaction history.
 - Export transactions in spreadsheet-compatible format with dates, account/currency, categories, splits and transfer representation documented.
 - Import transactions using column mapping, validation, preview and duplicate detection.
@@ -565,6 +567,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 28.10.2026 — Compact export filenames
+
+- Changed JSON backup filenames to `flow-bckp-YYYYMMDD-HHmm.json` and CSV transaction filenames to `flow-trns-YYYYMMDD-HHmm.csv`. Both use the device's local date and 24-hour time at export, with minute precision.
+- Verification: focused timestamp and filename checks, JavaScript syntax, local assets/script ordering and diff checks passed. Browser downloads were not retested.
 
 ### 2026-10-22 — Social preview metadata
 
