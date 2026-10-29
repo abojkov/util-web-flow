@@ -231,6 +231,7 @@ Rules are listed by next date/time ascending, then label and ID, including pause
 ### Settings and personalization
 
 - Base currency; display currency/number/date formatting.
+- **Language:** Settings & backup includes a Language selector (English, Spanish and Macedonian at launch). The choice is stored in IndexedDB as `language` and applied on reload. UI chrome, labels, empty states, toasts and month names follow the selected locale. User-entered data (account names, category names, payees, descriptions) is not translated. Starter categories are created in the active language on first run or after a full reset. Browser language is used as the initial default when no saved preference exists and a matching locale file is loaded.
 - Category management, archived accounts, recurring rules, budgets.
 - Optional app lock; backup and import/export tools.
 - No theme selector: light mode only.
@@ -288,7 +289,8 @@ Schema details are illustrative, not authoritative. Prefer indexed lookups on da
 - Optional **development-only** formatting via Prettier (`npm install` then `npm run format`). This does not affect opening `index.html` directly and is not required to run the app.
 - `index.html` is the sole application entry page and must be **directly openable**, without a local HTTP server.
 - Page metadata includes a description, canonical URL, Open Graph website tags and a large-image Twitter/X card. Preview URLs use `https://flow.aboykov.com/` from `CNAME` with the local `og-image.png` asset (1672 × 941), image type and descriptive alternative text. Social previews require the page and image to be publicly deployed; metadata does not add runtime network requests or affect direct-file use.
-- For `file://` compatibility, avoid ES module imports; use classic scripts in a documented dependency order.
+- For `file://` compatibility, avoid ES module imports; use classic scripts in a documented dependency order: `storage.js` → `state.js` → locale files in `assets/locales/` → `i18n.js` → remaining app scripts.
+- **Internationalization:** UI strings live in per-locale JavaScript files (`assets/locales/en.js`, `assets/locales/es.js`, `assets/locales/mk.js`) registered through `registerFlowLocale`. Runtime code calls `t('dotted.key', { placeholders })` with English fallback when a key is missing. Add a new language by copying `en.js`, translating values and registering the file in `index.html`.
 - Separate database operations, financial domain logic, UI rendering and event handling into maintainable files.
 - Keep all assets local. The only runtime network request is optional currency-rate synchronization.
 - **Browser limitation:** `file://` origin behavior and IndexedDB persistence vary across browsers; detect failures and never claim guaranteed persistence without testing the target browser.
@@ -326,6 +328,7 @@ Run the full dependency-free Node suite with `node --test tests/*.test.cjs`, or 
 - `tests/settings-modal.test.cjs`: Settings actions, targeted updates, scroll and focus.
 - `tests/storage.test.cjs`: atomic settings persistence and transaction aborts.
 - `tests/welcome.test.cjs`: first-launch welcome, dismissal and post-reset behavior.
+- `tests/locale-keys.test.cjs`: translation key parity across locale files and `index.html` script registration.
 
 Reusable VM/browser stubs live in `tests/helpers/app-harness.cjs`; the shared API response fixture lives in `tests/fixtures/currency-rates.cjs`. These simulated checks do not verify actual browser layout or IndexedDB persistence.
 
@@ -409,6 +412,7 @@ Explicitly excluded unless the product owner changes the requirements:
 | F23 | Currency     | Dynamic currency management                     | Partial — focused checks passed | Browser persistence and transfer checks pending      |
 | F24 | Currency     | Optional startup rate synchronization           | Partial — focused checks passed | Browser file access and offline checks pending       |
 | F25 | Onboarding   | Welcome dialog on first launch and reset        | Partial — focused checks passed | Browser layout and persistence checks pending        |
+| F26 | Settings     | Language selector and UI translations           | Partial — focused checks passed | Browser switch/reload and third-locale checks pending |
 
 ### Release phases
 
@@ -567,6 +571,27 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-29 — Localized month headings
+
+- Month/year headings (for example budget overview and period controls) now use `months.*` keys from locale files instead of browser `Intl` formatting, so Macedonian and Spanish month names appear reliably under `file://` and in browsers without full locale packs.
+- Verification: locale key parity and full Node test suite passed.
+
+### 2026-10-29 — Locale key parity test
+
+- Added `tests/locale-keys.test.cjs` to fail when `en.js`, `es.js` and `mk.js` diverge or when `index.html` omits a locale script.
+- Verification: `node --test tests/locale-keys.test.cjs` passed alongside the existing suite.
+
+### 2026-10-29 — Spanish locale
+
+- Added `assets/locales/es.js` with full UI translations and registered it in `index.html`. Español appears in Settings → Language alongside English and Macedonian.
+- Verification: JavaScript syntax check on `es.js`; all Node tests passed. Browser switch to Spanish was not retested.
+
+### 2026-10-29 — Language selector and UI translations
+
+- Added a Language control at the top of Settings & backup with English, Spanish and Macedonian. Preference is stored as `language` in IndexedDB and applied through a lightweight i18n layer (`t()`, locale files and helpers for account types and month labels).
+- Migrated app UI strings to translation keys. User financial data remains in the language it was entered. Starter categories use the active locale on first run and after reset.
+- Verification: JavaScript syntax checks on all scripts and locale files; all five Node test files passed (22 tests). Browser language switching and layout were not retested.
 
 ### 28.10.2026 — Compact export filenames
 

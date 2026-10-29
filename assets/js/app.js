@@ -3,8 +3,8 @@ $('#settings-shortcut').onclick = settingsModal
   try {
     await reload()
     if (!state.categories.length) {
-      for (const [name, icon, color, type] of defaults)
-        await put('categories', { id: uid(), name, icon, color, type })
+      for (const [nameKey, icon, color, type] of defaults)
+        await put('categories', { id: uid(), name: t(nameKey), icon, color, type })
     }
     await processRecurring()
     await reload()

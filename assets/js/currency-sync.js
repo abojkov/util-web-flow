@@ -35,15 +35,17 @@ function syncedCurrenciesToAdd() {
 }
 
 function currencyRateSource(code) {
-  if (manualCurrencyCodes().includes(code)) return 'Manual'
-  return getSetting('currencySync', {}).rates?.[code] ? 'Synced' : 'Local'
+  if (manualCurrencyCodes().includes(code)) return t('currency.rateSource.manual')
+  return getSetting('currencySync', {}).rates?.[code]
+    ? t('currency.rateSource.synced')
+    : t('currency.rateSource.local')
 }
 
 function currencySyncStatus() {
   const sync = getSetting('currencySync', {})
-  if (currencySyncRequest) return 'Syncing reference rates…'
+  if (currencySyncRequest) return t('currency.syncStatus.syncing')
   if (currencySyncError) return currencySyncError
-  if (!sync.updatedAt) return 'Not synced yet. Local reference rates remain available.'
+  if (!sync.updatedAt) return t('currency.syncStatus.notSynced')
   const updated = new Date(sync.updatedAt)
   const date = displayDate(monthKey(updated) + '-' + String(updated.getDate()).padStart(2, '0'))
   const time = [updated.getHours(), updated.getMinutes(), updated.getSeconds()]
@@ -51,9 +53,12 @@ function currencySyncStatus() {
     .join(':')
   const rateDates =
     sync.firstDate === sync.lastDate
-      ? `Rate date: ${displayDate(sync.firstDate)}`
-      : `Rate dates: ${displayDate(sync.firstDate)} to ${displayDate(sync.lastDate)}`
-  return `Last synced: ${date}, ${time}. ${rateDates}.`
+      ? t('currency.syncStatus.rateDate', { date: displayDate(sync.firstDate) })
+      : t('currency.syncStatus.rateDates', {
+          from: displayDate(sync.firstDate),
+          to: displayDate(sync.lastDate),
+        })
+  return t('currency.syncStatus.lastSynced', { date, time, rateDates })
 }
 
 function updateCurrencySyncStatus() {
@@ -147,8 +152,7 @@ async function syncCurrencyRates() {
     if (!$('#modal-root')?.innerHTML) render()
   } catch (error) {
     if (currencySyncRequest !== controller) return
-    currencySyncError =
-      'Sync failed. Cached or manual rates are still in use. Check your connection or browser permissions and try again.'
+    currencySyncError = t('currency.syncStatus.failed')
   } finally {
     clearTimeout(timeout)
     if (currencySyncRequest === controller) currencySyncRequest = null

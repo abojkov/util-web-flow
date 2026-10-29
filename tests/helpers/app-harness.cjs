@@ -4,6 +4,16 @@ const vm = require('node:vm')
 const payload = require('../fixtures/currency-rates.cjs')
 const source = name =>
   fs.readFileSync(path.join(__dirname, '../../assets/js', name + '.js'), 'utf8')
+const localeSource = name =>
+  fs.readFileSync(path.join(__dirname, '../../assets/locales', name + '.js'), 'utf8')
+const i18nBundle = () =>
+  source('state') +
+  '\n' +
+  localeSource('en') +
+  '\n' +
+  localeSource('mk') +
+  '\n' +
+  source('i18n')
 
 function createAppHarness() {
   const elements = new Map()
@@ -39,7 +49,7 @@ function createAppHarness() {
       renders++
     },
   })
-  vm.runInContext(source('state') + '\n' + source('currency-sync'), context)
+  vm.runInContext(i18nBundle() + '\n' + source('currency-sync'), context)
   return {
     context,
     elements,

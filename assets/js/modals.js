@@ -1,6 +1,6 @@
 function modal(title, body, { restoreView = null } = {}) {
   $('#modal-root').innerHTML =
-    `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${title}</h2><button class="close" id="close-modal" aria-label="Close">×</button></div><div class="modal-body">${body}</div></div></div>`
+    `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${title}</h2><button class="close" id="close-modal" aria-label="${escapeHtml(t('modals.close'))}">×</button></div><div class="modal-body">${body}</div></div></div>`
   $('#close-modal').onclick = closeModal
   bindModalNumberInputs()
   const modalBody = $('.modal-body')
@@ -54,13 +54,13 @@ function closeModal() {
 function confirmAction({
   title,
   message,
-  confirmText = 'Confirm',
+  confirmText = t('modals.confirm'),
   onConfirm,
   onCancel = closeModal,
 }) {
   modal(
     title,
-    `<p class="notice">${escapeHtml(message)}</p><div class="modal-footer"><button type="button" class="btn ghost" id="confirm-cancel">Cancel</button><button type="button" class="btn danger" id="confirm-ok">${escapeHtml(confirmText)}</button></div>`
+    `<p class="notice">${escapeHtml(message)}</p><div class="modal-footer"><button type="button" class="btn ghost" id="confirm-cancel">${escapeHtml(t('modals.cancel'))}</button><button type="button" class="btn danger" id="confirm-ok">${escapeHtml(confirmText)}</button></div>`
   )
   $('#confirm-cancel').onclick = onCancel
   $('#confirm-ok').onclick = async () => {
@@ -91,7 +91,7 @@ function exchangeRateRows() {
 }
 
 function payeeAutocompleteInput(value = '', id = 'payee-input') {
-  return `<div class="payee-autocomplete"><input id="${id}" name="payee" autocomplete="off" maxlength="120" value="${escapeHtml(value)}" placeholder="Merchant, person, ATM or place"><div class="payee-suggestions" data-payee-suggestions hidden></div></div>`
+  return `<div class="payee-autocomplete"><input id="${id}" name="payee" autocomplete="off" maxlength="120" value="${escapeHtml(value)}" placeholder="${escapeHtml(t('modals.transaction.payeePlaceholder'))}"><div class="payee-suggestions" data-payee-suggestions hidden></div></div>`
 }
 
 function bindPayeeAutocomplete(inputId) {
@@ -165,21 +165,21 @@ function categoryPicker(id, type, categoryId = '', subcategoryId = '', name = ''
   const value = selected ? categoryChoiceValue(selected.id, child?.id) : ''
   const label = selected
     ? [selected.name, child?.name].filter(Boolean).join(' / ')
-    : 'Choose category'
+    : t('modals.chooseCategory')
   const choice = (category, subcategory) => {
     const key = categoryChoiceValue(category.id, subcategory?.id)
     return `<button type="button" class="category-choice" data-category-choice="${escapeHtml(key)}" aria-pressed="${key === value}"><span aria-hidden="true">${escapeHtml(subcategory?.icon || category.icon || '◈')}</span><span>${escapeHtml(subcategory?.name || category.name)}</span></button>`
   }
-  return `<div class="field"><label for="${id}-toggle" id="${id}-label">Category or subcategory</label><input type="hidden" id="${id}" name="${name}" class="${inputClass}" value="${escapeHtml(value)}"><button type="button" class="account-picker-toggle" id="${id}-toggle" aria-expanded="false" aria-controls="${id}-picker"><span id="${id}-selection">${escapeHtml(label)}</span></button><div class="category-picker" id="${id}-picker" hidden role="group" aria-labelledby="${id}-label">${
+  return `<div class="field"><label for="${id}-toggle" id="${id}-label">${escapeHtml(t('modals.categoryOrSubcategory'))}</label><input type="hidden" id="${id}" name="${name}" class="${inputClass}" value="${escapeHtml(value)}"><button type="button" class="account-picker-toggle" id="${id}-toggle" aria-expanded="false" aria-controls="${id}-picker"><span id="${id}-selection">${escapeHtml(label)}</span></button><div class="category-picker" id="${id}-picker" hidden role="group" aria-labelledby="${id}-label">${
     categories.length
       ? categories
           .map((category, index) => {
             const children = (category.subcategories || []).slice().sort(sortByOrderThenName)
             const expanded = category.id === selected?.id && Boolean(child)
-            return `<div class="category-picker-group"><div class="category-picker-parent">${choice(category)}${children.length ? `<button type="button" class="category-expand" data-category-expand="${id}-children-${index}" aria-controls="${id}-children-${index}" aria-expanded="${expanded}" aria-label="Show subcategories of ${escapeHtml(category.name)}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ''}</div>${children.length ? `<div class="category-picker-children" id="${id}-children-${index}" ${expanded ? '' : 'hidden'}>${children.map(subcategory => choice(category, subcategory)).join('')}</div>` : ''}</div>`
+            return `<div class="category-picker-group"><div class="category-picker-parent">${choice(category)}${children.length ? `<button type="button" class="category-expand" data-category-expand="${id}-children-${index}" aria-controls="${id}-children-${index}" aria-expanded="${expanded}" aria-label="${escapeHtml(t('modals.showSubcategoriesOf', { name: category.name }))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ''}</div>${children.length ? `<div class="category-picker-children" id="${id}-children-${index}" ${expanded ? '' : 'hidden'}>${children.map(subcategory => choice(category, subcategory)).join('')}</div>` : ''}</div>`
           })
           .join('')
-      : '<p class="form-hint">No categories yet. Create one in More → Categories.</p>'
+      : `<p class="form-hint">${escapeHtml(t('modals.noCategoriesHint'))}</p>`
   }</div></div>`
 }
 
@@ -256,16 +256,16 @@ async function moveCategory(id, direction) {
 
 function accountModal(a) {
   modal(
-    a ? 'Edit account' : 'New account',
-    `<form id="account-form"><div class="field"><label>Account name</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="e.g. Main bank account"></div><div class="field-row"><div class="field"><label>Account type</label><select name="type">${['Bank', 'Cash', 'Savings', 'Investment', 'Loan', 'Other'].map(x => `<option ${a?.type === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div><div class="field"><label>Currency</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>Opening balance</label><input type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="opening" value="${a?.opening ?? 0}" required></div><div class="field"><label><input type="checkbox" name="visible" ${!a?.archived && a?.visible !== false ? 'checked' : ''} ${a?.archived ? 'disabled' : ''}> Visible in account selectors</label><p class="form-hint">${a?.archived ? 'Archived accounts are always hidden. Restore this account to make it visible again.' : 'Hidden accounts remain in balances, statistics and transaction history. You can show them again here.'}</p></div><div class="notice">Opening balances are used to calculate your balance. Currency cannot be changed after account creation.</div><div class="modal-footer">${a ? '<button type="button" class="btn danger" id="delete-account">Delete account</button>' : ''}<button class="btn" type="submit">Save account</button></div></form>`
+    a ? t('modals.account.editTitle') : t('modals.account.newTitle'),
+    `<form id="account-form"><div class="field"><label>${escapeHtml(t('modals.account.name'))}</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="${escapeHtml(t('modals.account.namePlaceholder'))}"></div><div class="field-row"><div class="field"><label>${escapeHtml(t('modals.account.type'))}</label><select name="type">${['Bank', 'Cash', 'Savings', 'Investment', 'Loan', 'Other'].map(x => `<option value="${x}" ${a?.type === x ? 'selected' : ''}>${escapeHtml(accountTypeLabel(x))}</option>`).join('')}</select></div><div class="field"><label>${escapeHtml(t('modals.account.currency'))}</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>${escapeHtml(t('modals.account.openingBalance'))}</label><input type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="opening" value="${a?.opening ?? 0}" required></div><div class="field"><label><input type="checkbox" name="visible" ${!a?.archived && a?.visible !== false ? 'checked' : ''} ${a?.archived ? 'disabled' : ''}> ${escapeHtml(t('modals.account.visibleInSelectors'))}</label><p class="form-hint">${escapeHtml(a?.archived ? t('modals.account.visibleHint.archived') : t('modals.account.visibleHint.active'))}</p></div><div class="notice">${escapeHtml(t('modals.account.notice'))}</div><div class="modal-footer">${a ? `<button type="button" class="btn danger" id="delete-account">${escapeHtml(t('modals.account.delete'))}</button>` : ''}<button class="btn" type="submit">${escapeHtml(t('modals.account.save'))}</button></div></form>`
   )
   $('#delete-account')?.addEventListener('click', () => {
     if (state.transactions.some(t => t.accountId === a.id || t.toAccountId === a.id))
-      return toast('Account has transactions. Archive it instead.')
+      return toast(t('toasts.accountHasTransactions'))
     confirmAction({
-      title: 'Delete account',
-      message: `Delete ${a.name}? This cannot be undone.`,
-      confirmText: 'Delete account',
+      title: t('modals.account.confirmDeleteTitle'),
+      message: t('modals.account.confirmDeleteMessage', { name: a.name }),
+      confirmText: t('modals.account.confirmDeleteButton'),
       onCancel: () => accountModal(a),
       onConfirm: async () => {
         await del('accounts', a.id)
@@ -289,23 +289,23 @@ function accountModal(a) {
     })
     closeModal()
     await reload()
-    toast('Account saved')
+    toast(t('toasts.accountSaved'))
   }
 }
 
-function copyTransactionDateChoice(t) {
-  if (!t) return toast('Transaction not found')
+function copyTransactionDateChoice(tx) {
+  if (!tx) return toast(t('toasts.transactionNotFound'))
   modal(
-    'Copy transaction',
-    `<p class="notice">Choose the date and time for the copied transaction.</p><div class="modal-footer"><button type="button" class="btn secondary" id="copy-original-datetime">Same date and time</button><button type="button" class="btn" id="copy-current-datetime">Current date and time</button></div>`
+    t('modals.transaction.copyTitle'),
+    `<p class="notice">${escapeHtml(t('modals.transaction.copyNotice'))}</p><div class="modal-footer"><button type="button" class="btn secondary" id="copy-original-datetime">${escapeHtml(t('modals.transaction.copySameDateTime'))}</button><button type="button" class="btn" id="copy-current-datetime">${escapeHtml(t('modals.transaction.copyCurrentDateTime'))}</button></div>`
   )
-  $('#copy-original-datetime').onclick = () => copyTransactionDraft(t, false)
-  $('#copy-current-datetime').onclick = () => copyTransactionDraft(t, true)
+  $('#copy-original-datetime').onclick = () => copyTransactionDraft(tx, false)
+  $('#copy-current-datetime').onclick = () => copyTransactionDraft(tx, true)
 }
 
-function copyTransactionDraft(t, useCurrentDateTime = false) {
-  if (!t) return toast('Transaction not found')
-  const copy = JSON.parse(JSON.stringify(t))
+function copyTransactionDraft(tx, useCurrentDateTime = false) {
+  if (!tx) return toast(t('toasts.transactionNotFound'))
+  const copy = JSON.parse(JSON.stringify(tx))
   delete copy.id
   delete copy.createdAt
   delete copy.updatedAt
@@ -318,22 +318,22 @@ function copyTransactionDraft(t, useCurrentDateTime = false) {
   transactionModal(copy, copy.type, { copy: true })
 }
 
-function transactionModal(t, initial = 'expense', options = {}) {
+function transactionModal(tx, initial = 'expense', options = {}) {
   const active = orderedAccounts(state.accounts.filter(isSelectableAccount))
-  if (!active.length && !account(t?.accountId)) {
+  if (!active.length && !account(tx?.accountId)) {
     if (!state.accounts.length) {
-      toast('Create an account first')
+      toast(t('toasts.createAccountFirst'))
       return accountModal()
     }
-    return toast('No visible active accounts. Show an account in Accounts to add a transaction.')
+    return toast(t('toasts.noVisibleAccountsForTx'))
   }
   const isCopy = Boolean(options.copy)
-  const isExisting = Boolean(t?.id) && !isCopy
-  const type = t?.type || initial
+  const isExisting = Boolean(tx?.id) && !isCopy
+  const type = tx?.type || initial
   const accountPicker = (id, name, label, selected) => {
     const selectedId = account(selected) ? selected : active[0]?.id || ''
     const selectedAccount = account(selectedId)
-    return `<div class="field"><label id="${id}-label" for="${id}-toggle">${label}</label><input type="hidden" name="${name}" id="${id}" value="${escapeHtml(selectedId)}"><button type="button" class="account-picker-toggle" id="${id}-toggle" aria-expanded="false" aria-controls="${id}-picker"><span id="${id}-selection">${escapeHtml(selectedAccount?.name || 'Choose account')}</span></button><div class="account-picker" id="${id}-picker" hidden role="group" aria-labelledby="${id}-label">${active.map(a => `<button type="button" class="account-choice" data-account-id="${escapeHtml(a.id)}" aria-pressed="${a.id === selectedId}"><span class="account-choice-name">${escapeHtml(a.name)}</span><small>${escapeHtml(a.currency)}</small></button>`).join('')}</div></div>`
+    return `<div class="field"><label id="${id}-label" for="${id}-toggle">${escapeHtml(label)}</label><input type="hidden" name="${name}" id="${id}" value="${escapeHtml(selectedId)}"><button type="button" class="account-picker-toggle" id="${id}-toggle" aria-expanded="false" aria-controls="${id}-picker"><span id="${id}-selection">${escapeHtml(selectedAccount?.name || t('modals.chooseAccount'))}</span></button><div class="account-picker" id="${id}-picker" hidden role="group" aria-labelledby="${id}-label">${active.map(a => `<button type="button" class="account-choice" data-account-id="${escapeHtml(a.id)}" aria-pressed="${a.id === selectedId}"><span class="account-choice-name">${escapeHtml(a.name)}</span><small>${escapeHtml(a.currency)}</small></button>`).join('')}</div></div>`
   }
   const bindAccountPicker = id => {
     const input = $('#' + id),
@@ -367,8 +367,8 @@ function transactionModal(t, initial = 'expense', options = {}) {
     })
   }
   modal(
-    isExisting ? 'Edit transaction' : 'New transaction',
-    `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${x[0].toUpperCase() + x.slice(1)}</button>`).join('')}</div><div class="field-row"><div class="field"><label for="tx-datetime">Date &amp; time</label><input id="tx-datetime" type="datetime-local" name="datetime" value="${escapeHtml((t?.date || today()) + 'T' + (t?.time || currentTime()))}" required></div><div class="field"><label>Amount</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="amount" value="${t?.amount ?? ''}" required placeholder="0.00"></div></div>${accountPicker('tx-account', 'accountId', 'Account', t?.accountId || active[0]?.id || '')}<div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">Exchange rate</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>Payee</label>${payeeAutocompleteInput(t?.payee ?? t?.place ?? '', 'tx-payee')}</div><div class="field"><label>Description (optional)</label><textarea name="description" maxlength="1200" rows="4" placeholder="What was this for?">${escapeHtml(t?.description ?? t?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? '<button type="button" class="btn danger" id="delete-tx">Delete transaction</button><button type="button" class="btn secondary" id="copy-tx">Copy</button>' : ''}<button class="btn" type="submit">Save transaction</button></div></form>`
+    isExisting ? t('modals.transaction.editTitle') : t('modals.transaction.newTitle'),
+    `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${escapeHtml(txTypeLabel(x))}</button>`).join('')}</div><div class="field-row"><div class="field"><label for="tx-datetime">${escapeHtml(t('modals.transaction.dateTime'))}</label><input id="tx-datetime" type="datetime-local" name="datetime" value="${escapeHtml((tx?.date || today()) + 'T' + (tx?.time || currentTime()))}" required></div><div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="amount" value="${tx?.amount ?? ''}" required placeholder="0.00"></div></div>${accountPicker('tx-account', 'accountId', t('modals.transaction.account'), tx?.accountId || active[0]?.id || '')}<div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">${escapeHtml(t('modals.transaction.exchangeRate'))}</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>${escapeHtml(t('modals.transaction.payee'))}</label>${payeeAutocompleteInput(tx?.payee ?? tx?.place ?? '', 'tx-payee')}</div><div class="field"><label>${escapeHtml(t('modals.transaction.description'))}</label><textarea name="description" maxlength="1200" rows="4" placeholder="${escapeHtml(t('modals.transaction.descriptionPlaceholder'))}">${escapeHtml(tx?.description ?? tx?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? `<button type="button" class="btn danger" id="delete-tx">${escapeHtml(t('modals.transaction.delete'))}</button><button type="button" class="btn secondary" id="copy-tx">${escapeHtml(t('modals.transaction.copy'))}</button>` : ''}<button class="btn" type="submit">${escapeHtml(t('modals.transaction.save'))}</button></div></form>`
   )
   bindPayeeAutocomplete('tx-payee')
   let chosen = type
@@ -398,22 +398,25 @@ function transactionModal(t, initial = 'expense', options = {}) {
         transferInput = $('#tx-transfer-rate')
       const pair = `${selected?.currency}:${destination?.currency}`
       const originalPair =
-        t?.type === 'transfer' && t.accountId === selected?.id && t.toAccountId === destination?.id
+        tx?.type === 'transfer' &&
+        tx.accountId === selected?.id &&
+        tx.toAccountId === destination?.id
       const historicalRate =
-        originalPair && t.amount > 0 && t.received > 0 ? t.received / t.amount : null
+        originalPair && tx.amount > 0 && tx.received > 0 ? tx.received / tx.amount : null
       const inverseRate = inverseTransferQuote(
         selected?.currency,
         destination?.currency,
         historicalRate,
-        { ...exchangeRates(), ...(t?.exchangeRates || {}) }
+        { ...exchangeRates(), ...(tx?.exchangeRates || {}) }
       )
       let originalReceived = null
       const editableReceived = Boolean(crossCurrency)
       const receivedInput = $('#tx-received')
       $('#tx-received-field').hidden = !editableReceived
       receivedInput.required = Boolean(editableReceived)
-      $('#tx-received-label').textContent =
-        `Amount received (${destination?.currency || 'destination currency'})`
+      $('#tx-received-label').textContent = destination?.currency
+        ? t('modals.transaction.amountReceived', { currency: destination.currency })
+        : t('modals.transaction.amountReceivedFallback')
       if (transferField && transferInput) {
         transferField.hidden = !crossCurrency
         transferInput.required = Boolean(crossCurrency)
@@ -431,17 +434,19 @@ function transactionModal(t, initial = 'expense', options = {}) {
                 : destinationRate / sourceRate
               : null
           const initialRate =
-            originalPair && t.amount > 0 && t.received > 0
+            originalPair && tx.amount > 0 && tx.received > 0
               ? inverseRate
-                ? t.amount / t.received
-                : t.received / t.amount
+                ? tx.amount / tx.received
+                : tx.received / tx.amount
               : configuredRate
           transferInput.value = formatTransferRate(initialRate)
-          if (originalPair && t.amount > 0 && t.received > 0) originalReceived = t.received
+          if (originalPair && tx.amount > 0 && tx.received > 0) originalReceived = tx.received
           lastTransferPair = pair
         }
-        $('#tx-transfer-rate-label').textContent =
-          `Exchange rate: 1 ${inverseRate ? destination?.currency || '' : selected?.currency || ''} = how many ${inverseRate ? selected?.currency : destination?.currency || ''}?`
+        $('#tx-transfer-rate-label').textContent = t('modals.transaction.exchangeRateTransfer', {
+          from: inverseRate ? destination?.currency || '' : selected?.currency || '',
+          to: inverseRate ? selected?.currency : destination?.currency || '',
+        })
       }
       if (editableReceived && event?.target === receivedInput) {
         const received = amount(receivedInput.value)
@@ -464,27 +469,36 @@ function transactionModal(t, initial = 'expense', options = {}) {
       return
     }
     if (selected && rateBox && rateInput && rateLabel) {
-      const snapshot = t?.exchangeRates || exchangeRates()
+      const snapshot = tx?.exchangeRates || exchangeRates()
       if (selected.currency !== lastRateCurrency) {
         rateInput.value = snapshot[selected.currency] || exchangeRates()[selected.currency] || ''
         lastRateCurrency = selected.currency
       }
-      rateLabel.textContent = `Exchange rate: 1 EUR = ${selected.currency}`
+      rateLabel.textContent = t('modals.transaction.exchangeRateEur', {
+        currency: selected.currency,
+      })
       rateBox.hidden = selected.currency === 'EUR'
     }
     if (!box || !selected || !value || selected.currency === base()) {
       if (box) box.hidden = true
       return
     }
-    box.textContent = `Reporting estimate: ${conversionNoteWithRates(value, selected.currency, base(), currentTransactionRates())}. This transaction keeps its own rate snapshot for historical reports.`
+    box.textContent = t('modals.transaction.conversionPreview', {
+      note: conversionNoteWithRates(
+        value,
+        selected.currency,
+        base(),
+        currentTransactionRates()
+      ),
+    })
     box.hidden = false
   }
   let splitPickerSequence = 0
   const extra = () => {
     $('#tx-extra').innerHTML =
       chosen === 'transfer'
-        ? `${accountPicker('tx-to', 'toAccountId', 'Destination account', t?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}<div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">Exchange rate</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter agreed rate"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">Amount received (destination currency)</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="0.00"></div>`
-        : `<div id="tx-category-field">${categoryPicker('tx-category', chosen, t?.categoryId, t?.subcategoryId, 'categoryChoice')}</div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${t?.splits?.length ? 'checked' : ''} style="width:auto"> Split into categories</label><div id="split-fields"></div></div>`
+        ? `${accountPicker('tx-to', 'toAccountId', t('modals.transaction.destinationAccount'), tx?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}<div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">${escapeHtml(t('modals.transaction.exchangeRate'))}</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="${escapeHtml(t('modals.transaction.transferRatePlaceholder'))}"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">${escapeHtml(t('modals.transaction.amountReceivedFallback'))}</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="${escapeHtml(t('modals.transaction.amountPlaceholder'))}"></div>`
+        : `<div id="tx-category-field">${categoryPicker('tx-category', chosen, tx?.categoryId, tx?.subcategoryId, 'categoryChoice')}</div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${tx?.splits?.length ? 'checked' : ''} style="width:auto"> ${escapeHtml(t('modals.transaction.splitIntoCategories'))}</label><div id="split-fields"></div></div>`
     if (chosen === 'transfer') {
       lastTransferPair = ''
       $('#tx-to').onchange = updateConversionPreview
@@ -505,11 +519,11 @@ function transactionModal(t, initial = 'expense', options = {}) {
           $('#tx-category-toggle').setAttribute('aria-expanded', 'false')
         }
         container.innerHTML = toggle.checked
-          ? `<div id="split-rows"></div><button type="button" class="btn secondary" id="add-split" style="margin-top:9px">+ Add split</button><p class="form-hint">Split amounts must equal the transaction total.</p>`
+          ? `<div id="split-rows"></div><button type="button" class="btn secondary" id="add-split" style="margin-top:9px">${escapeHtml(t('modals.transaction.addSplit'))}</button><p class="form-hint">${escapeHtml(t('modals.transaction.splitHint'))}</p>`
           : ''
         if (toggle.checked) {
-          let rows = t?.splits?.length
-            ? t.splits
+          let rows = tx?.splits?.length
+            ? tx.splits
             : [
                 {
                   categoryId: state.categories.find(c => c.type === chosen)?.id,
@@ -526,7 +540,7 @@ function transactionModal(t, initial = 'expense', options = {}) {
             const el = document.createElement('div')
             const pickerId = 'tx-split-category-' + ++splitPickerSequence
             el.className = 'field-row split-row'
-            el.innerHTML = `${categoryPicker(pickerId, chosen, s.categoryId, s.subcategoryId, '', 'split-cat')}<div class="field"><label>Amount</label><input class="split-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${s.amount ?? ''}" required></div>`
+            el.innerHTML = `${categoryPicker(pickerId, chosen, s.categoryId, s.subcategoryId, '', 'split-cat')}<div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input class="split-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${s.amount ?? ''}" required></div>`
             $('#split-rows').append(el)
             bindCategoryPicker(pickerId)
           }
@@ -550,18 +564,18 @@ function transactionModal(t, initial = 'expense', options = {}) {
   )
   $('#delete-tx')?.addEventListener('click', () => {
     confirmAction({
-      title: 'Delete transaction',
-      message: 'Delete this transaction? This cannot be undone.',
-      confirmText: 'Delete transaction',
-      onCancel: () => transactionModal(t),
+      title: t('modals.transaction.confirmDeleteTitle'),
+      message: t('modals.transaction.confirmDeleteMessage'),
+      confirmText: t('modals.transaction.confirmDeleteButton'),
+      onCancel: () => transactionModal(tx),
       onConfirm: async () => {
-        await del('transactions', t.id)
+        await del('transactions', tx.id)
         closeModal()
         await reload()
       },
     })
   })
-  $('#copy-tx')?.addEventListener('click', () => copyTransactionDateChoice(t))
+  $('#copy-tx')?.addEventListener('click', () => copyTransactionDateChoice(tx))
   $('#tx-amount')?.addEventListener('input', updateConversionPreview)
   $('#tx-account')?.addEventListener('change', updateConversionPreview)
   bindAccountPicker('tx-account')
@@ -571,25 +585,25 @@ function transactionModal(t, initial = 'expense', options = {}) {
     e.preventDefault()
     const f = new FormData(e.target),
       from = account(f.get('accountId'))
-    if (!from) return toast('Select an account')
+    if (!from) return toast(t('toasts.selectAccount'))
     const v = amount(f.get('amount'))
-    if (v <= 0) return toast('Enter a valid amount')
+    if (v <= 0) return toast(t('toasts.validAmount'))
     const dateTime = String(f.get('datetime') || '')
     const parts = /^(\d{4})-(\d{2})-(\d{2})T([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/.exec(
       dateTime
     )
-    if (!parts) return toast('Enter a valid date and time')
+    if (!parts) return toast(t('toasts.validDateTime'))
     const year = Number(parts[1]),
       month = Number(parts[2]),
       day = Number(parts[3])
     const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
     const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     if (year < 1 || month < 1 || month > 12 || day < 1 || day > daysInMonth[month - 1])
-      return toast('Enter a valid date and time')
+      return toast(t('toasts.validDateTime'))
     // Keep local calendar values intact: converting to UTC could change the reporting day.
     const [date, time] = dateTime.split('T')
     let record = {
-      id: isExisting ? t.id : uid(),
+      id: isExisting ? tx.id : uid(),
       type: chosen,
       amount: v,
       date,
@@ -598,7 +612,7 @@ function transactionModal(t, initial = 'expense', options = {}) {
       payee: String(f.get('payee') || '').trim(),
       description: String(f.get('description') || '').trim(),
       exchangeRates: currentTransactionRates(),
-      createdAt: isExisting ? t.createdAt || new Date().toISOString() : new Date().toISOString(),
+      createdAt: isExisting ? tx.createdAt || new Date().toISOString() : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
     record.exchangeRateFrom = from.currency
@@ -608,15 +622,15 @@ function transactionModal(t, initial = 'expense', options = {}) {
       record.exchangeRate = record.exchangeRates[base()] / record.exchangeRates[from.currency]
     if (chosen === 'transfer') {
       const to = account(f.get('toAccountId'))
-      if (!to || to.id === from.id) return toast('Select a different destination account')
+      if (!to || to.id === from.id) return toast(t('toasts.selectDestinationAccount'))
       record.toAccountId = to.id
       const transferRate = from.currency === to.currency ? 1 : decimalValue(f.get('transferRate'))
       if (!Number.isFinite(transferRate) || transferRate <= 0)
-        return toast('Enter a valid positive exchange rate')
+        return toast(t('toasts.validExchangeRate'))
       const crossCurrency = from.currency !== to.currency
       record.received = crossCurrency ? amount(f.get('received')) : v
       if (!Number.isFinite(record.received) || record.received <= 0)
-        return toast('The calculated amount received must be positive and finite')
+        return toast(t('toasts.validReceivedAmount'))
       // Keep the stored rate in destination units per source unit for compatibility.
       record.transferRate = crossCurrency ? record.received / v : 1
       record.exchangeRates = rateSnapshotForCurrencies([from.currency, to.currency, base()], {
@@ -642,18 +656,19 @@ function transactionModal(t, initial = 'expense', options = {}) {
           }
         })
         if (record.splits.some(split => !validCategory(split)))
-          return toast('Select a valid category or subcategory for each split')
+          return toast(t('toasts.validSplitCategory'))
         if (record.splits.some(split => split.amount <= 0))
-          return toast('Enter a valid split amount')
+          return toast(t('toasts.validSplitAmount'))
         if (
           Math.round(record.splits.reduce((s, x) => s + x.amount, 0) * 100) !== Math.round(v * 100)
         )
-          return toast('Split amounts must equal the total')
+          return toast(t('toasts.splitMustEqualTotal'))
         record.categoryId = null
         record.subcategoryId = null
       } else {
         const selectedCategory = parseCategoryChoice(f.get('categoryChoice'))
-        if (!validCategory(selectedCategory)) return toast('Select a valid category or subcategory')
+        if (!validCategory(selectedCategory))
+          return toast(t('toasts.selectCategory'))
         record.categoryId = selectedCategory.categoryId
         record.subcategoryId = selectedCategory.subcategoryId || null
       }
@@ -661,13 +676,13 @@ function transactionModal(t, initial = 'expense', options = {}) {
     await put('transactions', record)
     closeModal()
     await reload()
-    toast('Transaction saved')
+    toast(t('toasts.transactionSaved'))
   }
 }
 
 function categoriesModal() {
   const categoryRow = c =>
-    `<div class="category-item"><div class="transaction"><div class="tx-icon" style="background:${c.color}20;color:${c.color}">${escapeHtml(c.icon)}</div><div class="tx-main"><b>${escapeHtml(c.name)}</b><small>${c.type}${c.subcategories?.length ? ` · ${c.subcategories.length} subcategories` : ''}</small></div><div class="category-actions"><button class="mini-btn" data-move-category="${c.id}" data-direction="-1" title="Move up">↑</button><button class="mini-btn" data-move-category="${c.id}" data-direction="1" title="Move down">↓</button><button class="mini-btn" data-edit-category="${c.id}" title="Edit category">✎</button><button class="mini-btn" data-remove-category="${c.id}" title="Delete category">×</button></div></div>${
+    `<div class="category-item"><div class="transaction"><div class="tx-icon" style="background:${c.color}20;color:${c.color}">${escapeHtml(c.icon)}</div><div class="tx-main"><b>${escapeHtml(c.name)}</b><small>${escapeHtml(txTypeLabel(c.type))}${c.subcategories?.length ? ` · ${escapeHtml(t('modals.categories.subcategoryCount', { count: c.subcategories.length }))}` : ''}</small></div><div class="category-actions"><button class="mini-btn" data-move-category="${c.id}" data-direction="-1" title="${escapeHtml(t('modals.moveUp'))}">↑</button><button class="mini-btn" data-move-category="${c.id}" data-direction="1" title="${escapeHtml(t('modals.moveDown'))}">↓</button><button class="mini-btn" data-edit-category="${c.id}" title="${escapeHtml(t('modals.categories.editTitle'))}">✎</button><button class="mini-btn" data-remove-category="${c.id}" title="${escapeHtml(t('modals.remove'))}">×</button></div></div>${
       c.subcategories?.length
         ? `<div class="subcategory-list">${c.subcategories
             .slice()
@@ -681,11 +696,11 @@ function categoriesModal() {
     }</div>`
   const categorySection = (type, title, description) => {
     const items = state.categories.filter(c => c.type === type).sort(sortByOrderThenName)
-    return `<section class="category-group"><div class="category-group-head"><div><h3>${title}</h3><p>${description}</p></div><button class="btn secondary" data-new-category="${type}">+ New</button></div><div class="table-list">${items.length ? items.map(categoryRow).join('') : empty(`No ${type} categories`, `Create a ${type} category to organize transactions.`, type === 'expense' ? '↗' : '↙')}</div></section>`
+    return `<section class="category-group"><div class="category-group-head"><div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></div><button class="btn secondary" data-new-category="${type}">${escapeHtml(t('modals.categories.new'))}</button></div><div class="table-list">${items.length ? items.map(categoryRow).join('') : empty(type === 'expense' ? t('modals.categories.empty.expense.title') : t('modals.categories.empty.income.title'), type === 'expense' ? t('modals.categories.empty.expense.desc') : t('modals.categories.empty.income.desc'), type === 'expense' ? '↗' : '↙')}</div></section>`
   }
   modal(
-    'Manage categories',
-    `<div class="category-manager">${categorySection('expense', 'Expense categories', 'Used for spending, budgets and expense reports.')}${categorySection('income', 'Income categories', 'Used for salary, gifts, interest and income reports.')}</div>`
+    t('modals.categories.title'),
+    `<div class="category-manager">${categorySection('expense', t('modals.categories.expenseTitle'), t('modals.categories.expenseDesc'))}${categorySection('income', t('modals.categories.incomeTitle'), t('modals.categories.incomeDesc'))}</div>`
   )
   document
     .querySelectorAll('[data-new-category]')
@@ -708,11 +723,11 @@ function categoriesModal() {
               t.splits?.some(s => s.categoryId === b.dataset.removeCategory)
           )
         )
-          return toast('Category is in use')
+          return toast(t('toasts.categoryInUse'))
         confirmAction({
-          title: 'Delete category',
-          message: 'Delete this category? This cannot be undone.',
-          confirmText: 'Delete category',
+          title: t('modals.categories.deleteCategoryTitle'),
+          message: t('modals.categories.confirmDeleteMessage'),
+          confirmText: t('modals.categories.confirmDeleteButton'),
           onCancel: categoriesModal,
           onConfirm: async () => {
             await del('categories', b.dataset.removeCategory)
@@ -731,18 +746,18 @@ function categoryEdit(c, initialType = 'expense') {
     .sort(sortByOrderThenName)
     .map(
       s =>
-        `<div class="field-row subcategory-row" data-subcategory-id="${s.id}"><div class="field"><label>Subcategory name</label><input class="subcategory-name" maxlength="45" value="${escapeHtml(s.name || '')}"></div><div class="field"><label>Icon</label><div class="inline-field"><input class="subcategory-icon" maxlength="4" value="${escapeHtml(s.icon || '')}" placeholder="◦"><button type="button" class="mini-btn" data-move-subcategory="-1" title="Move up">↑</button><button type="button" class="mini-btn" data-move-subcategory="1" title="Move down">↓</button><button type="button" class="mini-btn" data-remove-subcategory title="Remove">×</button></div></div></div>`
+        `<div class="field-row subcategory-row" data-subcategory-id="${s.id}"><div class="field"><label>${escapeHtml(t('modals.categories.subcategoryName'))}</label><input class="subcategory-name" maxlength="45" value="${escapeHtml(s.name || '')}"></div><div class="field"><label>${escapeHtml(t('modals.categories.icon'))}</label><div class="inline-field"><input class="subcategory-icon" maxlength="4" value="${escapeHtml(s.icon || '')}" placeholder="◦"><button type="button" class="mini-btn" data-move-subcategory="-1" title="${escapeHtml(t('modals.moveUp'))}">↑</button><button type="button" class="mini-btn" data-move-subcategory="1" title="${escapeHtml(t('modals.moveDown'))}">↓</button><button type="button" class="mini-btn" data-remove-subcategory title="${escapeHtml(t('modals.remove'))}">×</button></div></div></div>`
     )
     .join('')
   modal(
-    c ? 'Edit category' : 'New category',
-    `<form id="category-form"><div class="field"><label>Name</label><input name="name" required maxlength="45" value="${escapeHtml(c?.name || '')}"></div><div class="field-row"><div class="field"><label>Type</label><select name="type" ${c ? 'disabled' : ''}><option value="expense" ${selectedType === 'expense' ? 'selected' : ''}>Expense</option><option value="income" ${selectedType === 'income' ? 'selected' : ''}>Income</option></select></div><div class="field"><label>Icon (emoji or symbol)</label><input name="icon" maxlength="4" value="${escapeHtml(c?.icon || '◈')}"></div></div><div class="field"><label>Color</label><input name="color" type="color" value="${c?.color || '#3b82f6'}" style="height:48px"></div><div class="field"><label>Subcategories</label><div id="subcategory-rows">${subcategoryRows}</div><button type="button" class="btn secondary" id="add-subcategory">+ Add subcategory</button><p class="form-hint">Transactions can use either the parent category or one of its subcategories.</p></div><div class="modal-footer"><button class="btn">Save category</button></div></form>`
+    c ? t('modals.categories.editCategoryTitle') : t('modals.categories.newTitle'),
+    `<form id="category-form"><div class="field"><label>${escapeHtml(t('modals.categories.name'))}</label><input name="name" required maxlength="45" value="${escapeHtml(c?.name || '')}"></div><div class="field-row"><div class="field"><label>${escapeHtml(t('modals.categories.type'))}</label><select name="type" ${c ? 'disabled' : ''}><option value="expense" ${selectedType === 'expense' ? 'selected' : ''}>${escapeHtml(t('common.expense'))}</option><option value="income" ${selectedType === 'income' ? 'selected' : ''}>${escapeHtml(t('common.income'))}</option></select></div><div class="field"><label>${escapeHtml(t('modals.categories.icon'))}</label><input name="icon" maxlength="4" value="${escapeHtml(c?.icon || '◈')}"></div></div><div class="field"><label>${escapeHtml(t('modals.categories.color'))}</label><input name="color" type="color" value="${c?.color || '#3b82f6'}" style="height:48px"></div><div class="field"><label>${escapeHtml(t('modals.categories.subcategories'))}</label><div id="subcategory-rows">${subcategoryRows}</div><button type="button" class="btn secondary" id="add-subcategory">${escapeHtml(t('modals.categories.addSubcategory'))}</button><p class="form-hint">${escapeHtml(t('modals.categories.subcategoryHint'))}</p></div><div class="modal-footer"><button class="btn">${escapeHtml(t('modals.categories.save'))}</button></div></form>`
   )
   const addSubcategoryRow = (item = {}) => {
     const row = document.createElement('div')
     row.className = 'field-row subcategory-row'
     row.dataset.subcategoryId = item.id || ''
-    row.innerHTML = `<div class="field"><label>Subcategory name</label><input class="subcategory-name" maxlength="45" value="${escapeHtml(item.name || '')}"></div><div class="field"><label>Icon</label><div class="inline-field"><input class="subcategory-icon" maxlength="4" value="${escapeHtml(item.icon || '')}" placeholder="◦"><button type="button" class="mini-btn" data-move-subcategory="-1" title="Move up">↑</button><button type="button" class="mini-btn" data-move-subcategory="1" title="Move down">↓</button><button type="button" class="mini-btn" data-remove-subcategory title="Remove">×</button></div></div>`
+    row.innerHTML = `<div class="field"><label>${escapeHtml(t('modals.categories.subcategoryName'))}</label><input class="subcategory-name" maxlength="45" value="${escapeHtml(item.name || '')}"></div><div class="field"><label>${escapeHtml(t('modals.categories.icon'))}</label><div class="inline-field"><input class="subcategory-icon" maxlength="4" value="${escapeHtml(item.icon || '')}" placeholder="◦"><button type="button" class="mini-btn" data-move-subcategory="-1" title="${escapeHtml(t('modals.moveUp'))}">↑</button><button type="button" class="mini-btn" data-move-subcategory="1" title="${escapeHtml(t('modals.moveDown'))}">↓</button><button type="button" class="mini-btn" data-remove-subcategory title="${escapeHtml(t('modals.remove'))}">×</button></div></div>`
     $('#subcategory-rows').append(row)
   }
   $('#add-subcategory').onclick = () => addSubcategoryRow()
@@ -780,7 +795,7 @@ function categoryEdit(c, initialType = 'expense') {
       .filter(s => s.name)
     const keptIds = new Set(subcategories.map(s => s.id))
     if ((c?.subcategories || []).some(s => usedSubcategoryIds.has(s.id) && !keptIds.has(s.id)))
-      return toast('Subcategory is in use')
+      return toast(t('toasts.subcategoryInUse'))
     await put('categories', {
       id: c?.id || uid(),
       name: f.get('name').trim(),
@@ -799,8 +814,8 @@ function categoryEdit(c, initialType = 'expense') {
 function budgetsModal() {
   const items = orderedBudgets(state.budgets.filter(b => b.month === state.month))
   modal(
-    'Monthly budgets',
-    `<div class="toolbar">${monthControl()}<button class="btn" id="new-budget">+ Add budget</button></div><div class="table-list">${items.length ? items.map(b => `<div class="transaction"><div class="tx-icon">◉</div><div class="tx-main"><b>${escapeHtml(cat(b.categoryId)?.name || 'Overall budget')}</b><small>${monthLabel(b.month)}</small></div><b>${money(b.limit, base())}</b><button class="mini-btn" data-remove-budget="${b.id}">×</button></div>`).join('') : empty('No budgets this month', 'Add a limit for your spending.')}</div>`
+    t('modals.budgets.title'),
+    `<div class="toolbar">${monthControl()}<button class="btn" id="new-budget">${escapeHtml(t('modals.budgets.add'))}</button></div><div class="table-list">${items.length ? items.map(b => `<div class="transaction"><div class="tx-icon">◉</div><div class="tx-main"><b>${escapeHtml(cat(b.categoryId)?.name || t('modals.budgets.overallBudget'))}</b><small>${escapeHtml(monthLabel(b.month))}</small></div><b>${money(b.limit, base())}</b><button class="mini-btn" data-remove-budget="${b.id}">×</button></div>`).join('') : empty(t('modals.budgets.empty.title'), t('modals.budgets.empty.desc'))}</div>`
   )
   bindMonth()
   $('#prev-month').onclick = () => {
@@ -828,14 +843,14 @@ function shiftBudget(n) {
 
 function budgetEdit() {
   modal(
-    'Add monthly budget',
-    `<form id="budget-form"><div class="field"><label>Month</label><input name="month" type="month" value="${state.month}" required></div><div class="field"><label>Category</label><select name="categoryId"><option value="">Overall budget</option>${state.categories
+    t('modals.budgets.addTitle'),
+    `<form id="budget-form"><div class="field"><label>${escapeHtml(t('modals.budgets.month'))}</label><input name="month" type="month" value="${state.month}" required></div><div class="field"><label>${escapeHtml(t('modals.budgets.category'))}</label><select name="categoryId"><option value="">${escapeHtml(t('modals.budgets.overallBudget'))}</option>${state.categories
       .filter(c => c.type === 'expense')
       .sort(sortByOrderThenName)
       .map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`)
       .join(
         ''
-      )}</select></div><div class="field"><label>Monthly limit (${base()})</label><input name="limit" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div><div class="notice">Budgets reset each month. No unused amount is carried forward.</div><div class="modal-footer"><button class="btn">Save budget</button></div></form>`
+      )}</select></div><div class="field"><label>${escapeHtml(t('modals.budgets.monthlyLimit', { currency: base() }))}</label><input name="limit" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div><div class="notice">${escapeHtml(t('modals.budgets.notice'))}</div><div class="modal-footer"><button class="btn">${escapeHtml(t('modals.budgets.save'))}</button></div></form>`
   )
   $('#budget-form').onsubmit = async e => {
     e.preventDefault()
@@ -843,7 +858,7 @@ function budgetEdit() {
       month = f.get('month'),
       categoryId = f.get('categoryId')
     const limit = amount(f.get('limit'))
-    if (limit <= 0) return toast('Enter a valid budget amount')
+    if (limit <= 0) return toast(t('toasts.validBudgetAmount'))
     const old = state.budgets.find(b => b.month === month && b.categoryId === categoryId)
     await put('budgets', { id: old?.id || uid(), month, categoryId, limit })
     await reload()
@@ -875,8 +890,8 @@ function orderedRecurring(items) {
 function recurringModal() {
   const items = orderedRecurring(state.recurring)
   modal(
-    'Recurring transactions',
-    `<div class="toolbar"><span class="muted">Scheduled items are added when you open the app.</span><button class="btn" id="new-recurring">+ New</button></div><div class="table-list">${items.length ? items.map(r => `<div class="transaction"><div class="tx-icon">↻</div><div class="tx-main"><b>${escapeHtml(r.payee || r.place || r.description || r.note || cat(r.categoryId)?.name || 'Recurring')}</b><small>${r.frequency} · next ${escapeHtml(displayDate(r.nextDate))}${r.time ? ' at ' + r.time : ''} · ${r.paused ? 'Paused' : 'Active'}</small></div><b>${money(r.amount, account(r.accountId)?.currency || base())}</b><button class="mini-btn" data-pause="${r.id}">${r.paused ? '▶' : 'Ⅱ'}</button><button class="mini-btn" data-remove-recurring="${r.id}">×</button></div>`).join('') : empty('No recurring transactions', 'Add regular salary, rent or subscriptions.', '↻')}</div>`
+    t('modals.recurring.title'),
+    `<div class="toolbar"><span class="muted">${escapeHtml(t('modals.recurring.subtitle'))}</span><button class="btn" id="new-recurring">${escapeHtml(t('modals.recurring.new'))}</button></div><div class="table-list">${items.length ? items.map(r => `<div class="transaction"><div class="tx-icon">↻</div><div class="tx-main"><b>${escapeHtml(r.payee || r.place || r.description || r.note || cat(r.categoryId)?.name || t('modals.recurring.fallbackLabel'))}</b><small>${escapeHtml(t('modals.recurring.frequency.' + r.frequency))} · ${escapeHtml(t('modals.recurring.nextAt', { date: displayDate(r.nextDate) }))}${r.time ? escapeHtml(t('modals.recurring.atTime', { time: r.time })) : ''} · ${escapeHtml(r.paused ? t('modals.recurring.paused') : t('modals.recurring.active'))}</small></div><b>${money(r.amount, account(r.accountId)?.currency || base())}</b><button class="mini-btn" data-pause="${r.id}">${r.paused ? '▶' : 'Ⅱ'}</button><button class="mini-btn" data-remove-recurring="${r.id}">×</button></div>`).join('') : empty(t('modals.recurring.empty.title'), t('modals.recurring.empty.desc'), '↻')}</div>`
   )
   $('#new-recurring').onclick = recurringEdit
   document.querySelectorAll('[data-pause]').forEach(
@@ -892,9 +907,9 @@ function recurringModal() {
     b =>
       (b.onclick = async () => {
         confirmAction({
-          title: 'Remove schedule',
-          message: 'Remove this recurring schedule? Existing transactions stay intact.',
-          confirmText: 'Remove schedule',
+          title: t('modals.recurring.confirmRemoveTitle'),
+          message: t('modals.recurring.confirmRemoveMessage'),
+          confirmText: t('modals.recurring.confirmRemoveButton'),
           onCancel: recurringModal,
           onConfirm: async () => {
             await del('recurring', b.dataset.removeRecurring)
@@ -910,11 +925,11 @@ function recurringEdit() {
   const active = orderedAccounts(state.accounts.filter(isSelectableAccount))
   if (!active.length) {
     if (!state.accounts.length) return accountModal()
-    return toast('No visible active accounts. Show an account in Accounts to create a schedule.')
+    return toast(t('toasts.noVisibleAccountsForSchedule'))
   }
   modal(
-    'New recurring transaction',
-    `<form id="rec-form"><div class="field-row"><div class="field"><label>Type</label><select name="type" id="rec-type"><option value="expense">Expense</option><option value="income">Income</option></select></div><div class="field"><label>Amount</label><input name="amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div></div><div class="field"><label>Account</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>Category</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>Frequency</label><select name="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="yearly">Yearly</option></select></div><div class="field"><label>First date</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>Time</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>Payee</label>${payeeAutocompleteInput('', 'rec-payee')}</div><div class="field"><label>Description</label><input name="description" maxlength="180"></div><div class="modal-footer"><button class="btn">Create schedule</button></div></form>`
+    t('modals.recurring.newTitle'),
+    `<form id="rec-form"><div class="field-row"><div class="field"><label>${escapeHtml(t('transactions.filter.type'))}</label><select name="type" id="rec-type"><option value="expense">${escapeHtml(t('txTypes.expense'))}</option><option value="income">${escapeHtml(t('txTypes.income'))}</option></select></div><div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input name="amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div></div><div class="field"><label>${escapeHtml(t('modals.transaction.account'))}</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>${escapeHtml(t('modals.budgets.category'))}</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>${escapeHtml(t('modals.recurring.frequency'))}</label><select name="frequency"><option value="daily">${escapeHtml(t('modals.recurring.frequency.daily'))}</option><option value="weekly">${escapeHtml(t('modals.recurring.frequency.weekly'))}</option><option value="monthly" selected>${escapeHtml(t('modals.recurring.frequency.monthly'))}</option><option value="yearly">${escapeHtml(t('modals.recurring.frequency.yearly'))}</option></select></div><div class="field"><label>${escapeHtml(t('modals.recurring.firstDate'))}</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>${escapeHtml(t('modals.recurring.time'))}</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>${escapeHtml(t('modals.recurring.payee'))}</label>${payeeAutocompleteInput('', 'rec-payee')}</div><div class="field"><label>${escapeHtml(t('modals.recurring.description'))}</label><input name="description" maxlength="180"></div><div class="modal-footer"><button class="btn">${escapeHtml(t('modals.recurring.create'))}</button></div></form>`
   )
   bindPayeeAutocomplete('rec-payee')
   const fill = () => {
@@ -930,7 +945,7 @@ function recurringEdit() {
     e.preventDefault()
     const f = new FormData(e.target)
     const value = amount(f.get('amount'))
-    if (value <= 0) return toast('Enter a valid amount')
+    if (value <= 0) return toast(t('toasts.validAmount'))
     await put('recurring', {
       id: uid(),
       type: f.get('type'),
@@ -1021,16 +1036,16 @@ function exportTimestamp() {
 
 function welcomeModal() {
   modal(
-    'Welcome to Flow',
+    t('welcome.modalTitle'),
     `<div class="welcome-content">
-      <p>A simple space for your everyday finances.</p>
+      <p>${escapeHtml(t('welcome.intro'))}</p>
       <ul class="welcome-steps">
-        <li>Add your first account. EUR is ready to use.</li>
-        <li>Record income, expenses and transfers.</li>
-        <li>Export a JSON backup from Settings &amp; backup to keep a copy.</li>
+        <li>${escapeHtml(t('welcome.step1'))}</li>
+        <li>${escapeHtml(t('welcome.step2'))}</li>
+        <li>${escapeHtml(t('welcome.step3'))}</li>
       </ul>
-      <div class="notice">Your records stay on this device. Currency rates can sync online.</div>
-      <button type="button" class="btn" id="welcome-start">Get started</button>
+      <div class="notice">${escapeHtml(t('welcome.notice'))}</div>
+      <button type="button" class="btn" id="welcome-start">${escapeHtml(t('welcome.getStarted'))}</button>
     </div>`
   )
   const start = $('#welcome-start')
@@ -1044,7 +1059,7 @@ function welcomeModal() {
     } catch (error) {
       console.error(error)
       if ($('#welcome-start') === start) closeModal()
-      toast('Could not save the welcome preference. You may see this message again.')
+      toast(t('toasts.welcomePreferenceFailed'))
     } finally {
       start.disabled = close.disabled = false
     }
@@ -1055,10 +1070,9 @@ function welcomeModal() {
 
 function resetDataModal() {
   confirmAction({
-    title: 'Reset all data?',
-    message:
-      'Permanently delete all accounts, transactions, budgets, recurring schedules, custom categories and settings in this browser? Starter categories will be restored and settings will return to defaults. This cannot be undone without a JSON backup. Cancel and export a full JSON backup first if you want to keep your data.',
-    confirmText: 'Delete all data',
+    title: t('modals.reset.title'),
+    message: t('modals.reset.message'),
+    confirmText: t('modals.reset.confirm'),
     onCancel: settingsModal,
     onConfirm: async () => {
       const buttons = ['#confirm-ok', '#confirm-cancel', '#close-modal'].map(selector =>
@@ -1067,9 +1081,9 @@ function resetDataModal() {
       if (buttons[0].disabled) return
       buttons.forEach(button => (button.disabled = true))
       try {
-        const categories = defaults.map(([name, icon, color, type]) => ({
+        const categories = defaults.map(([nameKey, icon, color, type]) => ({
           id: uid(),
-          name,
+          name: t(nameKey),
           icon,
           color,
           type,
@@ -1082,11 +1096,11 @@ function resetDataModal() {
         state.categories = categories
         closeModal()
         render()
-        toast('All data reset. You can start fresh.')
+        toast(t('toasts.dataReset'))
         welcomeModal()
       } catch (error) {
         console.error(error)
-        toast('Could not reset data. Please try again.')
+        toast(t('toasts.dataResetFailed'))
       } finally {
         buttons.forEach(button => (button.disabled = false))
       }
@@ -1099,7 +1113,7 @@ function updateAddCurrencyOptions() {
   if (!select) return
   const codes = syncedCurrenciesToAdd()
   const selected = select.value
-  const options = `<option value="">Select</option>${codes.map(code => `<option value="${code}">${code}</option>`).join('')}`
+  const options = `<option value="">${escapeHtml(t('settings.addCurrency.select'))}</option>${codes.map(code => `<option value="${code}">${code}</option>`).join('')}`
   if (select.innerHTML !== options) select.innerHTML = options
   select.value = codes.includes(selected) ? selected : ''
   select.disabled = !codes.length
@@ -1107,14 +1121,14 @@ function updateAddCurrencyOptions() {
   if (hint)
     hint.textContent =
       getSetting('currencySync', {}).provider !== 'exchangerate.fun'
-        ? 'Sync rates first to load supported currencies. A cached list remains available offline after a successful sync.'
+        ? t('settings.addCurrency.hint.syncFirst')
         : codes.length
-          ? 'Choose a currency from the synced list. Leave the rate blank to use its synced rate or enter a manual override. Amounts currently use two decimal places.'
-          : 'All currencies from the cached sync list are already available. Sync again to check for new currencies.'
+          ? t('settings.addCurrency.hint.choose')
+          : t('settings.addCurrency.hint.allAdded')
 }
 
 function reportingCurrencyNotice() {
-  return `Dashboard totals, charts and budget comparisons convert non-${base()} account amounts with your configured reference rates. Formula: amount ÷ source rate × ${base()} rate. Synced and manual reference rates are saved on this device for offline use. Your bank or exchange provider may apply a different rate.`
+  return t('settings.reportingNotice', { base: base() })
 }
 
 function refreshSettingsCurrencyControls({ savedCodes = [] } = {}) {
@@ -1157,80 +1171,91 @@ function settingsModal() {
     ? { scrollTop: previousBody.scrollTop, focusId: document.activeElement?.id }
     : null
   modal(
-    'Settings & backup',
+    t('settings.title'),
     `<div class="settings-content">
       <section class="settings-section">
         <div class="field">
-          <label for="base-currency">Base currency</label>
+          <label for="app-language">${escapeHtml(t('settings.language'))}</label>
+          <select id="app-language">${languageOptions()}</select>
+          <p class="form-hint">${escapeHtml(t('settings.languageHint'))}</p>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <div class="field">
+          <label for="base-currency">${escapeHtml(t('settings.baseCurrency'))}</label>
           <select id="base-currency">${currencyOptions(base())}</select>
         </div>
-        <div class="notice" id="base-currency-notice">${reportingCurrencyNotice()}</div>
+        <div class="notice" id="base-currency-notice">${escapeHtml(reportingCurrencyNotice())}</div>
       </section>
 
       <section class="settings-section" aria-labelledby="currency-sync-heading">
         <header class="settings-section-head">
-          <h3 id="currency-sync-heading">Currency synchronization</h3>
+          <h3 id="currency-sync-heading">${escapeHtml(t('settings.currencySync.title'))}</h3>
         </header>
         <div class="field">
-          <label><input type="checkbox" id="sync-on-startup" ${getSetting('syncCurrenciesOnStartup', true) ? 'checked' : ''}> Sync rates when the app opens</label>
+          <label><input type="checkbox" id="sync-on-startup" ${getSetting('syncCurrenciesOnStartup', true) ? 'checked' : ''}> ${escapeHtml(t('settings.currencySync.syncOnStartup'))}</label>
           <p class="form-hint" id="currency-sync-status" role="status">${escapeHtml(currencySyncStatus())}</p>
         </div>
         <div class="settings-actions">
-          <button type="button" class="btn secondary" id="sync-currencies" ${currencySyncRequest ? 'disabled' : ''}>Sync now</button>
-          <button type="button" class="btn ghost" id="use-synced-rates">Use synced rates</button>
+          <button type="button" class="btn secondary" id="sync-currencies" ${currencySyncRequest ? 'disabled' : ''}>${escapeHtml(t('settings.currencySync.syncNow'))}</button>
+          <button type="button" class="btn ghost" id="use-synced-rates">${escapeHtml(t('settings.currencySync.useSyncedRates'))}</button>
         </div>
         <form id="rates-form" class="settings-section-form">
           <div class="rate-list">${exchangeRateRows()}</div>
           <div class="settings-actions">
-            <button class="btn secondary" type="submit" id="save-rates">Save rates</button>
+            <button class="btn secondary" type="submit" id="save-rates">${escapeHtml(t('settings.currencySync.saveRates'))}</button>
           </div>
         </form>
       </section>
 
       <form id="add-currency-form" class="settings-section" aria-labelledby="add-currency-heading">
         <header class="settings-section-head">
-          <h3 id="add-currency-heading">Add currency</h3>
+          <h3 id="add-currency-heading">${escapeHtml(t('settings.addCurrency.title'))}</h3>
           <p class="form-hint" id="new-currency-hint"></p>
         </header>
         <div class="field-row">
           <div class="field">
-            <label for="new-currency-code">Currency</label>
+            <label for="new-currency-code">${escapeHtml(t('settings.addCurrency.currency'))}</label>
             <select id="new-currency-code" name="code" required></select>
           </div>
           <div class="field">
-            <label for="new-currency-rate">Units per 1 EUR</label>
-            <input id="new-currency-rate" name="rate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="Enter your rate">
+            <label for="new-currency-rate">${escapeHtml(t('settings.addCurrency.unitsPerEur'))}</label>
+            <input id="new-currency-rate" name="rate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="${escapeHtml(t('settings.addCurrency.ratePlaceholder'))}">
           </div>
         </div>
         <div class="settings-actions">
-          <button class="btn secondary" type="submit" id="add-currency-submit">Add currency</button>
+          <button class="btn secondary" type="submit" id="add-currency-submit">${escapeHtml(t('settings.addCurrency.submit'))}</button>
         </div>
       </form>
 
       <section class="settings-section" aria-labelledby="backup-heading">
         <header class="settings-section-head">
-          <h3 id="backup-heading">Backups</h3>
-          <p class="form-hint">Importing a backup replaces all existing data. Export a backup first.</p>
+          <h3 id="backup-heading">${escapeHtml(t('settings.backup.title'))}</h3>
+          <p class="form-hint">${escapeHtml(t('settings.backup.hint'))}</p>
         </header>
         <div class="settings-backup-actions">
-          <button class="btn secondary" id="export-json">↓ Export full JSON backup</button>
-          <button class="btn secondary" id="export-csv">↓ Export transactions as CSV</button>
-          <label class="btn ghost" style="text-align:center;cursor:pointer">↑ Import JSON backup<input id="import-json" type="file" accept="application/json,.json" hidden></label>
+          <button class="btn secondary" id="export-json">${escapeHtml(t('settings.backup.exportJson'))}</button>
+          <button class="btn secondary" id="export-csv">${escapeHtml(t('settings.backup.exportCsv'))}</button>
+          <label class="btn ghost" style="text-align:center;cursor:pointer">${escapeHtml(t('settings.backup.importJson'))}<input id="import-json" type="file" accept="application/json,.json" hidden></label>
         </div>
-        <div class="notice">Security: this version stores financial records locally in IndexedDB without encryption. PIN locking is planned for a later phase; do not treat browser storage as encrypted.</div>
+        <div class="notice">${escapeHtml(t('settings.backup.securityNotice'))}</div>
       </section>
 
       <section class="settings-section" aria-labelledby="reset-heading">
         <header class="settings-section-head">
-          <h3 id="reset-heading">Reset app</h3>
-          <p class="form-hint">Start from zero by deleting all local financial data and resetting settings. Export a full JSON backup first if you want to keep a copy.</p>
+          <h3 id="reset-heading">${escapeHtml(t('settings.reset.title'))}</h3>
+          <p class="form-hint">${escapeHtml(t('settings.reset.hint'))}</p>
         </header>
-        <button type="button" class="btn danger" id="reset-all-data">Reset all data</button>
+        <button type="button" class="btn danger" id="reset-all-data">${escapeHtml(t('settings.reset.button'))}</button>
       </section>
     </div>
-    <p class="settings-version">Flow - v${escapeHtml(APP_VERSION)}</p>`,
+    <p class="settings-version">${escapeHtml(t('settings.version', { version: APP_VERSION }))}</p>`,
     { restoreView }
   )
+  $('#app-language').onchange = async e => {
+    if (e.target.value !== getLanguage()) await setLanguage(e.target.value)
+  }
   updateAddCurrencyOptions()
   $('#add-currency-form').onsubmit = async e => {
     e.preventDefault()
@@ -1241,11 +1266,9 @@ function settingsModal() {
       ? decimalValue(form.elements.rate.value)
       : getSetting('currencySync', {}).rates?.[code]
     if (!syncedCurrenciesToAdd().includes(code))
-      return toast(
-        'Choose an available currency from the synced list. Sync rates first if the list is empty.'
-      )
+      return toast(t('toasts.chooseSyncedCurrency'))
     if (!Number.isFinite(rate) || rate <= 0)
-      return toast('Enter a positive reference rate or sync first to use an automatic rate.')
+      return toast(t('toasts.positiveReferenceRate'))
     const button = form.querySelector('button[type="submit"]')
     if (button.disabled) return
     button.disabled = true
@@ -1260,10 +1283,10 @@ function settingsModal() {
       refreshSettingsCurrencyControls()
       form.elements.code.value = ''
       form.elements.rate.value = ''
-      toast(`${code} added. It is now available for accounts and reporting.`)
+      toast(t('toasts.currencyAdded', { code }))
     } catch (error) {
       console.error(error)
-      toast('Could not add currency. Please try again.')
+      toast(t('toasts.currencyAddFailed'))
     } finally {
       button.disabled = false
     }
@@ -1274,12 +1297,12 @@ function settingsModal() {
       await saveCurrencySettings({ syncCurrenciesOnStartup: e.target.checked })
     } catch (error) {
       e.target.checked = getSetting('syncCurrenciesOnStartup', true)
-      toast('Could not save startup sync preference.')
+      toast(t('toasts.startupSyncFailed'))
     }
   }
   $('#use-synced-rates').onclick = async () => {
     const cached = getSetting('currencySync', {}).rates
-    if (!cached) return toast('Sync rates first to use automatic reference rates.')
+    if (!cached) return toast(t('toasts.syncFirstForAutoRates'))
     const next = { ...exchangeRates() }
     const manual = manualCurrencyCodes().filter(code => !cached[code])
     for (const code of Object.keys(next)) if (cached[code]) next[code] = cached[code]
@@ -1289,18 +1312,16 @@ function settingsModal() {
       refreshSettingsCurrencyControls({
         savedCodes: Object.keys(next).filter(code => cached[code]),
       })
-      toast('Supported currencies now use synced rates. Other manual rates are preserved.')
+      toast(t('toasts.syncedRatesApplied'))
     } catch (error) {
-      toast('Could not apply synced rates. Please try again.')
+      toast(t('toasts.syncedRatesFailed'))
     }
   }
   $('#reset-all-data').onclick = resetDataModal
   $('#base-currency').onchange = async e => {
     if (!canReportInCurrency(e.target.value)) {
       e.target.value = base()
-      return toast(
-        'Cannot use this reporting currency: a configured or historical transaction rate is missing.'
-      )
+      return toast(t('toasts.reportingCurrencyBlocked'))
     }
     await saveCurrencySettings({ baseCurrency: e.target.value })
     render()
@@ -1313,7 +1334,7 @@ function settingsModal() {
     for (const input of e.target.querySelectorAll('.rate-input')) {
       const value = decimalValue(input.value)
       if (!Number.isFinite(value) || value <= 0)
-        return toast(`Enter a valid rate for ${input.name}`)
+        return toast(t('toasts.validRateFor', { currency: input.name }))
       if (value !== Number(input.dataset.originalRate)) {
         manual.add(input.name)
         next[input.name] = value
@@ -1325,7 +1346,7 @@ function settingsModal() {
     refreshSettingsCurrencyControls({
       savedCodes: [...e.target.querySelectorAll('.rate-input')].map(input => input.name),
     })
-    toast('Exchange rates saved')
+    toast(t('toasts.exchangeRatesSaved'))
   }
   $('#export-json').onclick = async () => {
     const data = { format: 'flow-backup', version: 1, exportedAt: new Date().toISOString() }
@@ -1349,7 +1370,7 @@ function settingsModal() {
       'flow-bckp-' + exportTimestamp() + '.json',
       'application/json'
     )
-    toast('Backup exported')
+    toast(t('toasts.backupExported'))
   }
   $('#export-csv').onclick = () => {
     const fields = [
@@ -1399,7 +1420,7 @@ function settingsModal() {
       'flow-trns-' + exportTimestamp() + '.csv',
       'text/csv;charset=utf-8'
     )
-    toast('CSV exported')
+    toast(t('toasts.csvExported'))
   }
   $('#import-json').onchange = async e => {
     const file = e.target.files[0]
@@ -1413,21 +1434,20 @@ function settingsModal() {
       )
         throw Error('Unsupported backup format')
       confirmAction({
-        title: 'Replace all data',
-        message:
-          'Replace all current data with this backup? Export a backup first if you need to keep the current data.',
-        confirmText: 'Replace data',
+        title: t('modals.import.title'),
+        message: t('modals.import.message'),
+        confirmText: t('modals.import.confirm'),
         onCancel: settingsModal,
         onConfirm: async () => {
           cancelCurrencySync()
           await replaceAll(data)
           closeModal()
           await reload()
-          toast('Backup restored')
+          toast(t('toasts.backupRestored'))
         },
       })
     } catch (err) {
-      toast('Import failed: ' + err.message)
+      toast(t('toasts.importFailed', { message: err.message }))
     }
   }
 }

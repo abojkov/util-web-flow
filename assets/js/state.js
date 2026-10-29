@@ -16,26 +16,28 @@ const icons = {
 }
 const splitTransactionIcon =
   '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v5a3 3 0 0 0 3 3h2a3 3 0 0 1 3 3v6M12 8a3 3 0 0 1-3 3H7a3 3 0 0 0-3 3v6M1 17l3 3 3-3m10 0 3 3 3-3"/></svg>'
-const names = {
-  home: 'Overview',
-  transactions: 'Transactions',
-  statistics: 'Statistics',
-  accounts: 'Accounts',
-  more: 'More',
+function pageNames() {
+  return {
+    home: t('nav.home'),
+    transactions: t('nav.transactions'),
+    statistics: t('nav.statistics'),
+    accounts: t('nav.accounts'),
+    more: t('nav.more'),
+  }
 }
 const defaults = [
-  ['Food & Drinks', '🍽️', '#fb923c', 'expense'],
-  ['Shopping', '🛍️', '#a78bfa', 'expense'],
-  ['Transport', '🚙', '#60a5fa', 'expense'],
-  ['Bills', '🧾', '#2dd4bf', 'expense'],
-  ['Health', '♥', '#fb7185', 'expense'],
-  ['Home', '⌂', '#fbbf24', 'expense'],
-  ['Travel', '✈', '#38bdf8', 'expense'],
-  ['Other Expense', '◈', '#94a3b8', 'expense'],
-  ['Salary', '💼', '#34d399', 'income'],
-  ['Gift', '🎁', '#a78bfa', 'income'],
-  ['Interest', '↗', '#60a5fa', 'income'],
-  ['Other Income', '◈', '#94a3b8', 'income'],
+  ['common.starterCategory.foodDrinks', '🍽️', '#fb923c', 'expense'],
+  ['common.starterCategory.shopping', '🛍️', '#a78bfa', 'expense'],
+  ['common.starterCategory.transport', '🚙', '#60a5fa', 'expense'],
+  ['common.starterCategory.bills', '🧾', '#2dd4bf', 'expense'],
+  ['common.starterCategory.health', '♥', '#fb7185', 'expense'],
+  ['common.starterCategory.home', '⌂', '#fbbf24', 'expense'],
+  ['common.starterCategory.travel', '✈', '#38bdf8', 'expense'],
+  ['common.starterCategory.otherExpense', '◈', '#94a3b8', 'expense'],
+  ['common.starterCategory.salary', '💼', '#34d399', 'income'],
+  ['common.starterCategory.gift', '🎁', '#a78bfa', 'income'],
+  ['common.starterCategory.interest', '↗', '#60a5fa', 'income'],
+  ['common.starterCategory.otherIncome', '◈', '#94a3b8', 'income'],
 ]
 const createInitialState = () => ({
   page: 'home',
@@ -106,8 +108,11 @@ const shiftMonth = (month, delta) => {
   const [year, monthNumber] = month.split('-').map(Number)
   return monthKey(new Date(year, monthNumber - 1 + delta, 1, 12))
 }
-const monthLabel = m =>
-  new Date(m + '-01T12:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+const monthLabel = m => {
+  const [year, monthNumber] = String(m || '').split('-').map(Number)
+  if (!year || !monthNumber) return String(m || '')
+  return t('months.yearLabel', { month: t(`months.${monthNumber}`), year })
+}
 const account = id => state.accounts.find(a => a.id === id)
 const isSelectableAccount = a => !a.archived && a.visible !== false
 const cat = id => state.categories.find(c => c.id === id)
@@ -116,7 +121,7 @@ const subcat = (categoryId, subcategoryId) =>
 const categoryLabel = (categoryId, subcategoryId) => {
   const c = cat(categoryId),
     s = subcat(categoryId, subcategoryId)
-  return [c?.name, s?.name].filter(Boolean).join(' / ') || 'Other'
+  return [c?.name, s?.name].filter(Boolean).join(' / ') || t('common.other')
 }
 const defaultRates = { EUR: 1 }
 
@@ -241,8 +246,15 @@ function conversionRate(fromCurrency, toCurrency = base()) {
 
 function conversionNote(value, fromCurrency, toCurrency = base()) {
   const rate = conversionRate(fromCurrency, toCurrency)
-  if (!rate) return `No reference rate is available for ${fromCurrency} to ${toCurrency}.`
-  return `${money(value, fromCurrency)} ≈ ${money(value * rate, toCurrency)} · 1 ${fromCurrency} ≈ ${rate.toFixed(4)} ${toCurrency}`
+  if (!rate)
+    return t('currency.conversion.noRate', { from: fromCurrency, to: toCurrency })
+  return t('currency.conversion.estimate', {
+    fromAmount: money(value, fromCurrency),
+    toAmount: money(value * rate, toCurrency),
+    from: fromCurrency,
+    to: toCurrency,
+    rate: rate.toFixed(4),
+  })
 }
 
 function conversionNoteWithRates(
@@ -257,8 +269,15 @@ function conversionNoteWithRates(
       : sourceRates[fromCurrency] && sourceRates[toCurrency]
         ? sourceRates[toCurrency] / sourceRates[fromCurrency]
         : null
-  if (!rate) return `No reference rate is available for ${fromCurrency} to ${toCurrency}.`
-  return `${money(value, fromCurrency)} ≈ ${money(value * rate, toCurrency)} · 1 ${fromCurrency} ≈ ${rate.toFixed(4)} ${toCurrency}`
+  if (!rate)
+    return t('currency.conversion.noRate', { from: fromCurrency, to: toCurrency })
+  return t('currency.conversion.estimate', {
+    fromAmount: money(value, fromCurrency),
+    toAmount: money(value * rate, toCurrency),
+    from: fromCurrency,
+    to: toCurrency,
+    rate: rate.toFixed(4),
+  })
 }
 
 function balance(a) {
@@ -319,3 +338,11 @@ function totals() {
 }
 
 const base = () => getSetting('baseCurrency', 'EUR')
+
+const FLOW_LOCALES = {}
+const FLOW_LANGUAGE_META = {}
+
+function registerFlowLocale(code, messages, meta = {}) {
+  FLOW_LOCALES[code] = messages
+  if (meta.label) FLOW_LANGUAGE_META[code] = meta
+}
