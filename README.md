@@ -572,6 +572,10 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-29 — Release 1.2.0
+
+- Bumped `APP_VERSION` to 1.2.0 for the multilingual UI release (English, Spanish and Macedonian).
+
 ### 2026-10-29 — Localized month headings
 
 - Month/year headings (for example budget overview and period controls) now use `months.*` keys from locale files instead of browser `Intl` formatting, so Macedonian and Spanish month names appear reliably under `file://` and in browsers without full locale packs.
