@@ -27,7 +27,7 @@ test('Settings actions preserve the modal body, scroll and focused controls in p
     s.run('settingsModal()')
     s.flush()
     assert.equal(s.body().scrollTop, 0)
-    assert.equal(s.focusCalls().at(-1).id, 'app-language')
+    assert.equal(s.focusCalls().at(-1).id, 'base-currency')
     const oldBody = s.body()
     oldBody.scrollTop = 537
     s.context.document.activeElement = s.control(action)

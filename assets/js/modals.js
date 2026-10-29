@@ -1175,14 +1175,6 @@ function settingsModal() {
     `<div class="settings-content">
       <section class="settings-section">
         <div class="field">
-          <label for="app-language">${escapeHtml(t('settings.language'))}</label>
-          <select id="app-language">${languageOptions()}</select>
-          <p class="form-hint">${escapeHtml(t('settings.languageHint'))}</p>
-        </div>
-      </section>
-
-      <section class="settings-section">
-        <div class="field">
           <label for="base-currency">${escapeHtml(t('settings.baseCurrency'))}</label>
           <select id="base-currency">${currencyOptions(base())}</select>
         </div>
@@ -1240,6 +1232,14 @@ function settingsModal() {
           <label class="btn ghost" style="text-align:center;cursor:pointer">${escapeHtml(t('settings.backup.importJson'))}<input id="import-json" type="file" accept="application/json,.json" hidden></label>
         </div>
         <div class="notice">${escapeHtml(t('settings.backup.securityNotice'))}</div>
+      </section>
+
+      <section class="settings-section">
+        <div class="field">
+          <label for="app-language">${escapeHtml(t('settings.language'))}</label>
+          <select id="app-language">${languageOptions()}</select>
+          <p class="form-hint">${escapeHtml(t('settings.languageHint'))}</p>
+        </div>
       </section>
 
       <section class="settings-section" aria-labelledby="reset-heading">

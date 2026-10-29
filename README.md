@@ -572,6 +572,10 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-10-29 - Release 1.2.5
+
+- Bumped `APP_VERSION` to 1.2.5 for flexible amount input (US/UK and European grouped decimal formats).
+
 ### 2026-10-29 - Flexible amount input
 
 - Amount fields now accept common invoice formats such as `2,340.55` (US/UK) and `2.340,55` (European). When both comma and period appear, the last separator is treated as the decimal mark. Plain values such as `2340,55` and spaced thousands such as `2 340,55` also work.
