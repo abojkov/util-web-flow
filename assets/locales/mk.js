@@ -392,6 +392,7 @@ registerFlowLocale(
 
     'accountTypes.cash': 'Готовина',
     'accountTypes.bank': 'Банка',
+    'accountTypes.card': 'Картичка',
     'accountTypes.savings': 'Штедење',
     'accountTypes.investment': 'Инвестиција',
     'accountTypes.loan': 'Заем',

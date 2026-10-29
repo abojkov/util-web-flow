@@ -38,9 +38,12 @@ function languageOptions(current = getLanguage()) {
     .join('')
 }
 
+const ACCOUNT_TYPES = ['Bank', 'Card', 'Cash', 'Savings', 'Investment', 'Loan', 'Other']
+
 const ACCOUNT_TYPE_KEYS = {
   Cash: 'accountTypes.cash',
   Bank: 'accountTypes.bank',
+  Card: 'accountTypes.card',
   Savings: 'accountTypes.savings',
   Investment: 'accountTypes.investment',
   Loan: 'accountTypes.loan',

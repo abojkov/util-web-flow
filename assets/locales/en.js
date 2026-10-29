@@ -392,6 +392,7 @@ registerFlowLocale(
 
     'accountTypes.cash': 'Cash',
     'accountTypes.bank': 'Bank',
+    'accountTypes.card': 'Card',
     'accountTypes.savings': 'Savings',
     'accountTypes.investment': 'Investment',
     'accountTypes.loan': 'Loan',

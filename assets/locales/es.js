@@ -374,6 +374,7 @@ registerFlowLocale(
     'common.starterCategory.otherIncome': 'Otros ingresos',
     'accountTypes.cash': 'Efectivo',
     'accountTypes.bank': 'Banco',
+    'accountTypes.card': 'Tarjeta',
     'accountTypes.savings': 'Ahorros',
     'accountTypes.investment': 'Inversión',
     'accountTypes.loan': 'Préstamo',

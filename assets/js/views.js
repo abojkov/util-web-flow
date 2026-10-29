@@ -156,7 +156,7 @@ function orderedAccounts(items) {
 }
 
 function accountTypeOrder() {
-  const defaults = ['Cash', 'Bank', 'Savings', 'Investment', 'Loan', 'Other']
+  const defaults = ACCOUNT_TYPES
   const saved = getSetting('accountTypeOrder', [])
   const custom = state.accounts
     .map(a => a.type || 'Other')

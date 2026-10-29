@@ -95,7 +95,7 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 
 ### Accounts
 
-Supported types: cash, bank, savings, investment, loan and custom. **Credit cards are excluded.**
+Supported types: cash, bank, card, savings, investment, loan and custom. Card accounts track debit or prepaid card balances like other accounts. **Credit card billing, statements and limits are excluded.**
 
 Account fields: unique ID, name, type, native currency, opening balance, optional description, icon/color, archived flag, visibility (`visible`, default true), sort order, created/updated timestamps.
 
@@ -106,7 +106,7 @@ Account fields: unique ID, name, type, native currency, opening balance, optiona
 - Hidden accounts remain listed on Accounts with a compact Hidden badge and crossed-out eye indicator and remain included in active balances, transaction history/search, statistics, budgets and complete JSON backups. Existing recurring rules continue normally. Recheck the visibility option to show the account again. Each account row also has an eye button immediately before Archive/Restore: click to toggle visibility without confirmation. An eye means visible; a crossed-out eye means hidden. Both controls use the same saved visibility property; archived accounts cannot change visibility until restored.
 - Editing or copying a transaction retains its assigned hidden account in the collapsed field without offering that account among selectable buttons. If every active account is hidden, new transaction/schedule creation explains that an account must be made visible. A filter pointing at an account that becomes hidden resets to All accounts.
 - Visibility adds an optional account property; no IndexedDB version change or destructive migration is required.
-- Accounts are grouped by account type and can be reordered within each type group. Group headers also have up/down controls to reorder account types. Type order is shared by active and archived sections, saved in the `accountTypeOrder` setting and preserved by complete JSON backups. Moves swap with the neighboring displayed group; boundary controls are disabled. Individual accounts also disable Move up on the first row and Move down on the last row within each active/archived type group; single-account groups disable both. Account pickers, dropdowns and account summaries use the same type order first, then saved account `sortOrder` within each type, with alphabetical ties. Accounts without a saved `sortOrder` follow ordered accounts within their type. Without a saved type order, the existing Cash, Bank, Savings, Investment, Loan, Other order is used; new/custom types follow deterministically.
+- Accounts are grouped by account type and can be reordered within each type group. Group headers also have up/down controls to reorder account types. Type order is shared by active and archived sections, saved in the `accountTypeOrder` setting and preserved by complete JSON backups. Moves swap with the neighboring displayed group; boundary controls are disabled. Individual accounts also disable Move up on the first row and Move down on the last row within each active/archived type group; single-account groups disable both. Account pickers, dropdowns and account summaries use the same type order first, then saved account `sortOrder` within each type, with alphabetical ties. Accounts without a saved `sortOrder` follow ordered accounts within their type. Without a saved type order, the existing Bank, Card, Cash, Savings, Investment, Loan, Other order is used; new/custom types follow deterministically.
 - An archived account is not available for new ordinary transactions and is excluded from the current _active-account_ total by default; historical transactions and reports remain available.
 - Prevent unsafe deletion of accounts referenced by transactions.
 - Account balance is derived from opening balance and transaction ledger; **no manual balance adjustment feature**.
@@ -571,6 +571,10 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-10-29 — Card account type
+
+- Added **Card** as a standard account type after Bank in the create/edit account selector, account grouping and default type order. Translations included for English, Spanish and Macedonian. This is a balance-tracking account type, not credit card billing.
 
 ### 2026-10-29 — Release 1.2.0
 
