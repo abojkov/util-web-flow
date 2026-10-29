@@ -1,5 +1,5 @@
 // Update this value when releasing a new app version.
-const APP_VERSION = '1.2.1'
+const APP_VERSION = '1.2.2'
 
 const $ = s => document.querySelector(s),
   uid = () => crypto.randomUUID(),
@@ -95,13 +95,74 @@ const money = (n, c = 'EUR') => {
   return `${value} ${parts.find(part => part.type === 'currency').value}`
 }
 const fmt = (n, c) => money(n, c)
-const decimalValue = x =>
-  Number(
-    String(x ?? '')
-      .trim()
-      .replace(',', '.')
+const DECIMAL_INPUT_PATTERN = '-?[0-9][0-9\\s.,]*'
+const POSITIVE_DECIMAL_INPUT_PATTERN = '[0-9][0-9\\s.,]*'
+const groupedNumberParts = (value, separator) => {
+  const parts = value.split(separator)
+  if (parts.length <= 1) return false
+  return parts.every((part, index) =>
+    index === 0 ? /^\d{1,3}$/.test(part) : /^\d{3}$/.test(part)
   )
-const amount = x => Math.round((decimalValue(x) || 0) * 100) / 100
+}
+const parseDecimalInput = (raw, { maxFractionDigits = 10 } = {}) => {
+  let value = String(raw ?? '').trim()
+  if (!value) return NaN
+  let sign = 1
+  if (value.startsWith('-')) {
+    sign = -1
+    value = value.slice(1).trim()
+  }
+  if (!value) return NaN
+  value = value.replace(/\s+/g, '')
+  if (!/^[\d.,]+$/.test(value)) return NaN
+  const lastComma = value.lastIndexOf(',')
+  const lastDot = value.lastIndexOf('.')
+  const lastSeparator = Math.max(lastComma, lastDot)
+  if (lastComma >= 0 && lastDot >= 0) {
+    const decimalSeparator = lastComma > lastDot ? ',' : '.'
+    const thousandsSeparator = decimalSeparator === ',' ? '.' : ','
+    value = value.split(thousandsSeparator).join('')
+    if (decimalSeparator === ',') value = value.replace(',', '.')
+  } else if (lastSeparator >= 0) {
+    const separator = value[lastSeparator]
+    const integerPart = value.slice(0, lastSeparator)
+    const fractionPart = value.slice(lastSeparator + 1)
+    if (!/^\d+$/.test(fractionPart)) return NaN
+    const integerDigits = integerPart.split(/[.,]/).join('')
+    if (!/^\d+$/.test(integerDigits)) return NaN
+    const grouped =
+      groupedNumberParts(value, separator) ||
+      (fractionPart.length === 3 &&
+        integerPart.includes(separator) &&
+        groupedNumberParts(integerPart, separator))
+    if (
+      fractionPart.length > 0 &&
+      fractionPart.length <= maxFractionDigits &&
+      !grouped
+    ) {
+      value = `${integerDigits}.${fractionPart}`
+    } else if (grouped) {
+      value = value.split(separator).join('')
+    } else if (fractionPart.length <= maxFractionDigits) {
+      value = `${integerDigits}.${fractionPart}`
+    } else {
+      value = value.split(separator).join('')
+    }
+  }
+  if (!/^\d+(\.\d+)?$/.test(value)) return NaN
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? sign * parsed : NaN
+}
+const roundAmount = value => Math.round(value * 100) / 100
+const decimalValue = x => {
+  if (typeof x === 'number') return Number.isFinite(x) ? x : NaN
+  return parseDecimalInput(x, { maxFractionDigits: 12 })
+}
+const amount = x => {
+  if (typeof x === 'number') return Number.isFinite(x) ? roundAmount(x) : NaN
+  const parsed = parseDecimalInput(x, { maxFractionDigits: 2 })
+  return Number.isFinite(parsed) ? roundAmount(parsed) : NaN
+}
 const displayDate = value => String(value || '').replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$3.$2.$1')
 const monthKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 const shiftMonth = (month, delta) => {

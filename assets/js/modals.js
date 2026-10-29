@@ -83,7 +83,7 @@ function currencyOptions(current) {
 
 function exchangeRateRow(currency) {
   const configured = exchangeRates()
-  return `<div class="rate-row" data-rate-currency="${currency}"><label><span>${currency}</span><small>1 EUR =</small><small data-currency-rate-source="${currency}">${currencyRateSource(currency)}</small></label><input class="rate-input" data-original-rate="${configured[currency] ?? ''}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`
+  return `<div class="rate-row" data-rate-currency="${currency}"><label><span>${currency}</span><small>1 EUR =</small><small data-currency-rate-source="${currency}">${currencyRateSource(currency)}</small></label><input class="rate-input" data-original-rate="${configured[currency] ?? ''}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`
 }
 
 function exchangeRateRows() {
@@ -257,7 +257,7 @@ async function moveCategory(id, direction) {
 function accountModal(a) {
   modal(
     a ? t('modals.account.editTitle') : t('modals.account.newTitle'),
-    `<form id="account-form"><div class="field"><label>${escapeHtml(t('modals.account.name'))}</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="${escapeHtml(t('modals.account.namePlaceholder'))}"></div><div class="field-row"><div class="field"><label>${escapeHtml(t('modals.account.type'))}</label><select name="type">${ACCOUNT_TYPES.map(x => `<option value="${x}" ${a?.type === x ? 'selected' : ''}>${escapeHtml(accountTypeLabel(x))}</option>`).join('')}</select></div><div class="field"><label>${escapeHtml(t('modals.account.currency'))}</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>${escapeHtml(t('modals.account.openingBalance'))}</label><input type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="opening" value="${a?.opening ?? 0}" required></div><div class="field"><label><input type="checkbox" name="visible" ${!a?.archived && a?.visible !== false ? 'checked' : ''} ${a?.archived ? 'disabled' : ''}> ${escapeHtml(t('modals.account.visibleInSelectors'))}</label><p class="form-hint">${escapeHtml(a?.archived ? t('modals.account.visibleHint.archived') : t('modals.account.visibleHint.active'))}</p></div><div class="notice">${escapeHtml(t('modals.account.notice'))}</div><div class="modal-footer">${a ? `<button type="button" class="btn danger" id="delete-account">${escapeHtml(t('modals.account.delete'))}</button>` : ''}<button class="btn" type="submit">${escapeHtml(t('modals.account.save'))}</button></div></form>`
+    `<form id="account-form"><div class="field"><label>${escapeHtml(t('modals.account.name'))}</label><input name="name" required maxlength="70" value="${escapeHtml(a?.name || '')}" placeholder="${escapeHtml(t('modals.account.namePlaceholder'))}"></div><div class="field-row"><div class="field"><label>${escapeHtml(t('modals.account.type'))}</label><select name="type">${ACCOUNT_TYPES.map(x => `<option value="${x}" ${a?.type === x ? 'selected' : ''}>${escapeHtml(accountTypeLabel(x))}</option>`).join('')}</select></div><div class="field"><label>${escapeHtml(t('modals.account.currency'))}</label><select name="currency" ${a ? 'disabled' : ''}>${currencyOptions(a?.currency || base())}</select></div></div><div class="field"><label>${escapeHtml(t('modals.account.openingBalance'))}</label><input type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" name="opening" value="${a?.opening ?? 0}" required></div><div class="field"><label><input type="checkbox" name="visible" ${!a?.archived && a?.visible !== false ? 'checked' : ''} ${a?.archived ? 'disabled' : ''}> ${escapeHtml(t('modals.account.visibleInSelectors'))}</label><p class="form-hint">${escapeHtml(a?.archived ? t('modals.account.visibleHint.archived') : t('modals.account.visibleHint.active'))}</p></div><div class="notice">${escapeHtml(t('modals.account.notice'))}</div><div class="modal-footer">${a ? `<button type="button" class="btn danger" id="delete-account">${escapeHtml(t('modals.account.delete'))}</button>` : ''}<button class="btn" type="submit">${escapeHtml(t('modals.account.save'))}</button></div></form>`
   )
   $('#delete-account')?.addEventListener('click', () => {
     if (state.transactions.some(t => t.accountId === a.id || t.toAccountId === a.id))
@@ -368,7 +368,7 @@ function transactionModal(tx, initial = 'expense', options = {}) {
   }
   modal(
     isExisting ? t('modals.transaction.editTitle') : t('modals.transaction.newTitle'),
-    `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${escapeHtml(txTypeLabel(x))}</button>`).join('')}</div><div class="field-row"><div class="field"><label for="tx-datetime">${escapeHtml(t('modals.transaction.dateTime'))}</label><input id="tx-datetime" type="datetime-local" name="datetime" value="${escapeHtml((tx?.date || today()) + 'T' + (tx?.time || currentTime()))}" required></div><div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" name="amount" value="${tx?.amount ?? ''}" required placeholder="0.00"></div></div>${accountPicker('tx-account', 'accountId', t('modals.transaction.account'), tx?.accountId || active[0]?.id || '')}<div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">${escapeHtml(t('modals.transaction.exchangeRate'))}</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>${escapeHtml(t('modals.transaction.payee'))}</label>${payeeAutocompleteInput(tx?.payee ?? tx?.place ?? '', 'tx-payee')}</div><div class="field"><label>${escapeHtml(t('modals.transaction.description'))}</label><textarea name="description" maxlength="1200" rows="4" placeholder="${escapeHtml(t('modals.transaction.descriptionPlaceholder'))}">${escapeHtml(tx?.description ?? tx?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? `<button type="button" class="btn danger" id="delete-tx">${escapeHtml(t('modals.transaction.delete'))}</button><button type="button" class="btn secondary" id="copy-tx">${escapeHtml(t('modals.transaction.copy'))}</button>` : ''}<button class="btn" type="submit">${escapeHtml(t('modals.transaction.save'))}</button></div></form>`
+    `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${escapeHtml(txTypeLabel(x))}</button>`).join('')}</div><div class="field-row"><div class="field"><label for="tx-datetime">${escapeHtml(t('modals.transaction.dateTime'))}</label><input id="tx-datetime" type="datetime-local" name="datetime" value="${escapeHtml((tx?.date || today()) + 'T' + (tx?.time || currentTime()))}" required></div><div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" name="amount" value="${tx?.amount ?? ''}" required placeholder="0.00"></div></div>${accountPicker('tx-account', 'accountId', t('modals.transaction.account'), tx?.accountId || active[0]?.id || '')}<div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">${escapeHtml(t('modals.transaction.exchangeRate'))}</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>${escapeHtml(t('modals.transaction.payee'))}</label>${payeeAutocompleteInput(tx?.payee ?? tx?.place ?? '', 'tx-payee')}</div><div class="field"><label>${escapeHtml(t('modals.transaction.description'))}</label><textarea name="description" maxlength="1200" rows="4" placeholder="${escapeHtml(t('modals.transaction.descriptionPlaceholder'))}">${escapeHtml(tx?.description ?? tx?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? `<button type="button" class="btn danger" id="delete-tx">${escapeHtml(t('modals.transaction.delete'))}</button><button type="button" class="btn secondary" id="copy-tx">${escapeHtml(t('modals.transaction.copy'))}</button>` : ''}<button class="btn" type="submit">${escapeHtml(t('modals.transaction.save'))}</button></div></form>`
   )
   bindPayeeAutocomplete('tx-payee')
   let chosen = type
@@ -497,7 +497,7 @@ function transactionModal(tx, initial = 'expense', options = {}) {
   const extra = () => {
     $('#tx-extra').innerHTML =
       chosen === 'transfer'
-        ? `${accountPicker('tx-to', 'toAccountId', t('modals.transaction.destinationAccount'), tx?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}<div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">${escapeHtml(t('modals.transaction.exchangeRate'))}</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="${escapeHtml(t('modals.transaction.transferRatePlaceholder'))}"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">${escapeHtml(t('modals.transaction.amountReceivedFallback'))}</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="${escapeHtml(t('modals.transaction.amountPlaceholder'))}"></div>`
+        ? `${accountPicker('tx-to', 'toAccountId', t('modals.transaction.destinationAccount'), tx?.toAccountId || active.find(a => a.id !== $('#tx-account').value)?.id || '')}<div class="field" id="tx-transfer-rate-field" hidden><label id="tx-transfer-rate-label" for="tx-transfer-rate">${escapeHtml(t('modals.transaction.exchangeRate'))}</label><input id="tx-transfer-rate" name="transferRate" type="text" inputmode="decimal" data-decimal-input pattern="${POSITIVE_DECIMAL_INPUT_PATTERN}" placeholder="${escapeHtml(t('modals.transaction.transferRatePlaceholder'))}"></div><div class="field" id="tx-received-field" hidden><label id="tx-received-label" for="tx-received">${escapeHtml(t('modals.transaction.amountReceivedFallback'))}</label><input id="tx-received" name="received" type="text" inputmode="decimal" data-decimal-input pattern="${POSITIVE_DECIMAL_INPUT_PATTERN}" placeholder="${escapeHtml(t('modals.transaction.amountPlaceholder'))}"></div>`
         : `<div id="tx-category-field">${categoryPicker('tx-category', chosen, tx?.categoryId, tx?.subcategoryId, 'categoryChoice')}</div><div class="field" id="split-container"><label><input type="checkbox" id="enable-splits" ${tx?.splits?.length ? 'checked' : ''} style="width:auto"> ${escapeHtml(t('modals.transaction.splitIntoCategories'))}</label><div id="split-fields"></div></div>`
     if (chosen === 'transfer') {
       lastTransferPair = ''
@@ -540,7 +540,7 @@ function transactionModal(tx, initial = 'expense', options = {}) {
             const el = document.createElement('div')
             const pickerId = 'tx-split-category-' + ++splitPickerSequence
             el.className = 'field-row split-row'
-            el.innerHTML = `${categoryPicker(pickerId, chosen, s.categoryId, s.subcategoryId, '', 'split-cat')}<div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input class="split-amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" value="${s.amount ?? ''}" required></div>`
+            el.innerHTML = `${categoryPicker(pickerId, chosen, s.categoryId, s.subcategoryId, '', 'split-cat')}<div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input class="split-amount" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" value="${s.amount ?? ''}" required></div>`
             $('#split-rows').append(el)
             bindCategoryPicker(pickerId)
           }
@@ -587,7 +587,7 @@ function transactionModal(tx, initial = 'expense', options = {}) {
       from = account(f.get('accountId'))
     if (!from) return toast(t('toasts.selectAccount'))
     const v = amount(f.get('amount'))
-    if (v <= 0) return toast(t('toasts.validAmount'))
+    if (!Number.isFinite(v) || v <= 0) return toast(t('toasts.validAmount'))
     const dateTime = String(f.get('datetime') || '')
     const parts = /^(\d{4})-(\d{2})-(\d{2})T([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/.exec(
       dateTime
@@ -657,7 +657,7 @@ function transactionModal(tx, initial = 'expense', options = {}) {
         })
         if (record.splits.some(split => !validCategory(split)))
           return toast(t('toasts.validSplitCategory'))
-        if (record.splits.some(split => split.amount <= 0))
+        if (record.splits.some(split => !Number.isFinite(split.amount) || split.amount <= 0))
           return toast(t('toasts.validSplitAmount'))
         if (
           Math.round(record.splits.reduce((s, x) => s + x.amount, 0) * 100) !== Math.round(v * 100)
@@ -850,7 +850,7 @@ function budgetEdit() {
       .map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`)
       .join(
         ''
-      )}</select></div><div class="field"><label>${escapeHtml(t('modals.budgets.monthlyLimit', { currency: base() }))}</label><input name="limit" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div><div class="notice">${escapeHtml(t('modals.budgets.notice'))}</div><div class="modal-footer"><button class="btn">${escapeHtml(t('modals.budgets.save'))}</button></div></form>`
+      )}</select></div><div class="field"><label>${escapeHtml(t('modals.budgets.monthlyLimit', { currency: base() }))}</label><input name="limit" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" required></div><div class="notice">${escapeHtml(t('modals.budgets.notice'))}</div><div class="modal-footer"><button class="btn">${escapeHtml(t('modals.budgets.save'))}</button></div></form>`
   )
   $('#budget-form').onsubmit = async e => {
     e.preventDefault()
@@ -858,7 +858,7 @@ function budgetEdit() {
       month = f.get('month'),
       categoryId = f.get('categoryId')
     const limit = amount(f.get('limit'))
-    if (limit <= 0) return toast(t('toasts.validBudgetAmount'))
+    if (!Number.isFinite(limit) || limit <= 0) return toast(t('toasts.validBudgetAmount'))
     const old = state.budgets.find(b => b.month === month && b.categoryId === categoryId)
     await put('budgets', { id: old?.id || uid(), month, categoryId, limit })
     await reload()
@@ -929,7 +929,7 @@ function recurringEdit() {
   }
   modal(
     t('modals.recurring.newTitle'),
-    `<form id="rec-form"><div class="field-row"><div class="field"><label>${escapeHtml(t('transactions.filter.type'))}</label><select name="type" id="rec-type"><option value="expense">${escapeHtml(t('txTypes.expense'))}</option><option value="income">${escapeHtml(t('txTypes.income'))}</option></select></div><div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input name="amount" type="text" inputmode="decimal" data-decimal-input pattern="-?[0-9]+([.,][0-9]+)?" required></div></div><div class="field"><label>${escapeHtml(t('modals.transaction.account'))}</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>${escapeHtml(t('modals.budgets.category'))}</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>${escapeHtml(t('modals.recurring.frequency'))}</label><select name="frequency"><option value="daily">${escapeHtml(t('modals.recurring.frequency.daily'))}</option><option value="weekly">${escapeHtml(t('modals.recurring.frequency.weekly'))}</option><option value="monthly" selected>${escapeHtml(t('modals.recurring.frequency.monthly'))}</option><option value="yearly">${escapeHtml(t('modals.recurring.frequency.yearly'))}</option></select></div><div class="field"><label>${escapeHtml(t('modals.recurring.firstDate'))}</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>${escapeHtml(t('modals.recurring.time'))}</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>${escapeHtml(t('modals.recurring.payee'))}</label>${payeeAutocompleteInput('', 'rec-payee')}</div><div class="field"><label>${escapeHtml(t('modals.recurring.description'))}</label><input name="description" maxlength="180"></div><div class="modal-footer"><button class="btn">${escapeHtml(t('modals.recurring.create'))}</button></div></form>`
+    `<form id="rec-form"><div class="field-row"><div class="field"><label>${escapeHtml(t('transactions.filter.type'))}</label><select name="type" id="rec-type"><option value="expense">${escapeHtml(t('txTypes.expense'))}</option><option value="income">${escapeHtml(t('txTypes.income'))}</option></select></div><div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input name="amount" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" required></div></div><div class="field"><label>${escapeHtml(t('modals.transaction.account'))}</label><select name="accountId">${active.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${a.currency})</option>`).join('')}</select></div><div class="field"><label>${escapeHtml(t('modals.budgets.category'))}</label><select name="categoryId" id="rec-cat"></select></div><div class="field-row"><div class="field"><label>${escapeHtml(t('modals.recurring.frequency'))}</label><select name="frequency"><option value="daily">${escapeHtml(t('modals.recurring.frequency.daily'))}</option><option value="weekly">${escapeHtml(t('modals.recurring.frequency.weekly'))}</option><option value="monthly" selected>${escapeHtml(t('modals.recurring.frequency.monthly'))}</option><option value="yearly">${escapeHtml(t('modals.recurring.frequency.yearly'))}</option></select></div><div class="field"><label>${escapeHtml(t('modals.recurring.firstDate'))}</label><input name="nextDate" type="date" value="${today()}" required></div></div><div class="field"><label>${escapeHtml(t('modals.recurring.time'))}</label><input name="time" type="time" value="${currentTime()}" required></div><div class="field"><label>${escapeHtml(t('modals.recurring.payee'))}</label>${payeeAutocompleteInput('', 'rec-payee')}</div><div class="field"><label>${escapeHtml(t('modals.recurring.description'))}</label><input name="description" maxlength="180"></div><div class="modal-footer"><button class="btn">${escapeHtml(t('modals.recurring.create'))}</button></div></form>`
   )
   bindPayeeAutocomplete('rec-payee')
   const fill = () => {
@@ -945,7 +945,7 @@ function recurringEdit() {
     e.preventDefault()
     const f = new FormData(e.target)
     const value = amount(f.get('amount'))
-    if (value <= 0) return toast(t('toasts.validAmount'))
+    if (!Number.isFinite(value) || value <= 0) return toast(t('toasts.validAmount'))
     await put('recurring', {
       id: uid(),
       type: f.get('type'),
@@ -1221,7 +1221,7 @@ function settingsModal() {
           </div>
           <div class="field">
             <label for="new-currency-rate">${escapeHtml(t('settings.addCurrency.unitsPerEur'))}</label>
-            <input id="new-currency-rate" name="rate" type="text" inputmode="decimal" data-decimal-input pattern="[0-9]+([.,][0-9]+)?" placeholder="${escapeHtml(t('settings.addCurrency.ratePlaceholder'))}">
+            <input id="new-currency-rate" name="rate" type="text" inputmode="decimal" data-decimal-input pattern="${POSITIVE_DECIMAL_INPUT_PATTERN}" placeholder="${escapeHtml(t('settings.addCurrency.ratePlaceholder'))}">
           </div>
         </div>
         <div class="settings-actions">
