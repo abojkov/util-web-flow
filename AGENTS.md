@@ -1,4 +1,4 @@
-# AGENTS.md — Money Manager
+# AGENTS.md - Money Manager
 
 ## 1. Project Overview
 
@@ -436,4 +436,5 @@ The highest priorities are financial correctness, data integrity, offline compat
 - Display all full dates as `dd.mm.yyyy`, including status messages and date ranges. Display times in 24-hour format. Keep stored/exported ISO dates and native browser date inputs unchanged.
 
 - Never place a comma immediately before “and” or “or” in app text or project documentation. Apply this rule to all future copy changes.
+- Never use em dashes (`—`) or en dashes (`–`) in app text or project documentation. Use a hyphen (`-`) instead.
 - Preserve commas required by programming syntax and data formats. Do not rewrite user-entered content or imported financial records to enforce this writing rule.

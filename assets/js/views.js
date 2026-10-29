@@ -88,7 +88,7 @@ function txPeriodControl() {
     const weekStart = state.txSearchWeekStart || startOfWeek(today()),
       weekEnd = shiftDate(weekStart, 6)
     return periodToolbar(
-      `${escapeHtml(displayDate(weekStart))} – ${escapeHtml(displayDate(weekEnd))}`,
+      `${escapeHtml(displayDate(weekStart))} - ${escapeHtml(displayDate(weekEnd))}`,
       '210px'
     )
   }
