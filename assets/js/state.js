@@ -56,6 +56,7 @@ const createInitialState = () => ({
   txSearchPeriod: 'month',
   txSearchWeekStart: '',
   txSearchYear: today().slice(0, 4),
+  txSearchFiltersExpanded: false,
   txCategoryFilters: [],
   txExpandedCategories: [],
   txExpandedCategoryGroups: [],

@@ -763,6 +763,16 @@ function transactions() {
     selectedCategoryKeys.size || rawSearch || typeFilter !== 'all'
       ? `<button class="link-btn" id="tx-clear-search">${escapeHtml(t('transactions.search.clear'))}</button>`
       : ''
+  const filtersExpanded = state.txSearchFiltersExpanded === true
+  const activeFilterCount =
+    (typeFilter !== 'all' ? 1 : 0) +
+    (state.accountFilter !== 'all' ? 1 : 0) +
+    selectedCategoryKeys.size
+  const filtersToggleHint = filtersExpanded
+    ? t('transactions.search.hideFilters')
+    : activeFilterCount
+      ? t('transactions.search.filtersActive', { count: activeFilterCount })
+      : t('transactions.search.showFilters')
   return `
     <div class="toolbar">
       <div>
@@ -771,7 +781,7 @@ function transactions() {
       </div>
       <button class="btn" data-add="transaction">${escapeHtml(t('transactions.newTransaction'))}</button>
     </div>
-    <section class="search-panel">
+    <section class="search-panel ${filtersExpanded ? 'filters-open' : ''}">
       <div class="search-panel-head">
         <div>
           <h3>${escapeHtml(t('transactions.search.title'))}</h3>
@@ -780,7 +790,7 @@ function transactions() {
         ${clearSearch}
       </div>
       <div class="search-grid">
-        <label class="search-field">
+        <label class="search-field search-query">
           <span>${escapeHtml(t('transactions.search.label'))}</span>
           <input
             id="tx-search"
@@ -789,18 +799,31 @@ function transactions() {
             placeholder="${escapeHtml(t('transactions.search.placeholder'))}"
           />
         </label>
-        <label class="search-field">
-          <span>${escapeHtml(t('transactions.filter.type'))}</span>
-          <select id="tx-type-filter">${typeSelectOptions}</select>
-        </label>
-        <label class="search-field search-period">
-          <span>${escapeHtml(t('transactions.filter.period'))}</span>
-          <select id="tx-search-period">${periodSelectOptions}</select>
-        </label>
-        <label class="search-field">
-          <span>${escapeHtml(t('transactions.filter.account'))}</span>
-          ${accountSelect()}
-        </label>
+        <button
+          type="button"
+          class="search-filters-toggle"
+          id="tx-toggle-filters"
+          aria-expanded="${filtersExpanded ? 'true' : 'false'}"
+          aria-controls="tx-search-filters"
+        >
+          <span>${escapeHtml(t('transactions.search.filters'))}</span>
+          <small>${escapeHtml(filtersToggleHint)}</small>
+          <b aria-hidden="true">${filtersExpanded ? '−' : '+'}</b>
+        </button>
+        <div class="search-filters" id="tx-search-filters">
+          <label class="search-field">
+            <span>${escapeHtml(t('transactions.filter.type'))}</span>
+            <select id="tx-type-filter">${typeSelectOptions}</select>
+          </label>
+          <label class="search-field search-period">
+            <span>${escapeHtml(t('transactions.filter.period'))}</span>
+            <select id="tx-search-period">${periodSelectOptions}</select>
+          </label>
+          <label class="search-field">
+            <span>${escapeHtml(t('transactions.filter.account'))}</span>
+            ${accountSelect()}
+          </label>
+        </div>
       </div>
       ${categoryFilter}
     </section>
@@ -1150,6 +1173,7 @@ function render() {
     state.accountsEditing = false
     state.archivedAccountsExpanded = false
   }
+  if (state.page !== 'transactions') state.txSearchFiltersExpanded = false
   if (
     state.accountFilter !== 'all' &&
     !state.accounts.some(a => a.id === state.accountFilter && isSelectableAccount(a))
@@ -1202,6 +1226,11 @@ function render() {
       next?.focus({ preventScroll: true })
       next?.setSelectionRange(cursor, cursor)
     }, 180)
+  })
+  $('#tx-toggle-filters')?.addEventListener('click', () => {
+    state.txSearchFiltersExpanded = !state.txSearchFiltersExpanded
+    render()
+    $('#tx-toggle-filters')?.focus({ preventScroll: true })
   })
   $('#tx-type-filter')?.addEventListener('change', e => {
     state.txTypeFilter = e.target.value
