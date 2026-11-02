@@ -741,7 +741,7 @@ main {
   color: #7890ae;
   display: inline-flex;
   justify-content: center;
-  line-height: 0;
+  line-height: 1;
   padding: 6px;
 }
 

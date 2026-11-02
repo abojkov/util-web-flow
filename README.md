@@ -575,7 +575,7 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-11-02 - Release 1.3.1
 
-- Bumped `APP_VERSION` to 1.3.1 for refined navigation and More-menu icons, including a cleaner Home house, Settings gear and Categories tag outline.
+- Bumped `APP_VERSION` to 1.3.1 for refined navigation and More-menu icons, including a cleaner Home house, Settings gear and Categories tag outline. Mini action buttons keep centered padding for text glyphs such as the edit pen.
 
 ### 2026-11-02 - Modern app icons
 
