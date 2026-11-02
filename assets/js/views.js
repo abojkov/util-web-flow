@@ -207,109 +207,133 @@ function compareTransactionsNewestFirst(a, b) {
   )
 }
 
-function txList(items) {
+function transactionDayLabel(dateKey) {
+  const key = String(dateKey || '')
+  if (!key) return ''
+  const todayKey = today()
+  if (key === todayKey) return t('transactions.list.dayToday')
+  if (key === shiftDate(todayKey, -1)) return t('transactions.list.dayYesterday')
+  const weekday = new Intl.DateTimeFormat(localeTag(), { weekday: 'long' }).format(
+    new Date(key + 'T12:00:00')
+  )
+  return t('transactions.list.dayDate', { weekday, date: displayDate(key) })
+}
+
+function renderTransactionRow(item, { hideDate = false } = {}) {
+  const a = account(item.accountId),
+    c = cat(item.categoryId),
+    description = String(item.description ?? item.note ?? '').trim(),
+    payee = String(item.payee ?? item.place ?? '').trim(),
+    categoryName = item.categoryId ? categoryLabel(item.categoryId, item.subcategoryId) : '',
+    label =
+      payee ||
+      (item.type === 'transfer'
+        ? txTypeLabel('transfer')
+        : categoryName || txTypeLabel(item.type)),
+    currency = a?.currency || 'EUR',
+    equivalent = currency !== base() ? money(convertedTransactionAmount(item), base()) : '',
+    accountDetail =
+      item.type === 'transfer'
+        ? `${a?.name || t('transactions.list.unknownAccount')} → ${account(item.toAccountId)?.name || t('transactions.list.unknownAccount')}`
+        : a?.name || t('transactions.list.unknownAccount'),
+    detail = [
+      item.time && displayTime(item.time),
+      accountDetail,
+      item.type !== 'transfer' && categoryName,
+      !hideDate && displayDate(item.date),
+      equivalent && t('transactions.list.equivalent', { amount: equivalent }),
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    descriptionOpen = state.activeTxDescription === item.id,
+    descriptionBadge = description
+      ? `
+        <button
+          class="tx-note-badge ${descriptionOpen ? 'open' : ''}"
+          type="button"
+          data-tx-description="${item.id}"
+          aria-expanded="${descriptionOpen ? 'true' : 'false'}"
+        >
+          ${escapeHtml(t('transactions.list.note'))}
+        </button>
+      `
+      : '',
+    descriptionPopover =
+      description && descriptionOpen
+        ? `<div class="tx-note-popover">${escapeHtml(description)}</div>`
+        : '',
+    hasSplits = item.type !== 'transfer' && item.splits?.length > 0,
+    splitOpen = state.activeTxSplit === item.id,
+    splitDetailsId = `tx-splits-${escapeHtml(item.id)}`,
+    splitBadge = hasSplits
+      ? `
+        <button
+          class="tx-note-badge tx-split-badge ${splitOpen ? 'open' : ''}"
+          type="button"
+          data-tx-splits="${escapeHtml(item.id)}"
+          aria-expanded="${splitOpen}"
+          aria-controls="${splitDetailsId}"
+        >
+          ${escapeHtml(t('transactions.list.split'))}
+        </button>
+      `
+      : '',
+    splitDetails = hasSplits
+      ? `
+        <div class="tx-note-popover tx-split-details" id="${splitDetailsId}" ${splitOpen ? '' : 'hidden'}>
+          ${item.splits
+            .map(
+              split => `
+            <div class="tx-split-line">
+              <span>${escapeHtml(categoryLabel(split.categoryId, split.subcategoryId))}</span>
+              <span class="tx-split-amount">${money(split.amount, currency)}</span>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      `
+      : ''
+  return `
+    <div class="transaction">
+      <div class="tx-icon">${item.type === 'transfer' ? '⇄' : hasSplits ? splitTransactionIcon : c?.icon || '◈'}</div>
+      <div class="tx-main">
+        <b><span>${escapeHtml(label)}</span>${descriptionBadge}${splitBadge}</b>
+        <small>${escapeHtml(detail)}</small>
+        ${descriptionPopover}${splitDetails}
+      </div>
+      <div class="tx-amount ${item.type}">
+        ${item.type === 'expense' ? '−' : item.type === 'income' ? '+' : ''}${fmt(item.amount, currency)}
+      </div>
+      <div class="tx-actions">
+        <button class="mini-btn" data-edit-tx="${item.id}" title="${escapeHtml(t('transactions.list.editTitle'))}">✎</button>
+      </div>
+    </div>
+  `
+}
+
+function txList(items, { groupByDay = false } = {}) {
   if (!items.length)
     return empty(
       t('transactions.list.empty.title'),
       t('transactions.list.empty.desc'),
       '↗'
     )
-  return items
-    .map(item => {
-      const a = account(item.accountId),
-        c = cat(item.categoryId),
-        description = String(item.description ?? item.note ?? '').trim(),
-        payee = String(item.payee ?? item.place ?? '').trim(),
-        categoryName = item.categoryId
-          ? categoryLabel(item.categoryId, item.subcategoryId)
-          : '',
-        label =
-          payee ||
-          (item.type === 'transfer'
-            ? txTypeLabel('transfer')
-            : categoryName || txTypeLabel(item.type)),
-        currency = a?.currency || 'EUR',
-        equivalent = currency !== base() ? money(convertedTransactionAmount(item), base()) : '',
-        accountDetail =
-          item.type === 'transfer'
-            ? `${a?.name || t('transactions.list.unknownAccount')} → ${account(item.toAccountId)?.name || t('transactions.list.unknownAccount')}`
-            : a?.name || t('transactions.list.unknownAccount'),
-        detail = [
-          accountDetail,
-          item.type !== 'transfer' && categoryName,
-          displayDate(item.date),
-          item.time,
-          equivalent && t('transactions.list.equivalent', { amount: equivalent }),
-        ]
-          .filter(Boolean)
-          .join(' · '),
-        descriptionOpen = state.activeTxDescription === item.id,
-        descriptionBadge = description
-          ? `
-            <button
-              class="tx-note-badge ${descriptionOpen ? 'open' : ''}"
-              type="button"
-              data-tx-description="${item.id}"
-              aria-expanded="${descriptionOpen ? 'true' : 'false'}"
-            >
-              ${escapeHtml(t('transactions.list.note'))}
-            </button>
-          `
-          : '',
-        descriptionPopover =
-          description && descriptionOpen
-            ? `<div class="tx-note-popover">${escapeHtml(description)}</div>`
-            : '',
-        hasSplits = item.type !== 'transfer' && item.splits?.length > 0,
-        splitOpen = state.activeTxSplit === item.id,
-        splitDetailsId = `tx-splits-${escapeHtml(item.id)}`,
-        splitBadge = hasSplits
-          ? `
-            <button
-              class="tx-note-badge tx-split-badge ${splitOpen ? 'open' : ''}"
-              type="button"
-              data-tx-splits="${escapeHtml(item.id)}"
-              aria-expanded="${splitOpen}"
-              aria-controls="${splitDetailsId}"
-            >
-              ${escapeHtml(t('transactions.list.split'))}
-            </button>
-          `
-          : '',
-        splitDetails = hasSplits
-          ? `
-            <div class="tx-note-popover tx-split-details" id="${splitDetailsId}" ${splitOpen ? '' : 'hidden'}>
-              ${item.splits
-                .map(
-                  split => `
-                <div class="tx-split-line">
-                  <span>${escapeHtml(categoryLabel(split.categoryId, split.subcategoryId))}</span>
-                  <span class="tx-split-amount">${money(split.amount, currency)}</span>
-                </div>
-              `
-                )
-                .join('')}
-            </div>
-          `
-          : ''
-      return `
-        <div class="transaction">
-          <div class="tx-icon">${item.type === 'transfer' ? '⇄' : hasSplits ? splitTransactionIcon : c?.icon || '◈'}</div>
-          <div class="tx-main">
-            <b><span>${escapeHtml(label)}</span>${descriptionBadge}${splitBadge}</b>
-            <small>${escapeHtml(detail)}</small>
-            ${descriptionPopover}${splitDetails}
-          </div>
-          <div class="tx-amount ${item.type}">
-            ${item.type === 'expense' ? '−' : item.type === 'income' ? '+' : ''}${fmt(item.amount, currency)}
-          </div>
-          <div class="tx-actions">
-            <button class="mini-btn" data-edit-tx="${item.id}" title="${escapeHtml(t('transactions.list.editTitle'))}">✎</button>
-          </div>
-        </div>
-      `
-    })
-    .join('')
+  if (!groupByDay) return items.map(item => renderTransactionRow(item)).join('')
+  const parts = []
+  let currentDate = null
+  for (const item of items) {
+    const dateKey = String(item.date || '')
+    if (dateKey !== currentDate) {
+      currentDate = dateKey
+      const label = transactionDayLabel(dateKey)
+      parts.push(
+        `<div class="tx-day-separator" role="separator" aria-label="${escapeHtml(label)}"><span>${escapeHtml(label)}</span></div>`
+      )
+    }
+    parts.push(renderTransactionRow(item, { hideDate: true }))
+  }
+  return parts.join('')
 }
 
 function spendingByCategory(items) {
@@ -517,7 +541,7 @@ function home() {
   `
 }
 
-function transactions() {
+function transactionSearchModel() {
   const typeOptions = [
     ['all', t('transactions.filter.allTypes')],
     ['income', t('transactions.filter.income')],
@@ -570,43 +594,43 @@ function transactions() {
     (state.txExpandedCategoryGroups || []).filter(type => ['expense', 'income'].includes(type))
   )
   state.txExpandedCategoryGroups = [...expandedCategoryGroups]
-  const categoryMatches = t => {
+  const categoryMatches = item => {
     if (typeFilter === 'transfer' || !selectedCategoryKeys.size) return true
-    const matches = item =>
-      selectedCategoryKeys.has(categoryFilterKey(item.categoryId)) ||
-      selectedCategoryKeys.has(categoryFilterKey(item.categoryId, item.subcategoryId))
-    if (t.splits?.length) return t.splits.some(matches)
-    return matches(t)
+    const matches = entry =>
+      selectedCategoryKeys.has(categoryFilterKey(entry.categoryId)) ||
+      selectedCategoryKeys.has(categoryFilterKey(entry.categoryId, entry.subcategoryId))
+    if (item.splits?.length) return item.splits.some(matches)
+    return matches(item)
   }
   if (!state.txSearchWeekStart) state.txSearchWeekStart = startOfWeek(today())
   if (!state.txSearchYear) state.txSearchYear = today().slice(0, 4)
   const weekStart = state.txSearchWeekStart,
     weekEnd = shiftDate(weekStart, 6),
     yearKey = state.txSearchYear
-  const inSearchPeriod = t =>
+  const inSearchPeriod = item =>
     state.txSearchPeriod === 'all' ||
     (state.txSearchPeriod === 'year'
-      ? t.date?.startsWith(yearKey)
+      ? item.date?.startsWith(yearKey)
       : state.txSearchPeriod === 'week'
-        ? t.date >= weekStart && t.date <= weekEnd
-        : t.date?.startsWith(state.month))
+        ? item.date >= weekStart && item.date <= weekEnd
+        : item.date?.startsWith(state.month))
   const baseItems = state.transactions.filter(
-    t =>
-      (typeFilter === 'all' || t.type === typeFilter) &&
-      inSearchPeriod(t) &&
+    item =>
+      (typeFilter === 'all' || item.type === typeFilter) &&
+      inSearchPeriod(item) &&
       (state.accountFilter === 'all' ||
-        t.accountId === state.accountFilter ||
-        t.toAccountId === state.accountFilter)
+        item.accountId === state.accountFilter ||
+        item.toAccountId === state.accountFilter)
   )
   const matchedItems = baseItems.filter(
-    t =>
+    item =>
       (!query ||
-        [t.payee, t.place, t.description, t.note].some(value =>
+        [item.payee, item.place, item.description, item.note].some(value =>
           String(value || '')
             .toLocaleLowerCase()
             .includes(query)
         )) &&
-      categoryMatches(t)
+      categoryMatches(item)
   )
   const hasSearchFilters = Boolean(query || selectedCategoryKeys.size || typeFilter !== 'all')
   const sortedItems = matchedItems.slice().sort(compareTransactionsNewestFirst)
@@ -636,6 +660,107 @@ function transactions() {
             total: matchedItems.length,
           })
         : t('transactions.results.period', { period: periodLabel })
+  const clearSearchHtml =
+    selectedCategoryKeys.size || rawSearch || typeFilter !== 'all'
+      ? `<button class="link-btn" id="tx-clear-search">${escapeHtml(t('transactions.search.clear'))}</button>`
+      : ''
+  return {
+    typeOptions,
+    typeFilter,
+    rawSearch,
+    searchPeriodOptions,
+    categoryGroups,
+    categoryFilterKey,
+    selectedCategoryKeys,
+    expandedCategoryIds,
+    expandedCategoryGroups,
+    items,
+    resultText,
+    clearSearchHtml,
+  }
+}
+
+function bindTransactionResultInteractions() {
+  document.querySelectorAll('[data-tx-splits]').forEach(button =>
+    button.addEventListener('click', e => {
+      const id = e.currentTarget.dataset.txSplits
+      state.activeTxSplit = state.activeTxSplit === id ? '' : id
+      render()
+      ;[...document.querySelectorAll('[data-tx-splits]')]
+        .find(next => next.dataset.txSplits === id)
+        ?.focus({ preventScroll: true })
+    })
+  )
+  document.querySelectorAll('[data-tx-description]').forEach(button =>
+    button.addEventListener('click', e => {
+      const id = e.currentTarget.dataset.txDescription
+      state.activeTxDescription = state.activeTxDescription === id ? '' : id
+      render()
+    })
+  )
+}
+
+function clearTransactionSearch() {
+  state.txSearch = ''
+  state.txTypeFilter = 'all'
+  state.txCategoryFilters = []
+  state.txSearchPeriod = 'month'
+  render()
+}
+
+function refreshTransactionSearchResults() {
+  if (state.page !== 'transactions') return false
+  const status = $('#tx-search-status')
+  const list = $('#tx-results')
+  if (!status || !list) return false
+  const model = transactionSearchModel()
+  status.textContent = model.resultText
+  list.innerHTML = txList(model.items, { groupByDay: true })
+  const clearSlot = $('#tx-clear-search-slot')
+  if (clearSlot) {
+    clearSlot.innerHTML = model.clearSearchHtml
+    $('#tx-clear-search')?.addEventListener('click', clearTransactionSearch)
+  }
+  const periodSelect = $('#tx-search-period')
+  if (periodSelect) periodSelect.value = state.txSearchPeriod
+  const periodNav = $('#tx-period-nav')
+  if (periodNav) {
+    periodNav.innerHTML = txPeriodControl()
+    bindTxPeriod()
+  }
+  const filtersToggle = $('#tx-toggle-filters')
+  if (filtersToggle) {
+    const activeFilterCount =
+      (model.typeFilter !== 'all' ? 1 : 0) +
+      (state.accountFilter !== 'all' ? 1 : 0) +
+      model.selectedCategoryKeys.size
+    const filtersExpanded = state.txSearchFiltersExpanded === true
+    const hint = filtersExpanded
+      ? t('transactions.search.hideFilters')
+      : activeFilterCount
+        ? t('transactions.search.filtersActive', { count: activeFilterCount })
+        : t('transactions.search.showFilters')
+    const hintEl = filtersToggle.querySelector('small')
+    if (hintEl) hintEl.textContent = hint
+  }
+  bindTransactionResultInteractions()
+  return true
+}
+
+function transactions() {
+  const {
+    typeOptions,
+    typeFilter,
+    searchPeriodOptions,
+    categoryGroups,
+    categoryFilterKey,
+    selectedCategoryKeys,
+    expandedCategoryIds,
+    expandedCategoryGroups,
+    items,
+    resultText,
+    clearSearchHtml,
+  } = transactionSearchModel()
   const categoryBadge = option => `
     <label
       class="category-check ${option.isSubcategory ? 'subcategory' : ''} ${selectedCategoryKeys.has(option.key) ? 'selected' : ''}"
@@ -735,10 +860,16 @@ function transactions() {
           <div class="category-filter-groups">${categoryGroups.map(renderGroup).join('')}</div>
         </div>
       `
-  const clearSearch =
-    selectedCategoryKeys.size || rawSearch || typeFilter !== 'all'
-      ? `<button class="link-btn" id="tx-clear-search">${escapeHtml(t('transactions.search.clear'))}</button>`
-      : ''
+  const filtersExpanded = state.txSearchFiltersExpanded === true
+  const activeFilterCount =
+    (typeFilter !== 'all' ? 1 : 0) +
+    (state.accountFilter !== 'all' ? 1 : 0) +
+    selectedCategoryKeys.size
+  const filtersToggleHint = filtersExpanded
+    ? t('transactions.search.hideFilters')
+    : activeFilterCount
+      ? t('transactions.search.filtersActive', { count: activeFilterCount })
+      : t('transactions.search.showFilters')
   return `
     <div class="toolbar">
       <div>
@@ -747,16 +878,13 @@ function transactions() {
       </div>
       <button class="btn" data-add="transaction">${escapeHtml(t('transactions.newTransaction'))}</button>
     </div>
-    <section class="search-panel">
+    <section class="search-panel ${filtersExpanded ? 'filters-open' : ''}">
       <div class="search-panel-head">
-        <div>
-          <h3>${escapeHtml(t('transactions.search.title'))}</h3>
-          <p>${escapeHtml(t('transactions.search.subtitle'))}</p>
-        </div>
-        ${clearSearch}
+        <h3>${escapeHtml(t('transactions.search.title'))}</h3>
+        <p>${escapeHtml(t('transactions.search.subtitle'))}</p>
       </div>
       <div class="search-grid">
-        <label class="search-field">
+        <label class="search-field search-query">
           <span>${escapeHtml(t('transactions.search.label'))}</span>
           <input
             id="tx-search"
@@ -765,24 +893,38 @@ function transactions() {
             placeholder="${escapeHtml(t('transactions.search.placeholder'))}"
           />
         </label>
-        <label class="search-field">
-          <span>${escapeHtml(t('transactions.filter.type'))}</span>
-          <select id="tx-type-filter">${typeSelectOptions}</select>
-        </label>
-        <label class="search-field search-period">
-          <span>${escapeHtml(t('transactions.filter.period'))}</span>
-          <select id="tx-search-period">${periodSelectOptions}</select>
-        </label>
-        <label class="search-field">
-          <span>${escapeHtml(t('transactions.filter.account'))}</span>
-          ${accountSelect()}
-        </label>
+        <button
+          type="button"
+          class="search-filters-toggle"
+          id="tx-toggle-filters"
+          aria-expanded="${filtersExpanded ? 'true' : 'false'}"
+          aria-controls="tx-search-filters"
+        >
+          <span>${escapeHtml(t('transactions.search.filters'))}</span>
+          <small>${escapeHtml(filtersToggleHint)}</small>
+          <b aria-hidden="true">${filtersExpanded ? '−' : '+'}</b>
+        </button>
+        <div class="search-filters" id="tx-search-filters">
+          <label class="search-field">
+            <span>${escapeHtml(t('transactions.filter.type'))}</span>
+            <select id="tx-type-filter">${typeSelectOptions}</select>
+          </label>
+          <label class="search-field search-period">
+            <span>${escapeHtml(t('transactions.filter.period'))}</span>
+            <select id="tx-search-period">${periodSelectOptions}</select>
+          </label>
+          <label class="search-field">
+            <span>${escapeHtml(t('transactions.filter.account'))}</span>
+            ${accountSelect()}
+          </label>
+        </div>
       </div>
       ${categoryFilter}
+      <div id="tx-clear-search-slot" class="search-clear-slot">${clearSearchHtml}</div>
     </section>
-    ${txPeriodControl()}
-    <p class="form-hint">${escapeHtml(resultText)}</p>
-    <section class="table-list">${txList(items)}</section>
+    <div id="tx-period-nav">${txPeriodControl()}</div>
+    <p class="form-hint" id="tx-search-status">${escapeHtml(resultText)}</p>
+    <section class="table-list" id="tx-results">${txList(items, { groupByDay: true })}</section>
   `
 }
 
@@ -1126,6 +1268,7 @@ function render() {
     state.accountsEditing = false
     state.archivedAccountsExpanded = false
   }
+  if (state.page !== 'transactions') state.txSearchFiltersExpanded = false
   if (
     state.accountFilter !== 'all' &&
     !state.accounts.some(a => a.id === state.accountFilter && isSelectableAccount(a))
@@ -1163,21 +1306,34 @@ function render() {
   })
   $('#tx-search')?.addEventListener('input', e => {
     const value = e.target.value,
-      cursor = e.target.selectionStart
+      hadSearch = Boolean(state.txSearch.trim())
     clearTimeout(txSearchTimer)
+    // Keep the focused input mounted. Full render() remounts it and drops fast iOS keystrokes.
     if (!value.trim()) {
       state.txSearch = ''
-      render()
-      $('#tx-search')?.focus({ preventScroll: true })
+      if (hadSearch) state.txSearchPeriod = 'month'
+      if (!refreshTransactionSearchResults()) render()
       return
     }
     txSearchTimer = setTimeout(() => {
-      state.txSearch = value
-      render()
-      const next = $('#tx-search')
-      next?.focus({ preventScroll: true })
-      next?.setSelectionRange(cursor, cursor)
-    }, 180)
+      const live = $('#tx-search')
+      const latest = live ? live.value : value
+      if (!latest.trim()) {
+        state.txSearch = ''
+        if (hadSearch) state.txSearchPeriod = 'month'
+        if (!refreshTransactionSearchResults()) render()
+        return
+      }
+      const startingSearch = !state.txSearch.trim()
+      state.txSearch = latest
+      if (startingSearch) state.txSearchPeriod = 'all'
+      if (!refreshTransactionSearchResults()) render()
+    }, 350)
+  })
+  $('#tx-toggle-filters')?.addEventListener('click', () => {
+    state.txSearchFiltersExpanded = !state.txSearchFiltersExpanded
+    render()
+    $('#tx-toggle-filters')?.focus({ preventScroll: true })
   })
   $('#tx-type-filter')?.addEventListener('change', e => {
     state.txTypeFilter = e.target.value
@@ -1234,29 +1390,8 @@ function render() {
       render()
     })
   )
-  document.querySelectorAll('[data-tx-splits]').forEach(button =>
-    button.addEventListener('click', e => {
-      const id = e.currentTarget.dataset.txSplits
-      state.activeTxSplit = state.activeTxSplit === id ? '' : id
-      render()
-      ;[...document.querySelectorAll('[data-tx-splits]')]
-        .find(next => next.dataset.txSplits === id)
-        ?.focus({ preventScroll: true })
-    })
-  )
-  document.querySelectorAll('[data-tx-description]').forEach(button =>
-    button.addEventListener('click', e => {
-      const id = e.currentTarget.dataset.txDescription
-      state.activeTxDescription = state.activeTxDescription === id ? '' : id
-      render()
-    })
-  )
-  $('#tx-clear-search')?.addEventListener('click', () => {
-    state.txSearch = ''
-    state.txTypeFilter = 'all'
-    state.txCategoryFilters = []
-    render()
-  })
+  bindTransactionResultInteractions()
+  $('#tx-clear-search')?.addEventListener('click', clearTransactionSearch)
   document.querySelectorAll('[data-page]').forEach(
     b =>
       (b.onclick = () => {

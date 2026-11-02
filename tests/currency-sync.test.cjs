@@ -146,25 +146,60 @@ test('startup sync runs after local initialization and honors the saved opt-out'
   }
 })
 
-test('sync status uses dotted dates and local 24-hour time with padded fields', () => {
+test('sync status uses dotted dates and device-local time display', () => {
   const s = createAppHarness()
   const timestamp = new Date(2026, 9, 22, 17, 13, 39).toISOString()
   s.context.timestamp = timestamp
   s.run(
     "state.settings=[{id:'currencySync',value:{updatedAt:timestamp,firstDate:'2026-10-21',lastDate:'2026-10-22'}}]"
   )
+  const afternoon = s.run("displayTime('17:13:39')")
   assert.equal(
     s.run('currencySyncStatus()'),
-    'Last synced: 22.10.2026, 17:13:39. Rate dates: 21.10.2026 to 22.10.2026.'
+    `Last synced: 22.10.2026, ${afternoon}. Rate dates: 21.10.2026 to 22.10.2026.`
   )
   s.context.timestamp = new Date(2026, 0, 2, 0, 5, 9).toISOString()
   s.run(
     "state.settings[0].value.updatedAt=timestamp;state.settings[0].value.firstDate='2026-01-01';state.settings[0].value.lastDate='2026-01-02'"
   )
+  const midnight = s.run("displayTime('00:05:09')")
   assert.equal(
     s.run('currencySyncStatus()'),
-    'Last synced: 02.01.2026, 00:05:09. Rate dates: 01.01.2026 to 02.01.2026.'
+    `Last synced: 02.01.2026, ${midnight}. Rate dates: 01.01.2026 to 02.01.2026.`
   )
+})
+
+test('displayTime follows the runtime hour cycle and leaves invalid values unchanged', () => {
+  const s = createAppHarness()
+  assert.equal(s.run("displayTime('')"), '')
+  assert.equal(s.run("displayTime('not-a-time')"), 'not-a-time')
+  assert.equal(s.run("displayTime('25:00')"), '25:00')
+  const hour12 = s.run(
+    "new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hour12"
+  )
+  const afternoon = s.run("displayTime('14:05')")
+  const withSeconds = s.run("displayTime('14:05:09')")
+  if (hour12) {
+    assert.match(afternoon, /2:05/)
+    assert.match(withSeconds, /2:05:09/)
+    assert.doesNotMatch(afternoon, /^14:/)
+  } else {
+    assert.match(afternoon, /14:05/)
+    assert.match(withSeconds, /14:05:09/)
+  }
+})
+
+test('displayTime respects Settings timeFormat overrides', () => {
+  const s = createAppHarness()
+  s.run("state.settings=[{id:'timeFormat',value:'24h'}]")
+  assert.match(s.run("displayTime('14:05')"), /14:05/)
+  assert.match(s.run("displayTime('00:05:09')"), /00:05:09/)
+  s.run("state.settings=[{id:'timeFormat',value:'12h'}]")
+  assert.match(s.run("displayTime('14:05')"), /2:05/)
+  assert.doesNotMatch(s.run("displayTime('14:05')"), /^14:/)
+  assert.match(s.run("displayTime('00:05:09')"), /12:05:09/)
+  s.run("state.settings=[{id:'timeFormat',value:'bogus'}]")
+  assert.equal(s.run('getTimeFormatPreference()'), 'auto')
 })
 
 test('new provider replaces old automatic quotes and records source metadata without changing snapshots', async () => {

@@ -1,5 +1,5 @@
 // Update this value when releasing a new app version.
-const APP_VERSION = '1.2.5'
+const APP_VERSION = '1.3.0'
 
 const $ = s => document.querySelector(s),
   uid = () => crypto.randomUUID(),
@@ -56,6 +56,7 @@ const createInitialState = () => ({
   txSearchPeriod: 'month',
   txSearchWeekStart: '',
   txSearchYear: today().slice(0, 4),
+  txSearchFiltersExpanded: false,
   txCategoryFilters: [],
   txExpandedCategories: [],
   txExpandedCategoryGroups: [],
@@ -164,6 +165,54 @@ const amount = x => {
   return Number.isFinite(parsed) ? roundAmount(parsed) : NaN
 }
 const displayDate = value => String(value || '').replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$3.$2.$1')
+const TIME_FORMAT_OPTIONS = ['auto', '24h', '12h']
+const getTimeFormatPreference = () => {
+  const value = getSetting('timeFormat', 'auto')
+  return TIME_FORMAT_OPTIONS.includes(value) ? value : 'auto'
+}
+function timeFormatOptions(current = getTimeFormatPreference()) {
+  return TIME_FORMAT_OPTIONS.map(
+    value =>
+      `<option value="${escapeHtml(value)}" ${value === current ? 'selected' : ''}>${escapeHtml(
+        t(`settings.timeFormat.${value}`)
+      )}</option>`
+  ).join('')
+}
+// Display times follow Settings → Time format: Automatic uses the device/OS hour cycle;
+// 24h / 12h force that cycle app-wide. Stored ISO times are unchanged.
+const displayTime = value => {
+  const raw = String(value || '').trim()
+  const match = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/)
+  if (!match) return raw
+  const hours = Number(match[1])
+  const minutes = Number(match[2])
+  const hasSeconds = match[3] !== undefined
+  const seconds = hasSeconds ? Number(match[3]) : 0
+  if (
+    !Number.isInteger(hours) ||
+    hours < 0 ||
+    hours > 23 ||
+    !Number.isInteger(minutes) ||
+    minutes < 0 ||
+    minutes > 59 ||
+    !Number.isInteger(seconds) ||
+    seconds < 0 ||
+    seconds > 59
+  ) {
+    return raw
+  }
+  const date = new Date(2000, 0, 1, hours, minutes, seconds)
+  const preference = getTimeFormatPreference()
+  const options = { hour: 'numeric', minute: '2-digit' }
+  if (hasSeconds) options.second = '2-digit'
+  if (preference === '12h') options.hour12 = true
+  else if (preference === '24h') options.hour12 = false
+  try {
+    return new Intl.DateTimeFormat(undefined, options).format(date)
+  } catch {
+    return raw
+  }
+}
 const monthKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 const shiftMonth = (month, delta) => {
   const [year, monthNumber] = month.split('-').map(Number)

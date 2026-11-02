@@ -891,7 +891,7 @@ function recurringModal() {
   const items = orderedRecurring(state.recurring)
   modal(
     t('modals.recurring.title'),
-    `<div class="toolbar"><span class="muted">${escapeHtml(t('modals.recurring.subtitle'))}</span><button class="btn" id="new-recurring">${escapeHtml(t('modals.recurring.new'))}</button></div><div class="table-list">${items.length ? items.map(r => `<div class="transaction"><div class="tx-icon">↻</div><div class="tx-main"><b>${escapeHtml(r.payee || r.place || r.description || r.note || cat(r.categoryId)?.name || t('modals.recurring.fallbackLabel'))}</b><small>${escapeHtml(t('modals.recurring.frequency.' + r.frequency))} · ${escapeHtml(t('modals.recurring.nextAt', { date: displayDate(r.nextDate) }))}${r.time ? escapeHtml(t('modals.recurring.atTime', { time: r.time })) : ''} · ${escapeHtml(r.paused ? t('modals.recurring.paused') : t('modals.recurring.active'))}</small></div><b>${money(r.amount, account(r.accountId)?.currency || base())}</b><button class="mini-btn" data-pause="${r.id}">${r.paused ? '▶' : 'Ⅱ'}</button><button class="mini-btn" data-remove-recurring="${r.id}">×</button></div>`).join('') : empty(t('modals.recurring.empty.title'), t('modals.recurring.empty.desc'), '↻')}</div>`
+    `<div class="toolbar"><span class="muted">${escapeHtml(t('modals.recurring.subtitle'))}</span><button class="btn" id="new-recurring">${escapeHtml(t('modals.recurring.new'))}</button></div><div class="table-list">${items.length ? items.map(r => `<div class="transaction"><div class="tx-icon">↻</div><div class="tx-main"><b>${escapeHtml(r.payee || r.place || r.description || r.note || cat(r.categoryId)?.name || t('modals.recurring.fallbackLabel'))}</b><small>${escapeHtml(t('modals.recurring.frequency.' + r.frequency))} · ${escapeHtml(t('modals.recurring.nextAt', { date: displayDate(r.nextDate) }))}${r.time ? escapeHtml(t('modals.recurring.atTime', { time: displayTime(r.time) })) : ''} · ${escapeHtml(r.paused ? t('modals.recurring.paused') : t('modals.recurring.active'))}</small></div><b>${money(r.amount, account(r.accountId)?.currency || base())}</b><button class="mini-btn" data-pause="${r.id}">${r.paused ? '▶' : 'Ⅱ'}</button><button class="mini-btn" data-remove-recurring="${r.id}">×</button></div>`).join('') : empty(t('modals.recurring.empty.title'), t('modals.recurring.empty.desc'), '↻')}</div>`
   )
   $('#new-recurring').onclick = recurringEdit
   document.querySelectorAll('[data-pause]').forEach(
@@ -1240,6 +1240,11 @@ function settingsModal() {
           <select id="app-language">${languageOptions()}</select>
           <p class="form-hint">${escapeHtml(t('settings.languageHint'))}</p>
         </div>
+        <div class="field">
+          <label for="app-time-format">${escapeHtml(t('settings.timeFormat'))}</label>
+          <select id="app-time-format">${timeFormatOptions()}</select>
+          <p class="form-hint">${escapeHtml(t('settings.timeFormatHint'))}</p>
+        </div>
       </section>
 
       <section class="settings-section" aria-labelledby="reset-heading">
@@ -1255,6 +1260,18 @@ function settingsModal() {
   )
   $('#app-language').onchange = async e => {
     if (e.target.value !== getLanguage()) await setLanguage(e.target.value)
+  }
+  $('#app-time-format').onchange = async e => {
+    const value = TIME_FORMAT_OPTIONS.includes(e.target.value) ? e.target.value : 'auto'
+    if (value === getTimeFormatPreference()) return
+    try {
+      await saveCurrencySettings({ timeFormat: value })
+      updateCurrencySyncStatus()
+      if (typeof render === 'function') render()
+    } catch {
+      e.target.value = getTimeFormatPreference()
+      toast(t('toasts.timeFormatFailed'))
+    }
   }
   updateAddCurrencyOptions()
   $('#add-currency-form').onsubmit = async e => {
