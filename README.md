@@ -573,6 +573,10 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-11-02 - Release 1.3.0
+
+- Bumped `APP_VERSION` to 1.3.0 for transaction list day separators and detail order, device/manual time format display, mobile collapsible search filters and in-place search updates that keep fast typing reliable on iOS.
+
 ### 2026-11-02 - Search switches period to All history
 
 - Transactions Period still defaults to Monthly on open. The first non-empty search entry selects All history; later edits while search text remains do not override a manual Period change. Clearing the field or Clear search restores Monthly. Unfiltered All history still shows the latest 250 transactions until other filters are applied.
