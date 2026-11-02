@@ -240,7 +240,7 @@ function renderTransactionRow(item, { hideDate = false } = {}) {
       accountDetail,
       item.type !== 'transfer' && categoryName,
       !hideDate && displayDate(item.date),
-      item.time,
+      item.time && displayTime(item.time),
       equivalent && t('transactions.list.equivalent', { amount: equivalent }),
     ]
       .filter(Boolean)

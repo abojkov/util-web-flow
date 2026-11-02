@@ -48,9 +48,11 @@ function currencySyncStatus() {
   if (!sync.updatedAt) return t('currency.syncStatus.notSynced')
   const updated = new Date(sync.updatedAt)
   const date = displayDate(monthKey(updated) + '-' + String(updated.getDate()).padStart(2, '0'))
-  const time = [updated.getHours(), updated.getMinutes(), updated.getSeconds()]
-    .map(value => String(value).padStart(2, '0'))
-    .join(':')
+  const time = displayTime(
+    [updated.getHours(), updated.getMinutes(), updated.getSeconds()]
+      .map(value => String(value).padStart(2, '0'))
+      .join(':')
+  )
   const rateDates =
     sync.firstDate === sync.lastDate
       ? t('currency.syncStatus.rateDate', { date: displayDate(sync.firstDate) })

@@ -433,7 +433,7 @@ The highest priorities are financial correctness, data integrity, offline compat
 
 ## 22. Writing and Grammar
 
-- Display all full dates as `dd.mm.yyyy`, including status messages and date ranges. Display times in 24-hour format. Keep stored/exported ISO dates and native browser date inputs unchanged.
+- Display all full dates as `dd.mm.yyyy`, including status messages and date ranges. Display times using Settings → Time format: Automatic follows the device/OS hour cycle via the browser runtime locale; 24-hour and 12-hour force that cycle app-wide. Keep stored/exported ISO dates and native browser date inputs unchanged.
 
 - Never place a comma immediately before “and” or “or” in app text or project documentation. Apply this rule to all future copy changes.
 - Never use em dashes (`—`) or en dashes (`–`) in app text or project documentation. Use a hyphen (`-`) instead.
