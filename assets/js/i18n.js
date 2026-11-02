@@ -87,6 +87,7 @@ function applyShellI18n() {
   if (settingsBtn) {
     settingsBtn.title = t('shell.settingsTitle')
     settingsBtn.setAttribute('aria-label', t('shell.settingsAriaLabel'))
+    if (typeof icons !== 'undefined' && icons.settings) settingsBtn.innerHTML = icons.settings
   }
 }
 

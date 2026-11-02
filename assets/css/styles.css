@@ -140,9 +140,17 @@ button:disabled {
 }
 
 .nav-item .nav-icon {
-  font-size: 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 22px;
-  text-align: center;
+  height: 22px;
+  line-height: 0;
+}
+
+.app-icon {
+  display: block;
+  flex-shrink: 0;
 }
 
 .sidebar-foot {
@@ -368,8 +376,18 @@ main {
 }
 
 .balance-card footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
   font-size: 12px;
   color: #e2edff;
+}
+
+.balance-card footer .app-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.92;
 }
 
 .stat-card,
@@ -402,11 +420,19 @@ main {
 
 .stat-icon {
   float: right;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 12px;
   padding: 8px;
   background: #eaf9f2;
   color: #16a16e;
-  font-size: 18px;
+  line-height: 0;
+}
+
+.stat-icon .app-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .expense-icon {
@@ -463,6 +489,12 @@ main {
   place-items: center;
   border-radius: 18px;
   margin-bottom: 13px;
+  line-height: 0;
+}
+
+.empty-icon .app-icon {
+  width: 28px;
+  height: 28px;
 }
 
 .empty b {
@@ -537,6 +569,12 @@ main {
   display: grid;
   place-items: center;
   font-size: 18px;
+  line-height: 0;
+}
+
+.tx-icon .app-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .tx-main {
@@ -696,11 +734,15 @@ main {
 }
 
 .mini-btn {
+  align-items: center;
   background: #f4f7fc;
   border: 0;
   border-radius: 8px;
-  padding: 6px;
   color: #7890ae;
+  display: inline-flex;
+  justify-content: center;
+  line-height: 0;
+  padding: 6px;
 }
 
 .chart-wrap {
@@ -1907,8 +1949,29 @@ main {
 }
 
 .settings-tile h3 {
+  align-items: center;
+  display: flex;
+  gap: 10px;
   margin: 0 0 9px;
   font-size: 15px;
+}
+
+.settings-tile-icon {
+  align-items: center;
+  background: #eef4ff;
+  border-radius: 10px;
+  color: #3479f4;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 32px;
+  justify-content: center;
+  line-height: 0;
+  width: 32px;
+}
+
+.settings-tile-icon .app-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .settings-tile p {
@@ -2384,8 +2447,18 @@ main {
     color: #2568ee;
   }
 
-  .bottom-nav button span {
-    font-size: 21px;
+  .bottom-nav button > span:first-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    line-height: 0;
+  }
+
+  .bottom-nav button > span:first-child .app-icon {
+    width: 22px;
+    height: 22px;
   }
 
   .modal-backdrop {
@@ -2552,10 +2625,14 @@ main {
   padding-right: 12px;
 }
 
-.accounts-nav-icon {
-  display: inline-block;
-  vertical-align: middle;
-  flex-shrink: 0;
+.icon-btn .app-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.mini-btn .app-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .settings-version {

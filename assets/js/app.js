@@ -1,3 +1,4 @@
+$('#settings-shortcut').innerHTML = icons.settings
 $('#settings-shortcut').onclick = settingsModal
 ;(async () => {
   try {
