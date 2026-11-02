@@ -483,8 +483,9 @@ main {
   border-bottom: 1px solid #f0f3f9;
 }
 
-.transaction:last-child,
-.transaction:has(+ .tx-day-separator) {
+.table-list > .transaction:last-child,
+.table-list > .transaction:has(+ .tx-day-separator),
+.panel > .transaction:last-child {
   border-bottom: 0;
   padding-bottom: 0;
 }
