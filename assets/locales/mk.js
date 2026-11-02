@@ -93,6 +93,9 @@ registerFlowLocale(
     'transactions.list.unknownAccount': 'Непозната сметка',
     'transactions.list.equivalent': '{amount} еквивалент',
     'transactions.list.editTitle': 'Уреди',
+    'transactions.list.dayToday': 'Денес',
+    'transactions.list.dayYesterday': 'Вчера',
+    'transactions.list.dayDate': '{weekday}, {date}',
 
     'statistics.title': 'Финансиски увид',
     'statistics.subtitle': 'Разберете каде оди вашиот пари.',

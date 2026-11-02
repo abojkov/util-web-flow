@@ -207,109 +207,133 @@ function compareTransactionsNewestFirst(a, b) {
   )
 }
 
-function txList(items) {
+function transactionDayLabel(dateKey) {
+  const key = String(dateKey || '')
+  if (!key) return ''
+  const todayKey = today()
+  if (key === todayKey) return t('transactions.list.dayToday')
+  if (key === shiftDate(todayKey, -1)) return t('transactions.list.dayYesterday')
+  const weekday = new Intl.DateTimeFormat(localeTag(), { weekday: 'long' }).format(
+    new Date(key + 'T12:00:00')
+  )
+  return t('transactions.list.dayDate', { weekday, date: displayDate(key) })
+}
+
+function renderTransactionRow(item, { hideDate = false } = {}) {
+  const a = account(item.accountId),
+    c = cat(item.categoryId),
+    description = String(item.description ?? item.note ?? '').trim(),
+    payee = String(item.payee ?? item.place ?? '').trim(),
+    categoryName = item.categoryId ? categoryLabel(item.categoryId, item.subcategoryId) : '',
+    label =
+      payee ||
+      (item.type === 'transfer'
+        ? txTypeLabel('transfer')
+        : categoryName || txTypeLabel(item.type)),
+    currency = a?.currency || 'EUR',
+    equivalent = currency !== base() ? money(convertedTransactionAmount(item), base()) : '',
+    accountDetail =
+      item.type === 'transfer'
+        ? `${a?.name || t('transactions.list.unknownAccount')} → ${account(item.toAccountId)?.name || t('transactions.list.unknownAccount')}`
+        : a?.name || t('transactions.list.unknownAccount'),
+    detail = [
+      accountDetail,
+      item.type !== 'transfer' && categoryName,
+      !hideDate && displayDate(item.date),
+      item.time,
+      equivalent && t('transactions.list.equivalent', { amount: equivalent }),
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    descriptionOpen = state.activeTxDescription === item.id,
+    descriptionBadge = description
+      ? `
+        <button
+          class="tx-note-badge ${descriptionOpen ? 'open' : ''}"
+          type="button"
+          data-tx-description="${item.id}"
+          aria-expanded="${descriptionOpen ? 'true' : 'false'}"
+        >
+          ${escapeHtml(t('transactions.list.note'))}
+        </button>
+      `
+      : '',
+    descriptionPopover =
+      description && descriptionOpen
+        ? `<div class="tx-note-popover">${escapeHtml(description)}</div>`
+        : '',
+    hasSplits = item.type !== 'transfer' && item.splits?.length > 0,
+    splitOpen = state.activeTxSplit === item.id,
+    splitDetailsId = `tx-splits-${escapeHtml(item.id)}`,
+    splitBadge = hasSplits
+      ? `
+        <button
+          class="tx-note-badge tx-split-badge ${splitOpen ? 'open' : ''}"
+          type="button"
+          data-tx-splits="${escapeHtml(item.id)}"
+          aria-expanded="${splitOpen}"
+          aria-controls="${splitDetailsId}"
+        >
+          ${escapeHtml(t('transactions.list.split'))}
+        </button>
+      `
+      : '',
+    splitDetails = hasSplits
+      ? `
+        <div class="tx-note-popover tx-split-details" id="${splitDetailsId}" ${splitOpen ? '' : 'hidden'}>
+          ${item.splits
+            .map(
+              split => `
+            <div class="tx-split-line">
+              <span>${escapeHtml(categoryLabel(split.categoryId, split.subcategoryId))}</span>
+              <span class="tx-split-amount">${money(split.amount, currency)}</span>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      `
+      : ''
+  return `
+    <div class="transaction">
+      <div class="tx-icon">${item.type === 'transfer' ? '⇄' : hasSplits ? splitTransactionIcon : c?.icon || '◈'}</div>
+      <div class="tx-main">
+        <b><span>${escapeHtml(label)}</span>${descriptionBadge}${splitBadge}</b>
+        <small>${escapeHtml(detail)}</small>
+        ${descriptionPopover}${splitDetails}
+      </div>
+      <div class="tx-amount ${item.type}">
+        ${item.type === 'expense' ? '−' : item.type === 'income' ? '+' : ''}${fmt(item.amount, currency)}
+      </div>
+      <div class="tx-actions">
+        <button class="mini-btn" data-edit-tx="${item.id}" title="${escapeHtml(t('transactions.list.editTitle'))}">✎</button>
+      </div>
+    </div>
+  `
+}
+
+function txList(items, { groupByDay = false } = {}) {
   if (!items.length)
     return empty(
       t('transactions.list.empty.title'),
       t('transactions.list.empty.desc'),
       '↗'
     )
-  return items
-    .map(item => {
-      const a = account(item.accountId),
-        c = cat(item.categoryId),
-        description = String(item.description ?? item.note ?? '').trim(),
-        payee = String(item.payee ?? item.place ?? '').trim(),
-        categoryName = item.categoryId
-          ? categoryLabel(item.categoryId, item.subcategoryId)
-          : '',
-        label =
-          payee ||
-          (item.type === 'transfer'
-            ? txTypeLabel('transfer')
-            : categoryName || txTypeLabel(item.type)),
-        currency = a?.currency || 'EUR',
-        equivalent = currency !== base() ? money(convertedTransactionAmount(item), base()) : '',
-        accountDetail =
-          item.type === 'transfer'
-            ? `${a?.name || t('transactions.list.unknownAccount')} → ${account(item.toAccountId)?.name || t('transactions.list.unknownAccount')}`
-            : a?.name || t('transactions.list.unknownAccount'),
-        detail = [
-          accountDetail,
-          item.type !== 'transfer' && categoryName,
-          displayDate(item.date),
-          item.time,
-          equivalent && t('transactions.list.equivalent', { amount: equivalent }),
-        ]
-          .filter(Boolean)
-          .join(' · '),
-        descriptionOpen = state.activeTxDescription === item.id,
-        descriptionBadge = description
-          ? `
-            <button
-              class="tx-note-badge ${descriptionOpen ? 'open' : ''}"
-              type="button"
-              data-tx-description="${item.id}"
-              aria-expanded="${descriptionOpen ? 'true' : 'false'}"
-            >
-              ${escapeHtml(t('transactions.list.note'))}
-            </button>
-          `
-          : '',
-        descriptionPopover =
-          description && descriptionOpen
-            ? `<div class="tx-note-popover">${escapeHtml(description)}</div>`
-            : '',
-        hasSplits = item.type !== 'transfer' && item.splits?.length > 0,
-        splitOpen = state.activeTxSplit === item.id,
-        splitDetailsId = `tx-splits-${escapeHtml(item.id)}`,
-        splitBadge = hasSplits
-          ? `
-            <button
-              class="tx-note-badge tx-split-badge ${splitOpen ? 'open' : ''}"
-              type="button"
-              data-tx-splits="${escapeHtml(item.id)}"
-              aria-expanded="${splitOpen}"
-              aria-controls="${splitDetailsId}"
-            >
-              ${escapeHtml(t('transactions.list.split'))}
-            </button>
-          `
-          : '',
-        splitDetails = hasSplits
-          ? `
-            <div class="tx-note-popover tx-split-details" id="${splitDetailsId}" ${splitOpen ? '' : 'hidden'}>
-              ${item.splits
-                .map(
-                  split => `
-                <div class="tx-split-line">
-                  <span>${escapeHtml(categoryLabel(split.categoryId, split.subcategoryId))}</span>
-                  <span class="tx-split-amount">${money(split.amount, currency)}</span>
-                </div>
-              `
-                )
-                .join('')}
-            </div>
-          `
-          : ''
-      return `
-        <div class="transaction">
-          <div class="tx-icon">${item.type === 'transfer' ? '⇄' : hasSplits ? splitTransactionIcon : c?.icon || '◈'}</div>
-          <div class="tx-main">
-            <b><span>${escapeHtml(label)}</span>${descriptionBadge}${splitBadge}</b>
-            <small>${escapeHtml(detail)}</small>
-            ${descriptionPopover}${splitDetails}
-          </div>
-          <div class="tx-amount ${item.type}">
-            ${item.type === 'expense' ? '−' : item.type === 'income' ? '+' : ''}${fmt(item.amount, currency)}
-          </div>
-          <div class="tx-actions">
-            <button class="mini-btn" data-edit-tx="${item.id}" title="${escapeHtml(t('transactions.list.editTitle'))}">✎</button>
-          </div>
-        </div>
-      `
-    })
-    .join('')
+  if (!groupByDay) return items.map(item => renderTransactionRow(item)).join('')
+  const parts = []
+  let currentDate = null
+  for (const item of items) {
+    const dateKey = String(item.date || '')
+    if (dateKey !== currentDate) {
+      currentDate = dateKey
+      const label = transactionDayLabel(dateKey)
+      parts.push(
+        `<div class="tx-day-separator" role="separator" aria-label="${escapeHtml(label)}"><span>${escapeHtml(label)}</span></div>`
+      )
+    }
+    parts.push(renderTransactionRow(item, { hideDate: true }))
+  }
+  return parts.join('')
 }
 
 function spendingByCategory(items) {
@@ -782,7 +806,7 @@ function transactions() {
     </section>
     ${txPeriodControl()}
     <p class="form-hint">${escapeHtml(resultText)}</p>
-    <section class="table-list">${txList(items)}</section>
+    <section class="table-list">${txList(items, { groupByDay: true })}</section>
   `
 }
 

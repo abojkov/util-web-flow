@@ -133,7 +133,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Transfers retain an optional Payee (for example, a currency exchange store). Transaction list titles show Payee or “Transfer” when blank; details show Source account → Destination account, followed by date/time. Legacy `place` values remain supported. This applies to history and dashboard recent transactions without rewriting stored records.
 - Payee inputs should suggest previously used payees as the user types using an app-rendered suggestion list that works in mobile Safari.
 - Display all full dates as `dd.mm.yyyy`, including transaction rows, weekly range labels, recurring next-date labels and currency sync status. Sync timestamps use local 24-hour `HH:mm:ss` time; source date ranges are formatted without timezone conversion using the shared `displayDate` helper. Native date/date-time picker appearance follows browser/OS locale; stored dates and CSV/JSON dates remain ISO `yyyy-mm-dd` for reliable sorting and interchange. Month/year headings retain their existing labels.
-- Support daily/calendar, weekly, monthly and chronological review. Transaction lists are newest first across every period and text/account/category filter: local date descending, then local time descending (missing time treated as midnight), then creation timestamp and ID for stable ties. Dashboard recent transactions use the same order. Unfiltered All history retains its latest-250 display limit after sorting.
+- Support daily/calendar, weekly, monthly and chronological review. Transaction lists are newest first across every period and text/account/category filter: local date descending, then local time descending (missing time treated as midnight), then creation timestamp and ID for stable ties. The Transactions view inserts a full-width blue day separator between date groups labeled Today, Yesterday or weekday plus `dd.mm.yyyy`; grouped rows omit the redundant date from their detail line but keep time. Dashboard recent transactions use the same order without day separators. Unfiltered All history retains its latest-250 display limit after sorting.
 - Filter by date range, account, type, category/subcategory and search text. The Type dropdown supports All types, Income, Expenses and Transfers. Select Transfers + All history + All accounts with an empty text search to review every recorded transfer, newest first, without the unfiltered-history 250-row cap. Transfer mode hides/ignores category filters; selecting it clears category selections. Clear search resets Type to All types. Existing Payee/Description values remain untouched for manual review/editing. Transaction search starts at 2 characters and resets when the search field is blank. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories and expandable categories allow selecting only specific subcategories. Search period navigation changes with the selected period: monthly, weekly, yearly or no navigator for all history.
 - Validate positive amounts, valid account/category references, dates and transfer endpoints.
 - Changes must consistently update all dependent balances, charts and budgets.
@@ -571,6 +571,10 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-11-02 - Transaction day separators
+
+- Transaction history now inserts a full-width blue day separator between date groups labeled Today, Yesterday or weekday plus `dd.mm.yyyy`. Grouped rows hide the redundant date in their detail line.
 
 ### 2026-10-29 - Release 1.2.5
 

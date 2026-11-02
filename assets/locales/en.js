@@ -93,6 +93,9 @@ registerFlowLocale(
     'transactions.list.unknownAccount': 'Unknown account',
     'transactions.list.equivalent': '{amount} equivalent',
     'transactions.list.editTitle': 'Edit',
+    'transactions.list.dayToday': 'Today',
+    'transactions.list.dayYesterday': 'Yesterday',
+    'transactions.list.dayDate': '{weekday}, {date}',
 
     'statistics.title': 'Financial insights',
     'statistics.subtitle': 'Understand where your money goes.',
