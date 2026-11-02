@@ -573,6 +573,10 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-11-02 - Modern app icons
+
+- Replaced low-signal navigation and UI glyphs with a shared stroke SVG set: house (Home), list (Transactions), bar chart (Statistics), wallet (Accounts), grid (More), plus income/expense/transfer/budget/categories/recurring/settings and empty-state icons. More tiles and the Settings header use the same SVGs. Category emoji icons are unchanged.
+
 ### 2026-11-02 - Release 1.3.0
 
 - Bumped `APP_VERSION` to 1.3.0 for transaction list day separators and detail order, device/manual time format display, mobile collapsible search filters and in-place search updates that keep fast typing reliable on iOS.

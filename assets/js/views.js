@@ -34,7 +34,7 @@ function nav() {
   )
 }
 
-function empty(title, desc, icon = '◈') {
+function empty(title, desc, icon = icons.empty) {
   return `
     <div class="empty">
       <div class="empty-icon">${icon}</div>
@@ -296,7 +296,7 @@ function renderTransactionRow(item, { hideDate = false } = {}) {
       : ''
   return `
     <div class="transaction">
-      <div class="tx-icon">${item.type === 'transfer' ? '⇄' : hasSplits ? splitTransactionIcon : c?.icon || '◈'}</div>
+      <div class="tx-icon">${item.type === 'transfer' ? icons.transfer : hasSplits ? splitTransactionIcon : c?.icon || '◈'}</div>
       <div class="tx-main">
         <b><span>${escapeHtml(label)}</span>${descriptionBadge}${splitBadge}</b>
         <small>${escapeHtml(detail)}</small>
@@ -381,7 +381,7 @@ function donut(items) {
     return empty(
       t('statistics.donut.empty.title'),
       t('statistics.donut.empty.desc'),
-      '◉'
+      icons.statistics
     )
   let pct = 0
   const segments = groups
@@ -486,20 +486,22 @@ function home() {
           </span>
         </h2>
         <footer>
-          ◈
-          ${state.accountFilter === 'all' ? escapeHtml(t('home.activeAccounts', { count: active.length })) : escapeHtml(account(state.accountFilter)?.name || t('home.accountFallback'))}
-          ·
-          ${escapeHtml(state.accountFilter === 'all' ? t('home.estimatedBaseTotal') : t('home.nativeCurrency'))}
+          ${icons.accounts}
+          <span>
+            ${state.accountFilter === 'all' ? escapeHtml(t('home.activeAccounts', { count: active.length })) : escapeHtml(account(state.accountFilter)?.name || t('home.accountFallback'))}
+            ·
+            ${escapeHtml(state.accountFilter === 'all' ? t('home.estimatedBaseTotal') : t('home.nativeCurrency'))}
+          </span>
         </footer>
       </section>
       <section class="stat-card">
-        <span class="stat-icon">↙</span>
+        <span class="stat-icon">${icons.income}</span>
         <div class="label">${escapeHtml(t('home.monthlyIncome'))}</div>
         <div class="stat-value income">${money(tot.income, base())}</div>
         <div class="stat-bottom">${escapeHtml(t('home.forMonth', { month: monthLabel(state.month) }))}</div>
       </section>
       <section class="stat-card">
-        <span class="stat-icon expense-icon">↗</span>
+        <span class="stat-icon expense-icon">${icons.expense}</span>
         <div class="label">${escapeHtml(t('home.monthlyExpenses'))}</div>
         <div class="stat-value expense">${money(tot.expense, base())}</div>
         <div class="stat-bottom">${escapeHtml(t('home.forMonth', { month: monthLabel(state.month) }))}</div>
@@ -956,7 +958,7 @@ function statistics() {
     : empty(
         t('statistics.empty.noSpending.title'),
         t('statistics.empty.noSpending.desc'),
-        '◉'
+        icons.statistics
       )
   return `
     <div class="toolbar">
@@ -1223,7 +1225,7 @@ function more() {
           `
         })
         .join('')
-    : empty(t('more.empty.noBudgets.title'), t('more.empty.noBudgets.desc'), '◉')
+    : empty(t('more.empty.noBudgets.title'), t('more.empty.noBudgets.desc'), icons.budget)
   return `
     <div class="toolbar">
       <div>
@@ -1233,22 +1235,22 @@ function more() {
     </div>
     <div class="settings-grid">
       <section class="settings-tile">
-        <h3>${escapeHtml(t('more.budgets.title'))}</h3>
+        <h3><span class="settings-tile-icon">${icons.budget}</span>${escapeHtml(t('more.budgets.title'))}</h3>
         <p>${escapeHtml(t('more.budgets.desc'))}</p>
         <button class="btn secondary" id="open-budgets">${escapeHtml(t('more.budgets.button'))}</button>
       </section>
       <section class="settings-tile">
-        <h3>${escapeHtml(t('more.categories.title'))}</h3>
+        <h3><span class="settings-tile-icon">${icons.categories}</span>${escapeHtml(t('more.categories.title'))}</h3>
         <p>${escapeHtml(t('more.categories.desc'))}</p>
         <button class="btn secondary" id="open-categories">${escapeHtml(t('more.categories.button'))}</button>
       </section>
       <section class="settings-tile">
-        <h3>${escapeHtml(t('more.recurring.title'))}</h3>
+        <h3><span class="settings-tile-icon">${icons.recurring}</span>${escapeHtml(t('more.recurring.title'))}</h3>
         <p>${escapeHtml(t('more.recurring.desc'))}</p>
         <button class="btn secondary" id="open-recurring">${escapeHtml(t('more.recurring.button'))}</button>
       </section>
       <section class="settings-tile">
-        <h3>${escapeHtml(t('more.settings.title'))}</h3>
+        <h3><span class="settings-tile-icon">${icons.settings}</span>${escapeHtml(t('more.settings.title'))}</h3>
         <p>${escapeHtml(t('more.settings.desc'))}</p>
         <button class="btn secondary" id="open-settings">${escapeHtml(t('more.settings.button'))}</button>
       </section>

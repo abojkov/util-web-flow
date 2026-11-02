@@ -6,16 +6,60 @@ const $ = s => document.querySelector(s),
   today = () => new Date().toLocaleDateString('en-CA'),
   currentTime = () => new Date().toTimeString().slice(0, 5)
 let txSearchTimer
+const appIcon = (body, { size = 22, className = 'app-icon' } = {}) =>
+  `<svg class="${className}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${body}</svg>`
 const icons = {
-  home: '⌂',
-  transactions: '≡',
-  statistics: '◉',
-  accounts:
-    '<svg class="accounts-nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 8V5a2 2 0 0 0-2-2H6a3 3 0 0 0 0 6h14v12H6a3 3 0 0 1-3-3V6"/><path d="M20 12h-5a2 2 0 0 0 0 4h5"/><circle cx="16" cy="14" r=".5" fill="currentColor" stroke="none"/></svg>',
-  more: '☷',
+  home: appIcon(
+    '<path d="M4 10.6 12 3.4l8 7.2v9a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 19.6Z"/><path d="M9.5 21.4v-6.2a2.5 2.5 0 0 1 5 0v6.2"/>'
+  ),
+  transactions: appIcon(
+    '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/>'
+  ),
+  statistics: appIcon('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
+  accounts: appIcon(
+    '<path d="M20 8V5a2 2 0 0 0-2-2H6a3 3 0 0 0 0 6h14v12H6a3 3 0 0 1-3-3V6"/><path d="M20 12h-5a2 2 0 0 0 0 4h5"/><circle cx="16" cy="14" r=".5" fill="currentColor" stroke="none"/>',
+    { className: 'app-icon accounts-nav-icon' }
+  ),
+  more: appIcon(
+    [5, 12, 19]
+      .flatMap(y =>
+        [5, 12, 19].map(
+          x => `<circle cx="${x}" cy="${y}" r="1.35" fill="currentColor" stroke="none"/>`
+        )
+      )
+      .join('')
+  ),
+  income: appIcon('<path d="M12 3v13"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/>'),
+  expense: appIcon('<path d="M12 21V8"/><path d="m7 12 5-5 5 5"/><path d="M5 3h14"/>'),
+  transfer: appIcon(
+    '<path d="M7 8h12"/><path d="m16 5 3 3-3 3"/><path d="M17 16H5"/><path d="m8 13-3 3 3 3"/>'
+  ),
+  budget: appIcon(
+    '<path d="M21.2 12a9.2 9.2 0 1 1-2.5-6.2"/><path d="M12 3v9l7 3.5"/>'
+  ),
+  categories: appIcon(
+    '<path d="M12.7 3.3h5.6A2.4 2.4 0 0 1 20.7 5.7v5.6a2.4 2.4 0 0 1-.7 1.7l-8.5 8.5a2.4 2.4 0 0 1-3.4 0L2.8 16a2.4 2.4 0 0 1 0-3.4l8.5-8.5a2.4 2.4 0 0 1 1.4-.8Z"/><circle cx="16.2" cy="7.8" r="1.15" fill="currentColor" stroke="none"/>'
+  ),
+  recurring: appIcon(
+    '<path d="M3.5 12a8.5 8.5 0 0 1 14.3-6.2L20 8"/><path d="M20 3v5h-5"/><path d="M20.5 12a8.5 8.5 0 0 1-14.3 6.2L4 16"/><path d="M4 21v-5h5"/>'
+  ),
+  settings: appIcon(
+    '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
+  ),
+  play: appIcon('<path d="m8 5 11 7-11 7V5z" fill="currentColor" stroke="none"/>', {
+    size: 16,
+  }),
+  pause: appIcon(
+    '<rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/>',
+    { size: 16 }
+  ),
+  empty: appIcon(
+    '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M8 14h3"/>'
+  ),
 }
-const splitTransactionIcon =
-  '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v5a3 3 0 0 0 3 3h2a3 3 0 0 1 3 3v6M12 8a3 3 0 0 1-3 3H7a3 3 0 0 0-3 3v6M1 17l3 3 3-3m10 0 3 3 3-3"/></svg>'
+const splitTransactionIcon = appIcon(
+  '<path d="M12 3v5a3 3 0 0 0 3 3h2a3 3 0 0 1 3 3v6M12 8a3 3 0 0 1-3 3H7a3 3 0 0 0-3 3v6M1 17l3 3 3-3m10 0 3 3 3-3"/>'
+)
 function pageNames() {
   return {
     home: t('nav.home'),
