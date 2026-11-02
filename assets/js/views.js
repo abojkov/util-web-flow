@@ -541,7 +541,7 @@ function home() {
   `
 }
 
-function transactions() {
+function transactionSearchModel() {
   const typeOptions = [
     ['all', t('transactions.filter.allTypes')],
     ['income', t('transactions.filter.income')],
@@ -594,43 +594,43 @@ function transactions() {
     (state.txExpandedCategoryGroups || []).filter(type => ['expense', 'income'].includes(type))
   )
   state.txExpandedCategoryGroups = [...expandedCategoryGroups]
-  const categoryMatches = t => {
+  const categoryMatches = item => {
     if (typeFilter === 'transfer' || !selectedCategoryKeys.size) return true
-    const matches = item =>
-      selectedCategoryKeys.has(categoryFilterKey(item.categoryId)) ||
-      selectedCategoryKeys.has(categoryFilterKey(item.categoryId, item.subcategoryId))
-    if (t.splits?.length) return t.splits.some(matches)
-    return matches(t)
+    const matches = entry =>
+      selectedCategoryKeys.has(categoryFilterKey(entry.categoryId)) ||
+      selectedCategoryKeys.has(categoryFilterKey(entry.categoryId, entry.subcategoryId))
+    if (item.splits?.length) return item.splits.some(matches)
+    return matches(item)
   }
   if (!state.txSearchWeekStart) state.txSearchWeekStart = startOfWeek(today())
   if (!state.txSearchYear) state.txSearchYear = today().slice(0, 4)
   const weekStart = state.txSearchWeekStart,
     weekEnd = shiftDate(weekStart, 6),
     yearKey = state.txSearchYear
-  const inSearchPeriod = t =>
+  const inSearchPeriod = item =>
     state.txSearchPeriod === 'all' ||
     (state.txSearchPeriod === 'year'
-      ? t.date?.startsWith(yearKey)
+      ? item.date?.startsWith(yearKey)
       : state.txSearchPeriod === 'week'
-        ? t.date >= weekStart && t.date <= weekEnd
-        : t.date?.startsWith(state.month))
+        ? item.date >= weekStart && item.date <= weekEnd
+        : item.date?.startsWith(state.month))
   const baseItems = state.transactions.filter(
-    t =>
-      (typeFilter === 'all' || t.type === typeFilter) &&
-      inSearchPeriod(t) &&
+    item =>
+      (typeFilter === 'all' || item.type === typeFilter) &&
+      inSearchPeriod(item) &&
       (state.accountFilter === 'all' ||
-        t.accountId === state.accountFilter ||
-        t.toAccountId === state.accountFilter)
+        item.accountId === state.accountFilter ||
+        item.toAccountId === state.accountFilter)
   )
   const matchedItems = baseItems.filter(
-    t =>
+    item =>
       (!query ||
-        [t.payee, t.place, t.description, t.note].some(value =>
+        [item.payee, item.place, item.description, item.note].some(value =>
           String(value || '')
             .toLocaleLowerCase()
             .includes(query)
         )) &&
-      categoryMatches(t)
+      categoryMatches(item)
   )
   const hasSearchFilters = Boolean(query || selectedCategoryKeys.size || typeFilter !== 'all')
   const sortedItems = matchedItems.slice().sort(compareTransactionsNewestFirst)
@@ -660,6 +660,107 @@ function transactions() {
             total: matchedItems.length,
           })
         : t('transactions.results.period', { period: periodLabel })
+  const clearSearchHtml =
+    selectedCategoryKeys.size || rawSearch || typeFilter !== 'all'
+      ? `<button class="link-btn" id="tx-clear-search">${escapeHtml(t('transactions.search.clear'))}</button>`
+      : ''
+  return {
+    typeOptions,
+    typeFilter,
+    rawSearch,
+    searchPeriodOptions,
+    categoryGroups,
+    categoryFilterKey,
+    selectedCategoryKeys,
+    expandedCategoryIds,
+    expandedCategoryGroups,
+    items,
+    resultText,
+    clearSearchHtml,
+  }
+}
+
+function bindTransactionResultInteractions() {
+  document.querySelectorAll('[data-tx-splits]').forEach(button =>
+    button.addEventListener('click', e => {
+      const id = e.currentTarget.dataset.txSplits
+      state.activeTxSplit = state.activeTxSplit === id ? '' : id
+      render()
+      ;[...document.querySelectorAll('[data-tx-splits]')]
+        .find(next => next.dataset.txSplits === id)
+        ?.focus({ preventScroll: true })
+    })
+  )
+  document.querySelectorAll('[data-tx-description]').forEach(button =>
+    button.addEventListener('click', e => {
+      const id = e.currentTarget.dataset.txDescription
+      state.activeTxDescription = state.activeTxDescription === id ? '' : id
+      render()
+    })
+  )
+}
+
+function clearTransactionSearch() {
+  state.txSearch = ''
+  state.txTypeFilter = 'all'
+  state.txCategoryFilters = []
+  state.txSearchPeriod = 'month'
+  render()
+}
+
+function refreshTransactionSearchResults() {
+  if (state.page !== 'transactions') return false
+  const status = $('#tx-search-status')
+  const list = $('#tx-results')
+  if (!status || !list) return false
+  const model = transactionSearchModel()
+  status.textContent = model.resultText
+  list.innerHTML = txList(model.items, { groupByDay: true })
+  const clearSlot = $('#tx-clear-search-slot')
+  if (clearSlot) {
+    clearSlot.innerHTML = model.clearSearchHtml
+    $('#tx-clear-search')?.addEventListener('click', clearTransactionSearch)
+  }
+  const periodSelect = $('#tx-search-period')
+  if (periodSelect) periodSelect.value = state.txSearchPeriod
+  const periodNav = $('#tx-period-nav')
+  if (periodNav) {
+    periodNav.innerHTML = txPeriodControl()
+    bindTxPeriod()
+  }
+  const filtersToggle = $('#tx-toggle-filters')
+  if (filtersToggle) {
+    const activeFilterCount =
+      (model.typeFilter !== 'all' ? 1 : 0) +
+      (state.accountFilter !== 'all' ? 1 : 0) +
+      model.selectedCategoryKeys.size
+    const filtersExpanded = state.txSearchFiltersExpanded === true
+    const hint = filtersExpanded
+      ? t('transactions.search.hideFilters')
+      : activeFilterCount
+        ? t('transactions.search.filtersActive', { count: activeFilterCount })
+        : t('transactions.search.showFilters')
+    const hintEl = filtersToggle.querySelector('small')
+    if (hintEl) hintEl.textContent = hint
+  }
+  bindTransactionResultInteractions()
+  return true
+}
+
+function transactions() {
+  const {
+    typeOptions,
+    typeFilter,
+    searchPeriodOptions,
+    categoryGroups,
+    categoryFilterKey,
+    selectedCategoryKeys,
+    expandedCategoryIds,
+    expandedCategoryGroups,
+    items,
+    resultText,
+    clearSearchHtml,
+  } = transactionSearchModel()
   const categoryBadge = option => `
     <label
       class="category-check ${option.isSubcategory ? 'subcategory' : ''} ${selectedCategoryKeys.has(option.key) ? 'selected' : ''}"
@@ -759,10 +860,6 @@ function transactions() {
           <div class="category-filter-groups">${categoryGroups.map(renderGroup).join('')}</div>
         </div>
       `
-  const clearSearch =
-    selectedCategoryKeys.size || rawSearch || typeFilter !== 'all'
-      ? `<button class="link-btn" id="tx-clear-search">${escapeHtml(t('transactions.search.clear'))}</button>`
-      : ''
   const filtersExpanded = state.txSearchFiltersExpanded === true
   const activeFilterCount =
     (typeFilter !== 'all' ? 1 : 0) +
@@ -783,11 +880,8 @@ function transactions() {
     </div>
     <section class="search-panel ${filtersExpanded ? 'filters-open' : ''}">
       <div class="search-panel-head">
-        <div>
-          <h3>${escapeHtml(t('transactions.search.title'))}</h3>
-          <p>${escapeHtml(t('transactions.search.subtitle'))}</p>
-        </div>
-        ${clearSearch}
+        <h3>${escapeHtml(t('transactions.search.title'))}</h3>
+        <p>${escapeHtml(t('transactions.search.subtitle'))}</p>
       </div>
       <div class="search-grid">
         <label class="search-field search-query">
@@ -826,10 +920,11 @@ function transactions() {
         </div>
       </div>
       ${categoryFilter}
+      <div id="tx-clear-search-slot" class="search-clear-slot">${clearSearchHtml}</div>
     </section>
-    ${txPeriodControl()}
-    <p class="form-hint">${escapeHtml(resultText)}</p>
-    <section class="table-list">${txList(items, { groupByDay: true })}</section>
+    <div id="tx-period-nav">${txPeriodControl()}</div>
+    <p class="form-hint" id="tx-search-status">${escapeHtml(resultText)}</p>
+    <section class="table-list" id="tx-results">${txList(items, { groupByDay: true })}</section>
   `
 }
 
@@ -1211,25 +1306,29 @@ function render() {
   })
   $('#tx-search')?.addEventListener('input', e => {
     const value = e.target.value,
-      cursor = e.target.selectionStart,
       hadSearch = Boolean(state.txSearch.trim())
     clearTimeout(txSearchTimer)
+    // Keep the focused input mounted. Full render() remounts it and drops fast iOS keystrokes.
     if (!value.trim()) {
       state.txSearch = ''
       if (hadSearch) state.txSearchPeriod = 'month'
-      render()
-      $('#tx-search')?.focus({ preventScroll: true })
+      if (!refreshTransactionSearchResults()) render()
       return
     }
     txSearchTimer = setTimeout(() => {
+      const live = $('#tx-search')
+      const latest = live ? live.value : value
+      if (!latest.trim()) {
+        state.txSearch = ''
+        if (hadSearch) state.txSearchPeriod = 'month'
+        if (!refreshTransactionSearchResults()) render()
+        return
+      }
       const startingSearch = !state.txSearch.trim()
-      state.txSearch = value
+      state.txSearch = latest
       if (startingSearch) state.txSearchPeriod = 'all'
-      render()
-      const next = $('#tx-search')
-      next?.focus({ preventScroll: true })
-      next?.setSelectionRange(cursor, cursor)
-    }, 180)
+      if (!refreshTransactionSearchResults()) render()
+    }, 350)
   })
   $('#tx-toggle-filters')?.addEventListener('click', () => {
     state.txSearchFiltersExpanded = !state.txSearchFiltersExpanded
@@ -1291,30 +1390,8 @@ function render() {
       render()
     })
   )
-  document.querySelectorAll('[data-tx-splits]').forEach(button =>
-    button.addEventListener('click', e => {
-      const id = e.currentTarget.dataset.txSplits
-      state.activeTxSplit = state.activeTxSplit === id ? '' : id
-      render()
-      ;[...document.querySelectorAll('[data-tx-splits]')]
-        .find(next => next.dataset.txSplits === id)
-        ?.focus({ preventScroll: true })
-    })
-  )
-  document.querySelectorAll('[data-tx-description]').forEach(button =>
-    button.addEventListener('click', e => {
-      const id = e.currentTarget.dataset.txDescription
-      state.activeTxDescription = state.activeTxDescription === id ? '' : id
-      render()
-    })
-  )
-  $('#tx-clear-search')?.addEventListener('click', () => {
-    state.txSearch = ''
-    state.txTypeFilter = 'all'
-    state.txCategoryFilters = []
-    state.txSearchPeriod = 'month'
-    render()
-  })
+  bindTransactionResultInteractions()
+  $('#tx-clear-search')?.addEventListener('click', clearTransactionSearch)
   document.querySelectorAll('[data-page]').forEach(
     b =>
       (b.onclick = () => {
