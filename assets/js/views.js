@@ -237,10 +237,10 @@ function renderTransactionRow(item, { hideDate = false } = {}) {
         ? `${a?.name || t('transactions.list.unknownAccount')} → ${account(item.toAccountId)?.name || t('transactions.list.unknownAccount')}`
         : a?.name || t('transactions.list.unknownAccount'),
     detail = [
+      item.time && displayTime(item.time),
       accountDetail,
       item.type !== 'transfer' && categoryName,
       !hideDate && displayDate(item.date),
-      item.time && displayTime(item.time),
       equivalent && t('transactions.list.equivalent', { amount: equivalent }),
     ]
       .filter(Boolean)
