@@ -1211,16 +1211,20 @@ function render() {
   })
   $('#tx-search')?.addEventListener('input', e => {
     const value = e.target.value,
-      cursor = e.target.selectionStart
+      cursor = e.target.selectionStart,
+      hadSearch = Boolean(state.txSearch.trim())
     clearTimeout(txSearchTimer)
     if (!value.trim()) {
       state.txSearch = ''
+      if (hadSearch) state.txSearchPeriod = 'month'
       render()
       $('#tx-search')?.focus({ preventScroll: true })
       return
     }
     txSearchTimer = setTimeout(() => {
+      const startingSearch = !state.txSearch.trim()
       state.txSearch = value
+      if (startingSearch) state.txSearchPeriod = 'all'
       render()
       const next = $('#tx-search')
       next?.focus({ preventScroll: true })
@@ -1308,6 +1312,7 @@ function render() {
     state.txSearch = ''
     state.txTypeFilter = 'all'
     state.txCategoryFilters = []
+    state.txSearchPeriod = 'month'
     render()
   })
   document.querySelectorAll('[data-page]').forEach(
