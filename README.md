@@ -574,6 +574,10 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-11-04 - Release 1.3.2
+
+- Bumped `APP_VERSION` to 1.3.2 for the transaction edit-after-search fix and removable split rows in the transaction form.
+
 ### 2026-11-04 - Remove split rows
 
 - Split transaction forms can remove an accidentally added split with an × control beside each amount input. Remove stays available only while more than two splits are present; the minimum of two allocations remains while Split into categories is enabled. Split amounts still must be positive and sum to the transaction total.
