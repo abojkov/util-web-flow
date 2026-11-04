@@ -584,9 +584,10 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
-### 2026-11-04 - Currency calculator
+### 2026-11-04 - Release 1.4.0
 
-- Added Currency calculator on More: live two-way conversion between the base reporting currency and another Settings-enabled currency using current reference rates, with rate source labeling, an unavailable-rate state and an empty state that links to Settings when only the base currency is enabled.
+- Bumped `APP_VERSION` to 1.4.0 for the Currency calculator on More.
+- Added Currency calculator: live two-way conversion between the base reporting currency and another Settings-enabled currency using current reference rates, with rate source labeling, an unavailable-rate state and an empty state that links to Settings when only the base currency is enabled. The selectable currency uses the same badge size as the base currency with a dropdown chevron.
 
 ### 2026-11-04 - Release 1.3.2
 
