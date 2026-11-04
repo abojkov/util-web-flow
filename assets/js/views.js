@@ -700,6 +700,12 @@ function bindTransactionResultInteractions() {
       render()
     })
   )
+  // Search refresh replaces list rows without a full render(); rebind edit here too.
+  document.querySelectorAll('[data-edit-tx]').forEach(
+    button =>
+      (button.onclick = () =>
+        transactionModal(state.transactions.find(tx => tx.id === button.dataset.editTx)))
+  )
 }
 
 function clearTransactionSearch() {
@@ -1484,13 +1490,6 @@ function render() {
         })
       })
   )
-  document
-    .querySelectorAll('[data-edit-tx]')
-    .forEach(
-      b =>
-        (b.onclick = () =>
-          transactionModal(state.transactions.find(t => t.id === b.dataset.editTx)))
-    )
   $('#open-categories')?.addEventListener('click', categoriesModal)
   $('#open-budgets')?.addEventListener('click', budgetsModal)
   $('#budget-quick')?.addEventListener('click', budgetsModal)

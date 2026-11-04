@@ -573,6 +573,10 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-11-04 - Edit after transaction search
+
+- Fixed the Transactions edit pencil after in-place search/filter updates. Live search replaces result rows without a full page render, so edit handlers are rebound with the other transaction row interactions. Edit opens the transaction modal again after typing in Search.
+
 ### 2026-11-02 - Release 1.3.1
 
 - Bumped `APP_VERSION` to 1.3.1 for refined navigation and More-menu icons, including a cleaner Home house, Settings gear and Categories tag outline. Mini action buttons keep centered padding for text glyphs such as the edit pen.
