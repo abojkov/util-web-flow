@@ -536,13 +536,30 @@ function transactionModal(tx, initial = 'expense', options = {}) {
                   amount: '',
                 },
               ]
+          const syncSplitRemoveButtons = () => {
+            const splitRows = [...document.querySelectorAll('#split-rows .split-row')]
+            const canRemove = splitRows.length > 2
+            splitRows.forEach(row => {
+              const button = row.querySelector('.split-remove')
+              if (!button) return
+              button.hidden = !canRemove
+              button.disabled = !canRemove
+            })
+          }
           const addRow = s => {
             const el = document.createElement('div')
             const pickerId = 'tx-split-category-' + ++splitPickerSequence
             el.className = 'field-row split-row'
-            el.innerHTML = `${categoryPicker(pickerId, chosen, s.categoryId, s.subcategoryId, '', 'split-cat')}<div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input class="split-amount" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" value="${s.amount ?? ''}" required></div>`
+            el.innerHTML = `${categoryPicker(pickerId, chosen, s.categoryId, s.subcategoryId, '', 'split-cat')}<div class="field split-amount-field"><label>${escapeHtml(t('modals.amount'))}</label><div class="split-amount-controls"><input class="split-amount" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" value="${s.amount ?? ''}" required><button type="button" class="mini-btn split-remove" title="${escapeHtml(t('modals.transaction.removeSplit'))}" aria-label="${escapeHtml(t('modals.transaction.removeSplit'))}">×</button></div></div>`
+            el.querySelector('.split-remove').onclick = () => {
+              if (document.querySelectorAll('#split-rows .split-row').length <= 2) return
+              el.remove()
+              syncSplitRemoveButtons()
+            }
             $('#split-rows').append(el)
             bindCategoryPicker(pickerId)
+            bindModalNumberInputs()
+            syncSplitRemoveButtons()
           }
           rows.forEach(addRow)
           $('#add-split').onclick = () => addRow({})

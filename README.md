@@ -144,6 +144,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Allow income and expense transactions to contain multiple category allocations.
 - Each split has a category, optional subcategory, amount and optional description.
 - Enabling splits hides and disables the main category field; only individual split categories are used. Disabling splits restores the main field and its prior selection. Editing/copying split transactions starts with the main field hidden.
+- Split rows start with two allocations. Users can add more splits and remove any extra split with the × control next to Amount. At least two splits remain while splitting is enabled; turn off Split into categories to use a single category instead. Split amounts must stay positive - use Remove split rather than entering 0.
 - Split transaction records retain `categoryId: null` and `subcategoryId: null` at the parent level. The existing schema already supports this, so no database migration or rewriting existing records is required.
 - Split transactions use a branching icon representing one amount divided into categories and show a clickable purple Split badge alongside the blue Note badge when present. It expands a breakdown below the transaction details, with one line per category/subcategory and its amount in the account’s native currency. Clicking again collapses it; the dashboard and transaction history share this behavior.
 - Sum of split amounts **must exactly equal** the parent transaction amount.
@@ -572,6 +573,10 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-11-04 - Remove split rows
+
+- Split transaction forms can remove an accidentally added split with an × control beside each amount input. Remove stays available only while more than two splits are present; the minimum of two allocations remains while Split into categories is enabled. Split amounts still must be positive and sum to the transaction total.
 
 ### 2026-11-04 - Edit after transaction search
 

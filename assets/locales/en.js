@@ -262,6 +262,7 @@ registerFlowLocale(
     'modals.transaction.save': 'Save transaction',
     'modals.transaction.splitIntoCategories': 'Split into categories',
     'modals.transaction.addSplit': '+ Add split',
+    'modals.transaction.removeSplit': 'Remove split',
     'modals.transaction.splitHint': 'Split amounts must equal the transaction total.',
     'modals.transaction.conversionPreview': 'Reporting estimate: {note}. This transaction keeps its own rate snapshot for historical reports.',
     'modals.transaction.confirmDeleteTitle': 'Delete transaction',

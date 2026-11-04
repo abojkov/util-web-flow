@@ -262,6 +262,7 @@ registerFlowLocale(
     'modals.transaction.save': 'Зачувај трансакција',
     'modals.transaction.splitIntoCategories': 'Подели по категории',
     'modals.transaction.addSplit': '+ Додај поделба',
+    'modals.transaction.removeSplit': 'Отстрани поделба',
     'modals.transaction.splitHint': 'Износите од поделбата мора да се еднакви на вкупниот износ.',
     'modals.transaction.conversionPreview': 'Процена за известување: {note}. Оваа трансакција го задржува сопствениот курс за историски извештаи.',
     'modals.transaction.confirmDeleteTitle': 'Избриши трансакција',

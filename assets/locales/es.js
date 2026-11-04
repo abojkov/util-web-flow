@@ -251,6 +251,7 @@ registerFlowLocale(
     'modals.transaction.save': 'Guardar transacción',
     'modals.transaction.splitIntoCategories': 'Dividir en categorías',
     'modals.transaction.addSplit': '+ Añadir división',
+    'modals.transaction.removeSplit': 'Quitar división',
     'modals.transaction.splitHint': 'Los importes divididos deben igualar el total de la transacción.',
     'modals.transaction.conversionPreview': 'Estimación de informe: {note}. Esta transacción conserva su propia instantánea de tipos para informes históricos.',
     'modals.transaction.confirmDeleteTitle': 'Eliminar transacción',
