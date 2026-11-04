@@ -1256,6 +1256,11 @@ function more() {
         <button class="btn secondary" id="open-recurring">${escapeHtml(t('more.recurring.button'))}</button>
       </section>
       <section class="settings-tile">
+        <h3><span class="settings-tile-icon">${icons.calculator}</span>${escapeHtml(t('more.calculator.title'))}</h3>
+        <p>${escapeHtml(t('more.calculator.desc'))}</p>
+        <button class="btn secondary" id="open-calculator">${escapeHtml(t('more.calculator.button'))}</button>
+      </section>
+      <section class="settings-tile">
         <h3><span class="settings-tile-icon">${icons.settings}</span>${escapeHtml(t('more.settings.title'))}</h3>
         <p>${escapeHtml(t('more.settings.desc'))}</p>
         <button class="btn secondary" id="open-settings">${escapeHtml(t('more.settings.button'))}</button>
@@ -1494,6 +1499,7 @@ function render() {
   $('#open-budgets')?.addEventListener('click', budgetsModal)
   $('#budget-quick')?.addEventListener('click', budgetsModal)
   $('#open-recurring')?.addEventListener('click', recurringModal)
+  $('#open-calculator')?.addEventListener('click', currencyCalculatorModal)
   $('#open-settings')?.addEventListener('click', settingsModal)
   applyShellI18n()
 }

@@ -828,6 +828,144 @@ function categoryEdit(c, initialType = 'expense') {
   }
 }
 
+let lastCalculatorCurrency = ''
+
+function calculatorCurrencies() {
+  return availableCurrencies().filter(code => code !== base())
+}
+
+function formatCalculatorAmount(value) {
+  if (!Number.isFinite(value)) return ''
+  return new Intl.NumberFormat('en-GB', {
+    useGrouping: false,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(roundAmount(value))
+}
+
+function currencyCalculatorModal() {
+  const baseCurrency = base()
+  const others = calculatorCurrencies()
+  if (!others.length) {
+    modal(
+      t('modals.calculator.title'),
+      `<div class="currency-calculator">${empty(
+        t('modals.calculator.empty.title'),
+        t('modals.calculator.empty.desc'),
+        icons.calculator
+      )}<div class="modal-footer"><button type="button" class="btn secondary" id="calculator-open-settings">${escapeHtml(t('modals.calculator.openSettings'))}</button></div></div>`
+    )
+    $('#calculator-open-settings').onclick = settingsModal
+    return
+  }
+  const selected =
+    others.includes(lastCalculatorCurrency) ? lastCalculatorCurrency : others[0]
+  lastCalculatorCurrency = selected
+  modal(
+    t('modals.calculator.title'),
+    `<div class="currency-calculator">
+      <p class="form-hint">${escapeHtml(t('modals.calculator.hint'))}</p>
+      <div class="calc-side">
+        <div class="calc-side-meta">
+          <label for="calc-base-amount">${escapeHtml(t('modals.calculator.baseAmount'))}</label>
+          <span class="calc-currency-code">${escapeHtml(baseCurrency)}</span>
+        </div>
+        <input id="calc-base-amount" class="calc-amount-input" type="text" inputmode="decimal" data-decimal-input pattern="${POSITIVE_DECIMAL_INPUT_PATTERN}" placeholder="0.00" value="1.00" autocomplete="off">
+      </div>
+      <div class="calc-rate-card" id="calc-rate" role="status"></div>
+      <div class="calc-side">
+        <div class="calc-side-meta">
+          <label for="calc-other-amount">${escapeHtml(t('modals.calculator.otherAmount'))}</label>
+          <select id="calc-currency" class="calc-currency-code calc-currency-select" aria-label="${escapeHtml(t('modals.calculator.currency'))}">${others
+            .map(
+              code =>
+                `<option value="${escapeHtml(code)}" ${code === selected ? 'selected' : ''}>${escapeHtml(code)}</option>`
+            )
+            .join('')}</select>
+        </div>
+        <input id="calc-other-amount" class="calc-amount-input" type="text" inputmode="decimal" data-decimal-input pattern="${POSITIVE_DECIMAL_INPUT_PATTERN}" placeholder="0.00" autocomplete="off">
+      </div>
+      <p class="notice">${escapeHtml(t('modals.calculator.notice'))}</p>
+    </div>`
+  )
+  const baseInput = $('#calc-base-amount')
+  const otherInput = $('#calc-other-amount')
+  const currencySelect = $('#calc-currency')
+  const rateCard = $('#calc-rate')
+  let activeSide = 'base'
+
+  const updateRateCard = () => {
+    const other = currencySelect.value
+    const rate = conversionRate(baseCurrency, other)
+    if (!rate) {
+      rateCard.textContent = t('currency.conversion.noRate', {
+        from: baseCurrency,
+        to: other,
+      })
+      rateCard.classList.add('is-missing')
+      return null
+    }
+    rateCard.classList.remove('is-missing')
+    rateCard.textContent = t('modals.calculator.rate', {
+      base: baseCurrency,
+      other,
+      rate: formatTransferRate(rate),
+      source: currencyRateSource(other),
+    })
+    return rate
+  }
+
+  const syncFromBase = () => {
+    const rate = updateRateCard()
+    const raw = baseInput.value.trim()
+    if (!raw) {
+      otherInput.value = ''
+      return
+    }
+    const value = amount(raw)
+    if (!Number.isFinite(value) || value < 0 || !rate) {
+      if (!rate) otherInput.value = ''
+      return
+    }
+    otherInput.value = formatCalculatorAmount(value * rate)
+  }
+
+  const syncFromOther = () => {
+    const rate = updateRateCard()
+    const raw = otherInput.value.trim()
+    if (!raw) {
+      baseInput.value = ''
+      return
+    }
+    const value = amount(raw)
+    if (!Number.isFinite(value) || value < 0 || !rate) {
+      if (!rate) baseInput.value = ''
+      return
+    }
+    baseInput.value = formatCalculatorAmount(value / rate)
+  }
+
+  const refresh = () => {
+    if (activeSide === 'other') syncFromOther()
+    else syncFromBase()
+  }
+
+  baseInput.addEventListener('input', () => {
+    activeSide = 'base'
+    syncFromBase()
+  })
+  otherInput.addEventListener('input', () => {
+    activeSide = 'other'
+    syncFromOther()
+  })
+  currencySelect.addEventListener('change', () => {
+    lastCalculatorCurrency = currencySelect.value
+    refresh()
+  })
+  bindModalNumberInputs()
+  syncFromBase()
+}
+
 function budgetsModal() {
   const items = orderedBudgets(state.budgets.filter(b => b.month === state.month))
   modal(

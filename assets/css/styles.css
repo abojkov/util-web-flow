@@ -1999,6 +1999,110 @@ main {
   min-height: 40px;
 }
 
+.currency-calculator {
+  display: grid;
+  gap: 14px;
+}
+
+.currency-calculator .form-hint {
+  margin: 0;
+}
+
+.calc-side {
+  background: #f7faff;
+  border: 1px solid #e4ecf8;
+  border-radius: 14px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.calc-side-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.calc-side-meta label {
+  margin: 0;
+  color: #6b7c95;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.calc-currency-code {
+  background: #eef4ff;
+  border-radius: 999px;
+  color: #3479f4;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  padding: 5px 10px;
+}
+
+span.calc-currency-code {
+  display: inline-flex;
+  align-items: center;
+}
+
+.calc-currency-select {
+  display: inline-block;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 5px 22px 5px 10px;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #eef4ff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233479f4' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+  background-size: 12px;
+}
+
+.calc-amount-input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #17365f;
+  padding: 0;
+  min-height: 40px;
+  outline: none;
+}
+
+.calc-amount-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.calc-rate-card {
+  text-align: center;
+  background: #edf5ff;
+  border-radius: 12px;
+  color: #4e6b94;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px 12px;
+}
+
+.calc-rate-card.is-missing {
+  background: #fff4f4;
+  color: #b42318;
+}
+
+.currency-calculator .notice {
+  margin: 0;
+}
+
 .toast {
   position: fixed;
   bottom: 90px;

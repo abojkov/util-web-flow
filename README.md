@@ -55,7 +55,7 @@ Flow Money Manager is an original personal finance app inspired by the functiona
 | Transactions | Add/edit/delete, chronological history, calendar, search and filters                    |
 | Statistics   | Spending distribution, income/expense comparisons, trends and reports                   |
 | Accounts     | Balances, account creation/editing, archiving and restoration                           |
-| More         | Categories, budgets, recurring rules, currencies, security, import/export, settings     |
+| More         | Categories, budgets, recurring rules, currency calculator, currencies, import/export, settings |
 
 ### Visual direction
 
@@ -183,6 +183,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - All-accounts current balance estimates convert each active account's current native balance using the current configured rates in Settings.
 - Historical transaction reports use transaction exchange-rate snapshots so old transaction values do not silently change when Settings rates are updated later.
 - Settings show editable local reference rates for all available currencies and the conversion formula.
+- **Currency calculator:** More includes Currency calculator. It converts live between the base reporting currency and one other currency enabled in Settings (from reference rates plus account currencies). Typing in either amount updates the other using the current Settings rates (`amount ÷ source rate × target rate`). The dialog shows `1 {base} ≈ {rate} {other}` with the rate source label (Manual, Synced or Local). Missing or invalid rates show an explicit unavailable state instead of inventing a quote. With only the base currency enabled, the dialog explains how to add another currency and links to Settings. The last selected non-base currency is remembered for the current session. Estimates are not transfers and do not create transactions.
 - Monetary UI values use one shared format: grouped number with two decimal places, followed by the uppercase currency code (for example, `1,234.50 EUR`, `10.00 MKD`). Symbols such as €/$ are not used for formatted amounts. Exchange-rate quotes retain their extra precision and use the same trailing currency-code convention. Stored amounts and CSV/JSON numerical values are unchanged.
 - Preserve original values and historical conversion information.
 - Use integer minor units where appropriate or an exact decimal strategy; avoid ordinary JS floating-point math for money.
@@ -234,7 +235,7 @@ Rules are listed by next date/time ascending, then label and ID, including pause
 - Base currency; display currency/number/date formatting.
 - **Language:** Settings & backup includes a Language selector (English, Spanish and Macedonian at launch). The choice is stored in IndexedDB as `language` and applied on reload. UI chrome, labels, empty states, toasts and month names follow the selected locale. User-entered data (account names, category names, payees, descriptions) is not translated. Starter categories are created in the active language on first run or after a full reset. Browser language is used as the initial default when no saved preference exists and a matching locale file is loaded.
 - **Time format:** Settings & backup includes Automatic, 24-hour and 12-hour choices stored as `timeFormat` (default Automatic). Automatic follows the device hour cycle; the other options override displayed times app-wide without changing stored values or native pickers. Changing the preference refreshes open views and the currency sync status hint.
-- Category management, archived accounts, recurring rules, budgets.
+- Category management, archived accounts, recurring rules, budgets and the currency calculator.
 - Optional app lock; backup and import/export tools.
 - No theme selector: light mode only.
 
@@ -415,6 +416,7 @@ Explicitly excluded unless the product owner changes the requirements:
 | F24 | Currency     | Optional startup rate synchronization           | Partial - focused checks passed | Browser file access and offline checks pending       |
 | F25 | Onboarding   | Welcome dialog on first launch and reset        | Partial - focused checks passed | Browser layout and persistence checks pending        |
 | F26 | Settings     | Language selector and UI translations           | Partial - focused checks passed | Browser switch/reload and third-locale checks pending |
+| F27 | Currency     | Base/other currency calculator on More          | Partial - focused checks passed | Browser two-way conversion and empty-state checks pending |
 
 ### Release phases
 
@@ -455,6 +457,14 @@ Explicitly excluded unless the product owner changes the requirements:
 - Preserve custom rates through reload and full JSON backup/restore.
 - Reject a reporting-currency change when any transaction snapshot lacks its required historical rates. Keep existing snapshots and ledger amounts unchanged.
 - Verify account creation and transfers using a new currency on mobile and desktop; amounts currently retain two-decimal precision.
+
+### Currency calculator checks
+
+- With only the base currency enabled, More → Currency calculator shows the empty state and Open settings reaches Settings & backup.
+- After adding another currency, the calculator converts both directions with Settings rates (for example 1.00 EUR at 61.5 fills 61.50 MKD; editing the MKD amount updates EUR).
+- Changing the other currency recalculates from the active amount field and remembers the selection for the session.
+- Missing or nonpositive rates show an unavailable message and do not invent a converted amount.
+- The calculator never creates transactions or changes stored rates.
 
 ### Reset data checks
 
@@ -573,6 +583,10 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-11-04 - Currency calculator
+
+- Added Currency calculator on More: live two-way conversion between the base reporting currency and another Settings-enabled currency using current reference rates, with rate source labeling, an unavailable-rate state and an empty state that links to Settings when only the base currency is enabled.
 
 ### 2026-11-04 - Release 1.3.2
 
