@@ -717,8 +717,9 @@ function categoriesModal() {
   }
   modal(
     t('modals.categories.title'),
-    `<div class="category-manager">${categorySection('expense', t('modals.categories.expenseTitle'), t('modals.categories.expenseDesc'))}${categorySection('income', t('modals.categories.incomeTitle'), t('modals.categories.incomeDesc'))}</div>`
+    `<div class="category-manager"><div class="toolbar"><p class="form-hint">${escapeHtml(t('modals.categories.reorganizeHint'))}</p><button type="button" class="btn secondary" id="reorganize-categories">${escapeHtml(t('modals.categories.reorganize'))}</button></div>${categorySection('expense', t('modals.categories.expenseTitle'), t('modals.categories.expenseDesc'))}${categorySection('income', t('modals.categories.incomeTitle'), t('modals.categories.incomeDesc'))}</div>`
   )
+  $('#reorganize-categories').onclick = categoryReorganizeModal
   document
     .querySelectorAll('[data-new-category]')
     .forEach(b => (b.onclick = () => categoryEdit(null, b.dataset.newCategory)))
@@ -754,6 +755,347 @@ function categoriesModal() {
         })
       })
   )
+}
+
+function parseCategoryReorganizeItem(value) {
+  const [kind, categoryId, subcategoryId] = String(value || '').split(':')
+  if (kind === 'sub' && categoryId && subcategoryId)
+    return { kind: 'sub', categoryId, subcategoryId }
+  if (kind === 'cat' && categoryId) return { kind: 'cat', categoryId, subcategoryId: '' }
+  return null
+}
+
+function categoryReorganizeItemOptions(selected = '') {
+  const options = []
+  for (const type of ['expense', 'income']) {
+    const categories = state.categories.filter(c => c.type === type).sort(sortByOrderThenName)
+    for (const category of categories) {
+      const catValue = `cat:${category.id}`
+      options.push(
+        `<option value="${escapeHtml(catValue)}" ${catValue === selected ? 'selected' : ''}>${escapeHtml(category.name)} (${escapeHtml(txTypeLabel(category.type))})</option>`
+      )
+      for (const sub of (category.subcategories || []).slice().sort(sortByOrderThenName)) {
+        const subValue = `sub:${category.id}:${sub.id}`
+        options.push(
+          `<option value="${escapeHtml(subValue)}" ${subValue === selected ? 'selected' : ''}>${escapeHtml(category.name)} / ${escapeHtml(sub.name)}</option>`
+        )
+      }
+    }
+  }
+  return options.join('')
+}
+
+function categoryReorganizeDestinationOptions(itemValue) {
+  const item = parseCategoryReorganizeItem(itemValue)
+  if (!item) return `<option value="">${escapeHtml(t('modals.categories.reorganize.chooseItem'))}</option>`
+  if (item.kind === 'cat') {
+    const source = cat(item.categoryId)
+    if (!source)
+      return `<option value="">${escapeHtml(t('modals.categories.reorganize.chooseItem'))}</option>`
+    const targets = state.categories
+      .filter(c => c.type === source.type && c.id !== source.id)
+      .sort(sortByOrderThenName)
+    if (!targets.length)
+      return `<option value="">${escapeHtml(t('modals.categories.reorganize.noParentTargets'))}</option>`
+    return (
+      `<option value="">${escapeHtml(t('modals.categories.reorganize.chooseDestination'))}</option>` +
+      targets
+        .map(
+          c =>
+            `<option value="cat:${escapeHtml(c.id)}">${escapeHtml(t('modals.categories.reorganize.makeSubOf', { name: c.name }))}</option>`
+        )
+        .join('')
+    )
+  }
+  const parent = cat(item.categoryId)
+  if (!parent)
+    return `<option value="">${escapeHtml(t('modals.categories.reorganize.chooseItem'))}</option>`
+  const targets = state.categories
+    .filter(c => c.type === parent.type && c.id !== parent.id)
+    .sort(sortByOrderThenName)
+  return (
+    `<option value="">${escapeHtml(t('modals.categories.reorganize.chooseDestination'))}</option>` +
+    `<option value="promote">${escapeHtml(t('modals.categories.reorganize.promote'))}</option>` +
+    targets
+      .map(
+        c =>
+          `<option value="cat:${escapeHtml(c.id)}">${escapeHtml(t('modals.categories.reorganize.moveUnder', { name: c.name }))}</option>`
+      )
+      .join('')
+  )
+}
+
+function remapCategoryReferences(remap) {
+  const writes = []
+  const now = new Date().toISOString()
+  for (const tx of state.transactions) {
+    let changed = false
+    let next = null
+    const ensure = () => {
+      if (!next) next = { ...tx, splits: tx.splits ? tx.splits.map(split => ({ ...split })) : tx.splits }
+      return next
+    }
+    if (tx.categoryId) {
+      const mapped = remap(tx.categoryId, tx.subcategoryId || null)
+      if (
+        mapped &&
+        (mapped.categoryId !== tx.categoryId ||
+          (mapped.subcategoryId || null) !== (tx.subcategoryId || null))
+      ) {
+        ensure().categoryId = mapped.categoryId
+        ensure().subcategoryId = mapped.subcategoryId || null
+        changed = true
+      }
+    }
+    if (tx.splits?.length) {
+      const splits = tx.splits.map(split => {
+        const mapped = remap(split.categoryId, split.subcategoryId || null)
+        if (
+          !mapped ||
+          (mapped.categoryId === split.categoryId &&
+            (mapped.subcategoryId || null) === (split.subcategoryId || null))
+        )
+          return split
+        changed = true
+        return {
+          ...split,
+          categoryId: mapped.categoryId,
+          subcategoryId: mapped.subcategoryId || null,
+        }
+      })
+      if (changed) ensure().splits = splits
+    }
+    if (changed) {
+      ensure().updatedAt = now
+      writes.push({ store: 'transactions', item: next })
+    }
+  }
+  return writes
+}
+
+function withNormalizedSubSort(subcategories) {
+  return (subcategories || []).map((item, sortOrder) => ({ ...item, sortOrder }))
+}
+
+async function applyCategoryReorganize(itemValue, destinationValue) {
+  const fail = message => {
+    toast(message)
+    return false
+  }
+  const item = parseCategoryReorganizeItem(itemValue)
+  if (!item) return fail(t('toasts.categoryReorganizeChooseItem'))
+  if (!destinationValue) return fail(t('toasts.categoryReorganizeChooseDestination'))
+
+  if (item.kind === 'cat') {
+    const targetId = destinationValue.startsWith('cat:') ? destinationValue.slice(4) : ''
+    const source = cat(item.categoryId)
+    const target = cat(targetId)
+    if (!source || !target) return fail(t('toasts.categoryReorganizeInvalid'))
+    if (source.id === target.id) return fail(t('toasts.categoryReorganizeSameCategory'))
+    if (source.type !== target.type) return fail(t('toasts.categoryReorganizeTypeMismatch'))
+    for (const budget of state.budgets.filter(b => b.categoryId === source.id)) {
+      if (state.budgets.some(b => b.categoryId === target.id && b.month === budget.month))
+        return fail(
+          t('toasts.categoryReorganizeBudgetConflict', { month: monthLabel(budget.month) })
+        )
+    }
+    const formerSubs = (source.subcategories || []).slice().sort(sortByOrderThenName)
+    const demoted = {
+      id: source.id,
+      name: source.name,
+      icon: source.icon || '◦',
+      sortOrder: (target.subcategories || []).length,
+    }
+    const movedSubs = formerSubs.map((sub, index) => ({
+      ...sub,
+      sortOrder: (target.subcategories || []).length + 1 + index,
+    }))
+    const updatedTarget = {
+      ...target,
+      subcategories: withNormalizedSubSort([
+        ...(target.subcategories || []),
+        demoted,
+        ...movedSubs,
+      ]),
+    }
+    const writes = [
+      { store: 'categories', item: updatedTarget },
+      { store: 'categories', id: source.id, delete: true },
+      ...state.budgets
+        .filter(b => b.categoryId === source.id)
+        .map(b => ({ store: 'budgets', item: { ...b, categoryId: target.id } })),
+      ...state.recurring
+        .filter(r => r.categoryId === source.id)
+        .map(r => ({ store: 'recurring', item: { ...r, categoryId: target.id } })),
+      ...remapCategoryReferences((categoryId, subcategoryId) => {
+        if (categoryId !== source.id) return null
+        if (!subcategoryId) return { categoryId: target.id, subcategoryId: source.id }
+        return { categoryId: target.id, subcategoryId }
+      }),
+    ]
+    await putAll(writes)
+    await reload()
+    toast(t('toasts.categoryReorganizeDemoted', { name: source.name, parent: target.name }))
+    categoryReorganizeModal()
+    return true
+  }
+
+  const parent = cat(item.categoryId)
+  const sub = parent?.subcategories?.find(s => s.id === item.subcategoryId)
+  if (!parent || !sub) return fail(t('toasts.categoryReorganizeInvalid'))
+
+  if (destinationValue === 'promote') {
+    const newCategory = {
+      id: sub.id,
+      name: sub.name,
+      type: parent.type,
+      icon: sub.icon || parent.icon || '◈',
+      color: parent.color || '#3b82f6',
+      sortOrder: state.categories.filter(c => c.type === parent.type).length,
+      subcategories: [],
+    }
+    const updatedParent = {
+      ...parent,
+      subcategories: withNormalizedSubSort(
+        (parent.subcategories || []).filter(s => s.id !== sub.id)
+      ),
+    }
+    const writes = [
+      { store: 'categories', item: updatedParent },
+      { store: 'categories', item: newCategory },
+      ...remapCategoryReferences((categoryId, subcategoryId) => {
+        if (categoryId === parent.id && subcategoryId === sub.id)
+          return { categoryId: sub.id, subcategoryId: null }
+        return null
+      }),
+    ]
+    await putAll(writes)
+    await reload()
+    toast(t('toasts.categoryReorganizePromoted', { name: sub.name }))
+    categoryReorganizeModal()
+    return true
+  }
+
+  const targetId = destinationValue.startsWith('cat:') ? destinationValue.slice(4) : ''
+  const target = cat(targetId)
+  if (!target) return fail(t('toasts.categoryReorganizeInvalid'))
+  if (target.id === parent.id) return fail(t('toasts.categoryReorganizeSameCategory'))
+  if (target.type !== parent.type) return fail(t('toasts.categoryReorganizeTypeMismatch'))
+  const updatedParent = {
+    ...parent,
+    subcategories: withNormalizedSubSort(
+      (parent.subcategories || []).filter(s => s.id !== sub.id)
+    ),
+  }
+  const updatedTarget = {
+    ...target,
+    subcategories: withNormalizedSubSort([
+      ...(target.subcategories || []),
+      { ...sub, sortOrder: (target.subcategories || []).length },
+    ]),
+  }
+  const writes = [
+    { store: 'categories', item: updatedParent },
+    { store: 'categories', item: updatedTarget },
+    ...remapCategoryReferences((categoryId, subcategoryId) => {
+      if (categoryId === parent.id && subcategoryId === sub.id)
+        return { categoryId: target.id, subcategoryId: sub.id }
+      return null
+    }),
+  ]
+  await putAll(writes)
+  await reload()
+  toast(t('toasts.categoryReorganizeMoved', { name: sub.name, parent: target.name }))
+  categoryReorganizeModal()
+  return true
+}
+
+function categoryReorganizeModal(selectedItem = '') {
+  const initialItem =
+    selectedItem && parseCategoryReorganizeItem(selectedItem)
+      ? selectedItem
+      : ''
+  const itemOptions = categoryReorganizeItemOptions(initialItem)
+  if (!itemOptions) {
+    modal(
+      t('modals.categories.reorganizeTitle'),
+      `<div class="category-reorganize">${empty(
+        t('modals.categories.reorganize.empty.title'),
+        t('modals.categories.reorganize.empty.desc'),
+        icons.categories
+      )}<div class="modal-footer"><button type="button" class="btn ghost" id="reorganize-back">${escapeHtml(t('modals.categories.reorganize.back'))}</button></div></div>`
+    )
+    $('#reorganize-back').onclick = categoriesModal
+    return
+  }
+  modal(
+    t('modals.categories.reorganizeTitle'),
+    `<form id="category-reorganize-form" class="category-reorganize">
+      <p class="form-hint">${escapeHtml(t('modals.categories.reorganize.intro'))}</p>
+      <div class="field">
+        <label for="reorganize-item">${escapeHtml(t('modals.categories.reorganize.item'))}</label>
+        <select id="reorganize-item" required>
+          <option value="">${escapeHtml(t('modals.categories.reorganize.chooseItem'))}</option>
+          ${itemOptions}
+        </select>
+      </div>
+      <div class="field">
+        <label for="reorganize-destination">${escapeHtml(t('modals.categories.reorganize.destination'))}</label>
+        <select id="reorganize-destination" required>${categoryReorganizeDestinationOptions(initialItem)}</select>
+      </div>
+      <div class="notice" id="reorganize-notice">${escapeHtml(t('modals.categories.reorganize.notice'))}</div>
+      <div class="modal-footer">
+        <button type="button" class="btn ghost" id="reorganize-back">${escapeHtml(t('modals.categories.reorganize.back'))}</button>
+        <button class="btn" type="submit">${escapeHtml(t('modals.categories.reorganize.apply'))}</button>
+      </div>
+    </form>`
+  )
+  const itemSelect = $('#reorganize-item')
+  const destinationSelect = $('#reorganize-destination')
+  if (initialItem) itemSelect.value = initialItem
+  const refreshDestination = () => {
+    destinationSelect.innerHTML = categoryReorganizeDestinationOptions(itemSelect.value)
+  }
+  itemSelect.onchange = refreshDestination
+  $('#reorganize-back').onclick = categoriesModal
+  $('#category-reorganize-form').onsubmit = e => {
+    e.preventDefault()
+    const itemValue = itemSelect.value
+    const destinationValue = destinationSelect.value
+    const item = parseCategoryReorganizeItem(itemValue)
+    if (!item) return toast(t('toasts.categoryReorganizeChooseItem'))
+    if (!destinationValue) return toast(t('toasts.categoryReorganizeChooseDestination'))
+    const message =
+      item.kind === 'cat'
+        ? t('modals.categories.reorganize.confirmDemote', {
+            name: cat(item.categoryId)?.name || '',
+            parent: cat(destinationValue.slice(4))?.name || '',
+          })
+        : destinationValue === 'promote'
+          ? t('modals.categories.reorganize.confirmPromote', {
+              name: subcat(item.categoryId, item.subcategoryId)?.name || '',
+            })
+          : t('modals.categories.reorganize.confirmMove', {
+              name: subcat(item.categoryId, item.subcategoryId)?.name || '',
+              parent: cat(destinationValue.slice(4))?.name || '',
+            })
+    confirmAction({
+      title: t('modals.categories.reorganize.confirmTitle'),
+      message,
+      confirmText: t('modals.categories.reorganize.apply'),
+      onCancel: () => categoryReorganizeModal(itemValue),
+      onConfirm: async () => {
+        try {
+          const ok = await applyCategoryReorganize(itemValue, destinationValue)
+          if (!ok) categoryReorganizeModal(itemValue)
+        } catch (error) {
+          console.error(error)
+          toast(t('toasts.categoryReorganizeFailed'))
+          categoryReorganizeModal(itemValue)
+        }
+      },
+    })
+  }
 }
 
 function categoryEdit(c, initialType = 'expense') {

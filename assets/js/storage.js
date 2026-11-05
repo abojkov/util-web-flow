@@ -47,6 +47,23 @@ async function del(store, id) {
   })
 }
 
+// Atomic multi-store writes for related financial records (put and/or delete).
+async function putAll(writes) {
+  if (!writes.length) return
+  const db = await openDB()
+  return new Promise((res, rej) => {
+    const stores = [...new Set(writes.map(write => write.store))]
+    const tx = db.transaction(stores, 'readwrite')
+    for (const write of writes) {
+      if (write.delete) tx.objectStore(write.store).delete(write.id)
+      else tx.objectStore(write.store).put(write.item)
+    }
+    tx.oncomplete = res
+    tx.onerror = () => rej(tx.error)
+    tx.onabort = () => rej(tx.error || new Error('Update was aborted'))
+  })
+}
+
 async function replaceAll(data) {
   const db = await openDB()
   return new Promise((res, rej) => {

@@ -194,6 +194,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Custom names, icons, colors and ordering.
 - Manage categories constrains its grid to the dialog width. On mobile, compact 30px category icons and 28px-wide sort/edit/delete buttons keep all four actions together on the right in the first row. The name column shrinks and wraps as needed; subcategory chips wrap within the dialog. Desktop sizing and layout are unchanged by these compact mobile styles.
 - Moving a category up/down preserves the category dialog's scroll position and focuses the moved category's corresponding sort button without scrolling. Subcategory sorting retains its existing inline behavior.
+- **Temporary category reorganize:** Manage categories includes Reorganize for restructuring existing records. Supported moves: demote a main category under another same-type category as a subcategory; move a subcategory to a different same-type parent; promote a subcategory to a main category. Demoting a category also moves its current subcategories under the new parent as siblings. Related transactions and splits are rewritten in one IndexedDB transaction. Budgets and recurring rules on a demoted category move to the new parent; the move is blocked when the destination already has a budget for the same month. Income and expense stay separate. This helper is temporary and may be removed after cleanup use.
 - Optional editable starter categories; no seeded financial records.
 - Prevent deletion or reassignment from silently corrupting historical records.
 
@@ -417,6 +418,7 @@ Explicitly excluded unless the product owner changes the requirements:
 | F25 | Onboarding   | Welcome dialog on first launch and reset        | Partial - focused checks passed | Browser layout and persistence checks pending        |
 | F26 | Settings     | Language selector and UI translations           | Partial - focused checks passed | Browser switch/reload and third-locale checks pending |
 | F27 | Currency     | Base/other currency calculator on More          | Partial - focused checks passed | Browser two-way conversion and empty-state checks pending |
+| F28 | Categories   | Temporary category/subcategory reorganize       | Partial - focused checks passed | Browser demote/move/promote and budget-conflict checks pending |
 
 ### Release phases
 
@@ -457,6 +459,13 @@ Explicitly excluded unless the product owner changes the requirements:
 - Preserve custom rates through reload and full JSON backup/restore.
 - Reject a reporting-currency change when any transaction snapshot lacks its required historical rates. Keep existing snapshots and ledger amounts unchanged.
 - Verify account creation and transfers using a new currency on mobile and desktop; amounts currently retain two-decimal precision.
+
+### Category reorganize checks
+
+- Manage categories → Reorganize can demote a category under another same-type parent, move a subcategory to another parent and promote a subcategory to a main category.
+- Related transactions and splits update to the new category/subcategory IDs; demotion also relocates former child subcategories as siblings under the new parent.
+- Budgets and recurring rules on a demoted category move to the new parent; a same-month destination budget blocks the move.
+- Cross-type destinations are not offered. Cancel leaves records unchanged.
 
 ### Currency calculator checks
 
@@ -583,6 +592,10 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-11-05 - Temporary category reorganize
+
+- Added a temporary Reorganize helper in Manage categories to demote a category into another as a subcategory, move a subcategory to a different parent or promote a subcategory to a main category, updating related transactions, splits, budgets and recurring rules atomically.
 
 ### 2026-11-04 - Release 1.4.0
 
