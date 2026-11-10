@@ -1704,6 +1704,27 @@ main {
   padding-top: 0;
 }
 
+.category-manager > .toolbar {
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.category-manager > .toolbar .form-hint {
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+}
+
+.category-reorganize {
+  display: grid;
+  gap: 14px;
+}
+
+.category-reorganize .form-hint,
+.category-reorganize .notice {
+  margin: 0;
+}
+
 .category-manager {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
