@@ -594,6 +594,10 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-11-10 - Release 1.4.1
+
+- Bumped `APP_VERSION` to 1.4.1 for zero-value income and expense transactions.
+
 ### 2026-11-10 - Category reorganize placement
 
 - Moved the Reorganize action to the end of the Manage categories dialog.
