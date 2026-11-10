@@ -135,7 +135,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Display all full dates as `dd.mm.yyyy`, including transaction rows, weekly range labels, recurring next-date labels and currency sync status. Displayed times (transaction rows, recurring next-time labels and sync timestamps) use the shared `displayTime` helper and Settings → Time format (`timeFormat` in IndexedDB): Automatic (default) follows the device/OS hour cycle via the browser runtime locale; 24-hour and 12-hour force that cycle app-wide (locale AM/PM markers may vary). Source date ranges are formatted without timezone conversion using the shared `displayDate` helper. Native date/date-time picker appearance still follows browser/OS locale; stored dates and CSV/JSON dates remain ISO `yyyy-mm-dd` and `HH:mm` for reliable sorting and interchange. Export filenames keep padded 24-hour `HHmm` stamps. Month/year headings retain their existing labels.
 - Support daily/calendar, weekly, monthly and chronological review. Transaction lists are newest first across every period and text/account/category filter: local date descending, then local time descending (missing time treated as midnight), then creation timestamp and ID for stable ties. The Transactions view inserts a full-width blue day separator between date groups labeled Today, Yesterday or weekday plus `dd.mm.yyyy`; grouped rows omit the redundant date from their detail line but keep time. Detail lines show time, then account, then category (income/expense), then date when the row is not date-grouped and optional base-currency equivalent. Dashboard recent transactions use the same detail order without day separators. Unfiltered All history retains its latest-250 display limit after sorting.
 - Filter by date range, account, type, category/subcategory and search text. The Type dropdown supports All types, Income, Expenses and Transfers. Period defaults to Monthly. The first non-empty payee/description search entry switches Period to All history; further edits while the field stays non-empty leave Period unchanged. Clearing the search field or using Clear search restores Monthly. Select Transfers + All history + All accounts with an empty text search to review every recorded transfer, newest first, without the unfiltered-history 250-row cap. Transfer mode hides/ignores category filters; selecting it clears category selections. Clear search sits at the bottom of the search panel and resets Type to All types and Period to Monthly. Existing Payee/Description values remain untouched for manual review/editing. Transaction search starts at 2 characters and resets when the search field is blank. Debounced search updates refresh results in place without remounting the search input, avoiding dropped keystrokes on iOS Safari/PWA during large All history filters. On wider screens, Search / Type / Period / Account stay on one row with categories below. On mobile viewports (`max-width: 750px`), type/period/account/category filters collapse behind a Filters control (closed by default); the payee/description search field stays visible. Expansion is session UI state only and resets when leaving Transactions. Category search supports selecting multiple category badges at once; income and expense groups are collapsed by default, selecting a parent category includes all of its subcategories and expandable categories allow selecting only specific subcategories. Search period navigation changes with the selected period: monthly, weekly, yearly or no navigator for all history.
-- Validate positive amounts, valid account/category references, dates and transfer endpoints.
+- Validate non-negative income and expense amounts, positive transfer amounts, valid account/category references, dates and transfer endpoints.
 - Changes must consistently update all dependent balances, charts and budgets.
 - Deletions must be intentional and confirmable.
 
@@ -144,7 +144,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Allow income and expense transactions to contain multiple category allocations.
 - Each split has a category, optional subcategory, amount and optional description.
 - Enabling splits hides and disables the main category field; only individual split categories are used. Disabling splits restores the main field and its prior selection. Editing/copying split transactions starts with the main field hidden.
-- Split rows start with two allocations. Users can add more splits and remove any extra split with the × control next to Amount. At least two splits remain while splitting is enabled; turn off Split into categories to use a single category instead. Split amounts must stay positive - use Remove split rather than entering 0.
+- Split rows start with two allocations. Users can add more splits and remove any extra split with the × control next to Amount. At least two splits remain while splitting is enabled; turn off Split into categories to use a single category instead. Split amounts can be zero and must sum exactly to the transaction total.
 - Split transaction records retain `categoryId: null` and `subcategoryId: null` at the parent level. The existing schema already supports this, so no database migration or rewriting existing records is required.
 - Split transactions use a branching icon representing one amount divided into categories and show a clickable purple Split badge alongside the blue Note badge when present. It expands a breakdown below the transaction details, with one line per category/subcategory and its amount in the account’s native currency. Clicking again collapses it; the dashboard and transaction history share this behavior.
 - Sum of split amounts **must exactly equal** the parent transaction amount.
@@ -515,6 +515,7 @@ Explicitly excluded unless the product owner changes the requirements:
 - [ ] Records persist across reloads on the supported target browser.
 - [ ] €1,000 opening balance + €200 income − €75 expense = €1,125 balance.
 - [ ] Transfer of €100 between two EUR accounts changes each account correctly without changing combined total.
+- [ ] A zero-value income or expense saves without changing balances. Transfers still require a positive amount.
 - [ ] Cross-currency transfer records source and destination amounts accurately; unavailable rates do not produce fictional reports.
 - [ ] A €50 expense split €35/€15 reduces account balance by €50 and distributes budget/statistics by €35/€15.
 - [ ] Split amounts not equal to parent total are rejected.
@@ -598,6 +599,10 @@ Before treating any feature as complete, ask Codex:
 - Moved the Reorganize action to the end of the Manage categories dialog.
 - Aligned the Reorganize hint and action vertically in one row.
 
+### 2026-11-10 - Zero-value transactions
+
+- Income, expense and split allocation amounts now accept zero. Transfers still require a positive amount.
+
 ### 2026-11-05 - Category reorganize
 
 - Added Reorganize in Manage categories to demote a category into another as a subcategory, move a subcategory to a different parent or promote a subcategory to a main category, updating related transactions, splits, budgets and recurring rules atomically.
@@ -613,7 +618,7 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-11-04 - Remove split rows
 
-- Split transaction forms can remove an accidentally added split with an × control beside each amount input. Remove stays available only while more than two splits are present; the minimum of two allocations remains while Split into categories is enabled. Split amounts still must be positive and sum to the transaction total.
+- Split transaction forms can remove an accidentally added split with an × control beside each amount input. Remove stays available only while more than two splits are present; the minimum of two allocations remains while Split into categories is enabled. Split amounts can be zero and must sum to the transaction total.
 
 ### 2026-11-04 - Edit after transaction search
 

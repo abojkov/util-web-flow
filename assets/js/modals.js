@@ -604,7 +604,8 @@ function transactionModal(tx, initial = 'expense', options = {}) {
       from = account(f.get('accountId'))
     if (!from) return toast(t('toasts.selectAccount'))
     const v = amount(f.get('amount'))
-    if (!Number.isFinite(v) || v <= 0) return toast(t('toasts.validAmount'))
+    if (!Number.isFinite(v) || v < 0 || (chosen === 'transfer' && v === 0))
+      return toast(t('toasts.validAmount'))
     const dateTime = String(f.get('datetime') || '')
     const parts = /^(\d{4})-(\d{2})-(\d{2})T([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/.exec(
       dateTime
@@ -674,7 +675,7 @@ function transactionModal(tx, initial = 'expense', options = {}) {
         })
         if (record.splits.some(split => !validCategory(split)))
           return toast(t('toasts.validSplitCategory'))
-        if (record.splits.some(split => !Number.isFinite(split.amount) || split.amount <= 0))
+        if (record.splits.some(split => !Number.isFinite(split.amount) || split.amount < 0))
           return toast(t('toasts.validSplitAmount'))
         if (
           Math.round(record.splits.reduce((s, x) => s + x.amount, 0) * 100) !== Math.round(v * 100)
