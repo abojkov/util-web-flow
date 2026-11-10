@@ -303,7 +303,7 @@ registerFlowLocale(
     'modals.categories.empty.income.title': 'No income categories',
     'modals.categories.empty.income.desc': 'Create an income category to organize transactions.',
     'modals.categories.reorganize': 'Reorganize',
-    'modals.categories.reorganizeHint': 'Temporary helper to restructure existing categories and update related records.',
+    'modals.categories.reorganizeHint': 'Reorganize existing categories and update their related records.',
     'modals.categories.reorganizeTitle': 'Reorganize categories',
     'modals.categories.reorganize.intro': 'Move a category under another category, move a subcategory to a different parent or promote a subcategory to a main category. Existing transactions, splits, budgets and recurring rules are updated to match.',
     'modals.categories.reorganize.item': 'Item to move',

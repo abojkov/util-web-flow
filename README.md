@@ -194,7 +194,7 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 - Custom names, icons, colors and ordering.
 - Manage categories constrains its grid to the dialog width. On mobile, compact 30px category icons and 28px-wide sort/edit/delete buttons keep all four actions together on the right in the first row. The name column shrinks and wraps as needed; subcategory chips wrap within the dialog. Desktop sizing and layout are unchanged by these compact mobile styles.
 - Moving a category up/down preserves the category dialog's scroll position and focuses the moved category's corresponding sort button without scrolling. Subcategory sorting retains its existing inline behavior.
-- **Temporary category reorganize:** Manage categories includes Reorganize for restructuring existing records. Supported moves: demote a main category under another same-type category as a subcategory; move a subcategory to a different same-type parent; promote a subcategory to a main category. Demoting a category also moves its current subcategories under the new parent as siblings. Related transactions and splits are rewritten in one IndexedDB transaction. Budgets and recurring rules on a demoted category move to the new parent; the move is blocked when the destination already has a budget for the same month. Income and expense stay separate. This helper is temporary and may be removed after cleanup use.
+- **Category reorganize:** Manage categories includes Reorganize for restructuring existing records at the end of the dialog. Its hint and action stay in one row with vertical alignment. Supported moves: demote a main category under another same-type category as a subcategory; move a subcategory to a different same-type parent; promote a subcategory to a main category. Demoting a category also moves its current subcategories under the new parent as siblings. Related transactions and splits are rewritten in one IndexedDB transaction. Budgets and recurring rules on a demoted category move to the new parent; the move is blocked when the destination already has a budget for the same month. Income and expense stay separate.
 - Optional editable starter categories; no seeded financial records.
 - Prevent deletion or reassignment from silently corrupting historical records.
 
@@ -418,7 +418,7 @@ Explicitly excluded unless the product owner changes the requirements:
 | F25 | Onboarding   | Welcome dialog on first launch and reset        | Partial - focused checks passed | Browser layout and persistence checks pending        |
 | F26 | Settings     | Language selector and UI translations           | Partial - focused checks passed | Browser switch/reload and third-locale checks pending |
 | F27 | Currency     | Base/other currency calculator on More          | Partial - focused checks passed | Browser two-way conversion and empty-state checks pending |
-| F28 | Categories   | Temporary category/subcategory reorganize       | Partial - focused checks passed | Browser demote/move/promote and budget-conflict checks pending |
+| F28 | Categories   | Category/subcategory reorganize                 | Partial - focused checks passed | Browser demote/move/promote and budget-conflict checks pending |
 
 ### Release phases
 
@@ -593,9 +593,14 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
-### 2026-11-05 - Temporary category reorganize
+### 2026-11-10 - Category reorganize placement
 
-- Added a temporary Reorganize helper in Manage categories to demote a category into another as a subcategory, move a subcategory to a different parent or promote a subcategory to a main category, updating related transactions, splits, budgets and recurring rules atomically.
+- Moved the Reorganize action to the end of the Manage categories dialog.
+- Aligned the Reorganize hint and action vertically in one row.
+
+### 2026-11-05 - Category reorganize
+
+- Added Reorganize in Manage categories to demote a category into another as a subcategory, move a subcategory to a different parent or promote a subcategory to a main category, updating related transactions, splits, budgets and recurring rules atomically.
 
 ### 2026-11-04 - Release 1.4.0
 
@@ -868,14 +873,14 @@ Before treating any feature as complete, ask Codex:
 
 ### 2026-10-17 - Collapsible archived accounts
 
-- Moved archived accounts into a native details/summary section with a count, closed by default. The clickable blue outlined header groups its chevron, label and count together and includes expand/collapse hints plus hover/focus feedback. Expansion is temporary UI state retained during account management and reset on navigation away/reload.
+- Moved archived accounts into a native details/summary section with a count, closed by default. The clickable blue outlined header groups its chevron, label and count together and includes expand/collapse hints plus hover/focus feedback. Expansion is UI-only state retained during account management and reset on navigation away/reload.
 - Existing inline balances and archived management actions remain available when expanded.
 - Verification: JavaScript syntax, focused collapsed/expanded/empty rendering and state checks, local asset/script-order checks and diff checks passed. Live browser touch/keyboard/layout and IndexedDB interaction remain unverified.
 
 ### 2026-10-17 - Accounts viewing and management modes
 
 - Added a Manage/Done toggle above Accounts (labeled Manage because it covers sorting, visibility, editing and archiving). Sorting, visibility, editing and archive/restore controls appear in management mode. Add account stays visible in both modes, including empty lists.
-- Kept mobile balances on the same row as account details and placed management actions underneath. Management mode is temporary UI state and resets on navigation away/reload; financial data and calculations are unchanged.
+- Kept mobile balances on the same row as account details and placed management actions underneath. Management mode is UI-only state and resets on navigation away/reload; financial data and calculations are unchanged.
 - Verification: focused rendering/toggle/reset checks, Add account visibility for populated/empty lists in both modes, JavaScript syntax, asset/script-order checks and diff checks passed. Live mobile layout and IndexedDB interaction verification remain pending.
 
 ### 2026-10-17 - Prevent form focus zoom on mobile

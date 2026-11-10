@@ -717,7 +717,7 @@ function categoriesModal() {
   }
   modal(
     t('modals.categories.title'),
-    `<div class="category-manager"><div class="toolbar"><p class="form-hint">${escapeHtml(t('modals.categories.reorganizeHint'))}</p><button type="button" class="btn secondary" id="reorganize-categories">${escapeHtml(t('modals.categories.reorganize'))}</button></div>${categorySection('expense', t('modals.categories.expenseTitle'), t('modals.categories.expenseDesc'))}${categorySection('income', t('modals.categories.incomeTitle'), t('modals.categories.incomeDesc'))}</div>`
+    `<div class="category-manager">${categorySection('expense', t('modals.categories.expenseTitle'), t('modals.categories.expenseDesc'))}${categorySection('income', t('modals.categories.incomeTitle'), t('modals.categories.incomeDesc'))}<div class="toolbar"><p class="form-hint">${escapeHtml(t('modals.categories.reorganizeHint'))}</p><button type="button" class="btn secondary" id="reorganize-categories">${escapeHtml(t('modals.categories.reorganize'))}</button></div></div>`
   )
   $('#reorganize-categories').onclick = categoryReorganizeModal
   document

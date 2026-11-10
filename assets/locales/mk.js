@@ -303,7 +303,7 @@ registerFlowLocale(
     'modals.categories.empty.income.title': 'Нема категории за приход',
     'modals.categories.empty.income.desc': 'Создајте категорија за приход за да ги организирате трансакциите.',
     'modals.categories.reorganize': 'Реорганизирај',
-    'modals.categories.reorganizeHint': 'Привремена помош за преструктурирање на постоечки категории и ажурирање на поврзаните записи.',
+    'modals.categories.reorganizeHint': 'Реорганизирајте ги постоечките категории и ажурирајте ги нивните поврзани записи.',
     'modals.categories.reorganizeTitle': 'Реорганизирај категории',
     'modals.categories.reorganize.intro': 'Преместете категорија под друга категорија, преместете поткатегорија кај друг родител или унапредете поткатегорија во главна категорија. Постоечките трансакции, поделби, буџети и периодични правила се ажурираат соодветно.',
     'modals.categories.reorganize.item': 'Ставка за преместување',

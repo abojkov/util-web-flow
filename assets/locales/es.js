@@ -291,7 +291,7 @@ registerFlowLocale(
     'modals.categories.empty.income.title': 'Sin categorías de ingresos',
     'modals.categories.empty.income.desc': 'Crea una categoría de ingresos para organizar transacciones.',
     'modals.categories.reorganize': 'Reorganizar',
-    'modals.categories.reorganizeHint': 'Ayuda temporal para reestructurar categorías existentes y actualizar los registros relacionados.',
+    'modals.categories.reorganizeHint': 'Reorganiza las categorías existentes y actualiza los registros relacionados.',
     'modals.categories.reorganizeTitle': 'Reorganizar categorías',
     'modals.categories.reorganize.intro': 'Mueve una categoría bajo otra, mueve una subcategoría a otro padre o convierte una subcategoría en categoría principal. Se actualizan las transacciones, divisiones, presupuestos y reglas recurrentes relacionadas.',
     'modals.categories.reorganize.item': 'Elemento a mover',

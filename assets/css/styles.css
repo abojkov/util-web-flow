@@ -1705,8 +1705,8 @@ main {
 }
 
 .category-manager > .toolbar {
-  align-items: flex-start;
-  margin-bottom: 16px;
+  align-items: center;
+  margin-bottom: 0;
 }
 
 .category-manager > .toolbar .form-hint {
