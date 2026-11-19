@@ -1313,7 +1313,8 @@ main {
 
 .field textarea {
   min-height: 110px;
-  resize: vertical;
+  resize: none;
+  overflow-y: hidden;
 }
 
 .field input[type='checkbox'],

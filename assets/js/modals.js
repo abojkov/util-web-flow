@@ -370,6 +370,15 @@ function transactionModal(tx, initial = 'expense', options = {}) {
     isExisting ? t('modals.transaction.editTitle') : t('modals.transaction.newTitle'),
     `<form id="tx-form"><div class="segmented">${['expense', 'income', 'transfer'].map(x => `<button type="button" data-type="${x}" class="${x === type ? 'active' : ''}">${escapeHtml(txTypeLabel(x))}</button>`).join('')}</div><div class="field-row"><div class="field"><label for="tx-datetime">${escapeHtml(t('modals.transaction.dateTime'))}</label><input id="tx-datetime" type="datetime-local" name="datetime" value="${escapeHtml((tx?.date || today()) + 'T' + (tx?.time || currentTime()))}" required></div><div class="field"><label>${escapeHtml(t('modals.amount'))}</label><input id="tx-amount" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" name="amount" value="${tx?.amount ?? ''}" required placeholder="0.00"></div></div>${accountPicker('tx-account', 'accountId', t('modals.transaction.account'), tx?.accountId || active[0]?.id || '')}<div class="field" id="tx-rate-field" hidden><label id="tx-rate-label">${escapeHtml(t('modals.transaction.exchangeRate'))}</label><input id="tx-rate" name="exchangeRateSource" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}"></div><div class="notice conversion-preview" id="tx-conversion" hidden></div><div id="tx-extra"></div><div class="field"><label>${escapeHtml(t('modals.transaction.payee'))}</label>${payeeAutocompleteInput(tx?.payee ?? tx?.place ?? '', 'tx-payee')}</div><div class="field"><label>${escapeHtml(t('modals.transaction.description'))}</label><textarea name="description" maxlength="1200" rows="4" placeholder="${escapeHtml(t('modals.transaction.descriptionPlaceholder'))}">${escapeHtml(tx?.description ?? tx?.note ?? '')}</textarea></div><div class="modal-footer">${isExisting ? `<button type="button" class="btn danger" id="delete-tx">${escapeHtml(t('modals.transaction.delete'))}</button><button type="button" class="btn secondary" id="copy-tx">${escapeHtml(t('modals.transaction.copy'))}</button>` : ''}<button class="btn" type="submit">${escapeHtml(t('modals.transaction.save'))}</button></div></form>`
   )
+  const descriptionField = $('#tx-form textarea[name="description"]')
+  if (descriptionField) {
+    const resizeDescription = () => {
+      descriptionField.style.height = 'auto'
+      descriptionField.style.height = `${descriptionField.scrollHeight}px`
+    }
+    descriptionField.addEventListener('input', resizeDescription)
+    resizeDescription()
+  }
   bindPayeeAutocomplete('tx-payee')
   let chosen = type
   let lastRateCurrency = ''
