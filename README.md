@@ -886,6 +886,11 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-11-19 - Release 1.4.2
+
+- Bumped `APP_VERSION` to 1.4.2 for the floating mobile Add transaction button, square small action buttons, the
+  consistent Add transaction header and the auto-growing transaction description.
+
 ### 2026-11-19 - Consistent Add transaction header
 
 - The Transactions page header now uses the same layout as Home: identical title/subtitle spacing, button alignment and
