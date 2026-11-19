@@ -190,9 +190,10 @@ Core fields: ID, type, amount, date, time, source account, optional destination 
 category/subcategory where applicable, payee, description, optional attachment references, created/updated timestamps.
 
 - Create, edit, delete, list, search, filter and inspect transaction details.
-- The transaction form Description textarea grows automatically with its content while typing and when opening an
-  existing transaction, so the full text stays visible without an inner scrollbar. It starts at the 110px minimum
-  height; manual resizing is disabled.
+- The transaction form Description textarea grows automatically with its content on desktop and when opening an
+  existing transaction, so the full text stays visible without an inner scrollbar. On mobile it uses a stable 160px
+  height with internal scrolling to prevent the on-screen keyboard and bottom sheet from jumping as lines are added.
+  Manual resizing is disabled.
 - Transaction category fields use the same inline expand/select/collapse flow as account selection, including split
   rows. Categories appear as separate buttons in saved order; a separate chevron expands a category’s ordered
   subcategories without selecting it. Expanding a category closes any other expanded category within that picker;
@@ -885,6 +886,13 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-11-19 - Stable mobile transaction description
+
+- Kept the transaction Description field at a stable 160px height on mobile and enabled internal scrolling. This
+  prevents the iOS keyboard and bottom sheet from repeatedly resizing while new lines are typed. Desktop retains
+  automatic textarea growth.
+- Bumped `APP_VERSION` to 1.4.3.
 
 ### 2026-11-19 - Release 1.4.2
 

@@ -373,6 +373,8 @@ function transactionModal(tx, initial = 'expense', options = {}) {
   const descriptionField = $('#tx-form textarea[name="description"]')
   if (descriptionField) {
     const resizeDescription = () => {
+      // Avoid resizing the iOS bottom sheet on every keystroke while its keyboard is open.
+      if (window.matchMedia('(max-width: 750px)').matches) return
       descriptionField.style.height = 'auto'
       descriptionField.style.height = `${descriptionField.scrollHeight}px`
     }

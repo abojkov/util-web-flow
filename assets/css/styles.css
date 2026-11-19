@@ -2664,6 +2664,13 @@ span.calc-currency-code {
     padding: 15px 19px calc(19px + env(safe-area-inset-bottom));
   }
 
+  #tx-form textarea[name='description'] {
+    height: 160px;
+    min-height: 160px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .modal-body:has(> form > .modal-footer:last-child),
   .modal-body:has(> .modal-footer:last-child) {
     padding-bottom: 0;
