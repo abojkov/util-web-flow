@@ -153,6 +153,10 @@ button:disabled {
   flex-shrink: 0;
 }
 
+.settings-icon {
+  overflow: visible;
+}
+
 .sidebar-foot {
   margin-top: auto;
   display: flex;
