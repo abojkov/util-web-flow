@@ -51,7 +51,6 @@ registerFlowLocale(
     'home.empty.noAccounts.desc': 'Crea tu primera cuenta para empezar.',
     'transactions.title': 'Historial de transacciones',
     'transactions.subtitle': 'Cada movimiento, en un solo lugar.',
-    'transactions.newTransaction': '+ Nueva transacción',
     'transactions.search.title': 'Buscar transacciones',
     'transactions.search.subtitle': 'Encuentra transacciones por texto, tipo, periodo, cuenta y categoría.',
     'transactions.search.clear': 'Limpiar búsqueda',

@@ -460,7 +460,7 @@ function home() {
         <h2>${escapeHtml(t('home.welcome.title'))}</h2>
         <div class="muted">${escapeHtml(t('home.welcome.subtitle'))}</div>
       </div>
-      <button class="btn" data-add="transaction">${escapeHtml(t('home.addTransaction'))}</button>
+      <button class="btn add-transaction-btn" data-add="transaction" aria-label="${escapeHtml(t('home.addTransaction'))}">${icons.plus}<span class="btn-label">${escapeHtml(t('home.addTransaction'))}</span></button>
     </div>
     <div class="toolbar">${monthControl()}${accountSelect()}</div>
     <div class="grid summary-grid">
@@ -879,12 +879,12 @@ function transactions() {
       ? t('transactions.search.filtersActive', { count: activeFilterCount })
       : t('transactions.search.showFilters')
   return `
-    <div class="toolbar">
+    <div class="welcome">
       <div>
         <h2>${escapeHtml(t('transactions.title'))}</h2>
-        <p class="muted">${escapeHtml(t('transactions.subtitle'))}</p>
+        <div class="muted">${escapeHtml(t('transactions.subtitle'))}</div>
       </div>
-      <button class="btn" data-add="transaction">${escapeHtml(t('transactions.newTransaction'))}</button>
+      <button class="btn add-transaction-btn" data-add="transaction" aria-label="${escapeHtml(t('home.addTransaction'))}">${icons.plus}<span class="btn-label">${escapeHtml(t('home.addTransaction'))}</span></button>
     </div>
     <section class="search-panel ${filtersExpanded ? 'filters-open' : ''}">
       <div class="search-panel-head">

@@ -276,6 +276,10 @@ main {
   background: #1755d8;
 }
 
+.add-transaction-btn .fab-icon {
+  display: none;
+}
+
 .btn.secondary {
   background: #edf3ff;
   color: #2563eb;
@@ -741,8 +745,11 @@ main {
   color: #7890ae;
   display: inline-flex;
   justify-content: center;
+  /* Fixed square so single glyphs and icons get equal horizontal and vertical space. */
+  width: 28px;
+  height: 28px;
+  padding: 0;
   line-height: 1;
-  padding: 6px;
 }
 
 .chart-wrap {
@@ -2575,6 +2582,39 @@ span.calc-currency-code {
     box-shadow: 0 -8px 25px #1e427009;
   }
 
+  /* New transaction becomes a floating circular action above the bottom navigation. */
+  .add-transaction-btn {
+    position: fixed;
+    right: 18px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    z-index: 14;
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 24px #2465ed55;
+  }
+
+  .add-transaction-btn:active {
+    transform: scale(0.94);
+  }
+
+  .add-transaction-btn .fab-icon {
+    display: block;
+    stroke-width: 2.4;
+  }
+
+  .add-transaction-btn .btn-label {
+    display: none;
+  }
+
+  main:has(.add-transaction-btn) {
+    padding-bottom: 150px;
+  }
+
   .bottom-nav button {
     background: none;
     border: 0;
@@ -2699,7 +2739,7 @@ span.calc-currency-code {
   .category-actions .mini-btn {
     width: 28px;
     min-width: 28px;
-    height: 32px;
+    height: 28px;
     padding: 0;
     font-size: 14px;
   }

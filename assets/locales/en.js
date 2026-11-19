@@ -55,7 +55,6 @@ registerFlowLocale(
 
     'transactions.title': 'Transaction history',
     'transactions.subtitle': 'Every movement, all in one place.',
-    'transactions.newTransaction': '+ New transaction',
     'transactions.search.title': 'Search transactions',
     'transactions.search.subtitle': 'Find transactions by text, type, period, account and category.',
     'transactions.search.clear': 'Clear search',

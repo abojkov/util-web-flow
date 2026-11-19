@@ -59,6 +59,7 @@ const icons = {
   empty: appIcon(
     '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M8 14h3"/>'
   ),
+  plus: appIcon('<path d="M12 5v14M5 12h14"/>', { size: 26, className: 'app-icon fab-icon' }),
 }
 const splitTransactionIcon = appIcon(
   '<path d="M12 3v5a3 3 0 0 0 3 3h2a3 3 0 0 1 3 3v6M12 8a3 3 0 0 1-3 3H7a3 3 0 0 0-3 3v6M1 17l3 3 3-3m10 0 3 3 3-3"/>'

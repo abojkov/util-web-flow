@@ -55,7 +55,6 @@ registerFlowLocale(
 
     'transactions.title': 'Историја на трансакции',
     'transactions.subtitle': 'Секое движење на едно место.',
-    'transactions.newTransaction': '+ Нова трансакција',
     'transactions.search.title': 'Пребарај трансакции',
     'transactions.search.subtitle': 'Најдете трансакции по текст, тип, период, сметка и категорија.',
     'transactions.search.clear': 'Исчисти пребарување',
