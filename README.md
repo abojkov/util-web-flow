@@ -61,7 +61,7 @@ financial data.
 | Transactions | Add/edit/delete, chronological history, calendar, search and filters                           |
 | Statistics   | Spending distribution, income/expense comparisons, trends and reports                          |
 | Accounts     | Balances, account creation/editing, archiving and restoration                                  |
-| More         | Categories, budgets, recurring rules, currency calculator, currencies, import/export, settings |
+| More         | Categories, budgets, recurring rules, currency settings, import/export and preferences            |
 
 ### Visual direction
 
@@ -90,8 +90,8 @@ financial data.
 ## Functional requirements
 
 > **Status legend:** `Planned` = agreed requirement, not yet verified as implemented; `In progress` = actively being
-> built; `Implemented` = confirmed in source and tested; `Blocked` = cannot proceed yet. See the feature tracker for the
-> current status. This section describes intended behavior.
+> built; `Implemented` = confirmed in source and tested; `Blocked` = cannot proceed yet; `Removed` = no longer part of
+> the app. See the feature tracker for the current status. This section describes intended behavior.
 
 ### Welcome dialog
 
@@ -372,13 +372,8 @@ category/subcategory where applicable, payee, description, optional attachment r
 - Historical transaction reports use transaction exchange-rate snapshots so old transaction values do not silently
   change when Settings rates are updated later.
 - Settings show editable local reference rates for all available currencies and the conversion formula.
-- **Currency calculator:** More includes Currency calculator. It converts live between the base reporting currency and
-  one other currency enabled in Settings (from reference rates plus account currencies). Typing in either amount updates
-  the other using the current Settings rates (`amount ÷ source rate × target rate`). The dialog shows
-  `1 {base} ≈ {rate} {other}` with the rate source label (Manual, Synced or Local). Missing or invalid rates show an
-  explicit unavailable state instead of inventing a quote. With only the base currency enabled, the dialog explains how
-  to add another currency and links to Settings. The last selected non-base currency is remembered for the current
-  session. Estimates are not transfers and do not create transactions.
+- Currency conversion is available in Settings under Currency synchronization. Convert amounts mode uses the currency
+  rate fields as a live conversion grid. Edit rates mode provides the manual reference-rate controls.
 - Monetary UI values use one shared format: grouped number with two decimal places, followed by the uppercase currency
   code (for example, `1,234.50 EUR`, `10.00 MKD`). Symbols such as €/$ are not used for formatted amounts. Exchange-rate
   quotes retain their extra precision and use the same trailing currency-code convention. Stored amounts and CSV/JSON
@@ -453,7 +448,7 @@ category order.
   Automatic). Automatic follows the device hour cycle; the other options override displayed times app-wide without
   changing stored values or native pickers. Changing the preference refreshes open views and the currency sync status
   hint.
-- Category management, archived accounts, recurring rules, budgets and the currency calculator.
+- Category management, archived accounts, recurring rules and budgets.
 - Optional app lock; backup and import/export tools.
 - No theme selector: light mode only.
 
@@ -673,7 +668,7 @@ inspect and test the implementation before changing a feature to `Implemented`.
 | F24 | Currency     | Optional startup rate synchronization           | Partial - focused checks passed | Browser file access and offline checks pending                 |
 | F25 | Onboarding   | Welcome dialog on first launch and reset        | Partial - focused checks passed | Browser layout and persistence checks pending                  |
 | F26 | Settings     | Language selector and UI translations           | Partial - focused checks passed | Browser switch/reload and third-locale checks pending          |
-| F27 | Currency     | Base/other currency calculator on More          | Partial - focused checks passed | Browser two-way conversion and empty-state checks pending      |
+| F27 | Currency     | Base/other currency calculator on More          | Removed in 1.5.0              | Conversion moved into Settings currency rows                    |
 | F28 | Categories   | Category/subcategory reorganize                 | Partial - focused checks passed | Browser demote/move/promote and budget-conflict checks pending |
 
 ### Release phases
@@ -741,15 +736,8 @@ inspect and test the implementation before changing a feature to `Implemented`.
   move.
 - Cross-type destinations are not offered. Cancel leaves records unchanged.
 
-### Currency conversion checks
+### Settings currency conversion checks
 
-- With only the base currency enabled, More → Currency calculator shows the empty state and Open settings reaches
-  Settings & backup.
-- After adding another currency, the calculator converts both directions with Settings rates (for example 1.00 EUR at
-  61.5 fills 61.50 MKD; editing the MKD amount updates EUR).
-- Changing the other currency recalculates from the active amount field and remembers the selection for the session.
-- Missing or nonpositive rates show an unavailable message and do not invent a converted amount.
-- The calculator never creates transactions or changes stored rates.
 - Settings → Currency synchronization starts in Convert amounts mode. Typing in any currency row makes it the source
   amount and recalculates all other available currencies from saved rates. Amounts are temporary. Edit rates mode
   restores the existing editable units-per-EUR fields and Save rates workflow. A sync refresh recalculates conversion
@@ -913,6 +901,13 @@ Before treating any feature as complete, ask Codex:
 - Kept manual reference-rate editing in Edit rates mode. Conversion amounts are temporary and do not affect saved
   rates or synchronization.
 - **Verification:** JavaScript syntax and diff checks passed; browser interaction remains unverified.
+
+### 2026-11-27 - Remove More currency calculator
+
+- Removed the standalone Currency calculator modal and its More section entry. Use Convert amounts in Settings for
+  live conversion; Edit rates still manages saved reference rates.
+- Retained the shared conversion math used by Settings and transaction currency estimates.
+- **Verification:** JavaScript syntax and diff checks passed; browser navigation remains unverified.
 
 ### 2026-11-27 - Release 1.5.0
 
