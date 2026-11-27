@@ -2164,6 +2164,10 @@ main {
   border-bottom: 0;
 }
 
+.rate-row.rate-management-row {
+  grid-template-columns: 8em minmax(0, 1fr) auto;
+}
+
 .rate-row label {
   display: grid;
   grid-template-columns: max-content max-content;
@@ -2207,6 +2211,14 @@ main {
 .rate-row b {
   color: #253754;
   text-align: right;
+}
+
+.rate-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
 }
 
 .rate-actions {

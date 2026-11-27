@@ -21,6 +21,25 @@ async function saveCurrencySettings(values) {
   }
 }
 
+async function ensureRateAnchorCurrency() {
+  const savedAnchor = getSetting('exchangeRateBaseCurrency', '')
+  const anchor = base()
+  if (savedAnchor === anchor) return
+  const current = exchangeRates()
+  const anchorRate = current[anchor]
+  if (!Number.isFinite(anchorRate) || anchorRate <= 0) return
+  const next = Object.fromEntries(
+    Object.entries(current)
+      .filter(([, rate]) => Number.isFinite(rate) && rate > 0)
+      .map(([code, rate]) => [code, rate / anchorRate])
+  )
+  next[anchor] = 1
+  await saveCurrencySettings({
+    exchangeRates: next,
+    exchangeRateBaseCurrency: anchor,
+  })
+}
+
 function syncedCurrenciesToAdd() {
   const sync = getSetting('currencySync', {})
   if (sync.provider !== 'exchangerate.fun') return []
@@ -132,11 +151,15 @@ async function syncCurrencyRates() {
     rates.EUR = 1
     if (!Object.keys(data.rates).length) throw new Error('Incomplete rate response')
     if (currencySyncRequest !== controller || controller.signal.aborted) return
+    const anchor = rateAnchorCurrency()
+    if (!Number.isFinite(rates[anchor]) || rates[anchor] <= 0)
+      throw new Error('Reference currency is unavailable from the sync provider')
     const next = { ...exchangeRates() }
     const manual = manualCurrencyCodes()
     for (const code of Object.keys(next)) {
-      if (!manual.includes(code) && rates[code]) next[code] = rates[code]
+      if (!manual.includes(code) && rates[code]) next[code] = rates[code] / rates[anchor]
     }
+    next[anchor] = 1
     await saveCurrencySettings({
       exchangeRates: next,
       manualCurrencyCodes: manual,

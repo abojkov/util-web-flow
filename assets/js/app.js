@@ -7,6 +7,7 @@ $('#settings-shortcut').onclick = settingsModal
       for (const [nameKey, icon, color, type] of defaults)
         await put('categories', { id: uid(), name: t(nameKey), icon, color, type })
     }
+    await ensureRateAnchorCurrency()
     await processRecurring()
     await reload()
     if (!getSetting('welcomeSeen', false) && !$('#modal-root').innerHTML) welcomeModal()

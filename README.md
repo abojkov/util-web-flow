@@ -4,7 +4,7 @@
 > IndexedDB.
 
 **Project status:** Active development **Specification version:** 1.0 **App version:** maintained in `APP_VERSION` at
-the top of `assets/js/state.js`; Settings reads this constant. **Last specification update:** 2026-10-22
+the top of `assets/js/state.js`; Settings reads this constant. **Last specification update:** 2026-11-27
 **Implementation status:** Not audited against the current local repository. Feature descriptions below are
 requirements, not assertions that the feature works.
 
@@ -310,7 +310,9 @@ category/subcategory where applicable, payee, description, optional attachment r
   current-rate fallback. Recurring processing on startup runs before the background sync and therefore uses locally
   cached rates.
 
-- Each account has one native currency; base reporting currency is configurable (EUR default).
+- Each account has one native currency; base reporting currency is configurable (EUR default). The selected reporting
+  currency is also the reference-rate anchor. EUR is not required and can be removed when it is not the reporting
+  currency and no account uses it.
 - Currency selectors are built dynamically from local reference-rate codes, the reporting currency and all accounts,
   including archived accounts. Fresh installs and Reset all data start with only EUR. Other currencies can be added in
   Settings. Existing saved rates and account currencies remain available; older accounts using USD, GBP, CHF, MKD or SEK
@@ -319,12 +321,19 @@ category/subcategory where applicable, payee, description, optional attachment r
   already enabled are offered, sorted alphabetically. Sync first to load the list; once cached it works offline. A
   successful sync refreshes an open dropdown without discarding a still-valid selection. Adding an arbitrary code or an
   already enabled currency is rejected even if a manual rate is supplied. Existing custom/imported currencies are
-  preserved. Leave the rate blank to use the synced rate or enter a positive manual override in units per 1 EUR.
+  preserved. Leave the rate blank to use the synced rate or enter a positive manual override in units per 1 reporting
+  currency.
 - Reference rates and custom codes are saved together in the existing `exchangeRates` setting and included in full JSON
-  backups. No schema migration is required; manual currency management works offline. There is no currency deletion
-  action.
-- EUR remains fixed at 1. Save rates retains entered rate precision, including values smaller than one millionth. Use
-  synced rates applies cached provider rates to supported currencies; manual rate editing remains available.
+  backups. No schema migration is required; manual currency management works offline.
+- In Edit rates mode, remove a currency only when it is neither the reference-rate anchor nor the reporting currency and no active or archived
+  account uses it. Account balance does not affect eligibility because a zero-balance account may retain financial
+  history. Remove deletes the configured reference rate and manual-override marker while preserving transactions and
+  the complete cached sync-rate list. A removed provider currency can be added again from the cached sync list. Save
+  other unsaved rate edits and let currency synchronization finish before removing a currency.
+- The reporting currency remains fixed at 1. Existing EUR-based saved rates are rebased to the selected reporting
+  currency on startup without changing cross rates. Save rates retains entered rate precision, including values smaller
+  than one millionth. Synced provider rates are normalized to the reporting currency before applying; manual rate editing
+  remains available.
 - Settings currency rows have Convert amounts and Edit rates modes. In Convert amounts mode, type an amount in any
   currency field and all other fields show the equivalent using saved reference rates. These temporary amounts do not
   change saved rates or transactions. Edit rates mode keeps the existing manual rate workflow. Missing rates are shown
@@ -337,7 +346,8 @@ category/subcategory where applicable, payee, description, optional attachment r
 - Same-currency transfers automatically receive the sent amount; no received-amount or exchange-rate input or conversion
   estimate is shown.
 - Cross-currency transfers require a positive rate. Pairs involving the main currency quote 1 main-currency unit = X
-  other units. For other pairs, the currency with the higher unit value (lower valid Settings rate per EUR) is quoted
+  other units. For other pairs, the currency with the higher unit value (lower valid Settings rate per reporting
+  currency) is quoted
   first: MKD ↔ USD uses 1 USD = X MKD in both directions. When reference rates are missing, existing transfers use their
   saved destination/source amount ratio to choose a readable quote. New transfers with missing rates start blank and use
   destination units per source unit until valid reference rates are configured. Quote direction is automatic; there is
@@ -664,7 +674,7 @@ inspect and test the implementation before changing a feature to `Implemented`.
 | F20 | Quality      | Error states, accessibility, responsive QA      | Planned                         | Browser verification                                           |
 | F21 | Accounts     | Account visibility                              | Partial - focused checks passed | Browser hide/show, reload and restore checks pending           |
 | F22 | Data         | Reset all data with confirmation                | Partial - focused checks passed | Browser persistence and mobile checks pending                  |
-| F23 | Currency     | Dynamic currency management                     | Partial - focused checks passed | Browser persistence and transfer checks pending                |
+| F23 | Currency     | Dynamic currency management and safe removal     | Partial - focused checks passed | Browser removal guards, persistence and transfer checks pending |
 | F24 | Currency     | Optional startup rate synchronization           | Partial - focused checks passed | Browser file access and offline checks pending                 |
 | F25 | Onboarding   | Welcome dialog on first launch and reset        | Partial - focused checks passed | Browser layout and persistence checks pending                  |
 | F26 | Settings     | Language selector and UI translations           | Partial - focused checks passed | Browser switch/reload and third-locale checks pending          |
@@ -721,6 +731,13 @@ inspect and test the implementation before changing a feature to `Implemented`.
   positive rates must not be rounded to zero.
 - Retain currencies from imported and archived accounts in selectors.
 - Preserve custom rates through reload and full JSON backup/restore.
+- Remove an unused currency that is not the reporting currency. This includes EUR when another currency is the base.
+  Remove its configured rate and manual marker
+  while retaining the cached sync-rate list and transaction records.
+- Block removal of the reporting currency and every currency used by active or archived accounts, even when their
+  current balances are zero. Protected currencies have no Remove button.
+- Preserve unfinished edits in other rate fields by asking the user to save them before removing a currency.
+- Prevent a currency removal while synchronization is in progress to avoid a conflicting settings write.
 - Reject a reporting-currency change when any transaction snapshot lacks its required historical rates. Keep existing
   snapshots and ledger amounts unchanged.
 - Verify account creation and transfers using a new currency on mobile and desktop; amounts currently retain two-decimal
@@ -740,12 +757,19 @@ inspect and test the implementation before changing a feature to `Implemented`.
 
 - Settings → Currency synchronization starts in Convert amounts mode. Typing in any currency row makes it the source
   amount and recalculates all other available currencies from saved rates. Amounts are temporary. Edit rates mode
-  restores the existing editable units-per-EUR fields and Save rates workflow. A sync refresh recalculates conversion
+  restores the existing editable units-per-base-currency fields and Save rates workflow. A sync refresh recalculates conversion
   amounts without replacing the source amount. Sync now and Use synced rates appear only in Edit rates mode. Unsaved
   rate edits must be saved before switching to Convert amounts.
 - With EUR, USD, GBP, CHF and MKD enabled, entering 5 in the EUR row updates the other four fields from saved rates.
 - Entering a value in another currency makes that field the source and recalculates the rest. Invalid or missing rates
   show unavailable values. Conversion inputs are never saved as exchange rates.
+- Changing the reporting currency rebases saved rates so the new currency is 1. Existing currency ratios and transaction
+  snapshots remain unchanged.
+- With MKD as the reporting currency, Edit rates shows units per 1 MKD. EUR can be removed when no account uses EUR and
+  EUR is not the reporting currency. Adding EUR again from the cached provider list still works.
+- Repeat with COP as the reporting currency to confirm the rate reference is not tied to a built-in currency.
+- Applying synced rates while MKD is the reporting currency converts the cached EUR-based provider values to MKD-based
+  rates before saving. Existing manual overrides remain unchanged.
 
 ### Reset data checks
 
@@ -895,6 +919,15 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-11-27 - Use the reporting currency as the rate reference
+
+- Settings rate values now use the selected reporting currency as their reference. Changing the reporting currency
+  rebases saved values while preserving currency ratios and existing transaction snapshots.
+- EUR can be removed when it is not the reporting currency and no account uses it. The public sync request remains a
+  fixed EUR-based request internally and synced values are converted to the selected reference before saving.
+- Legacy EUR-based saved values are automatically rebased on startup. Full backups preserve each transaction's existing
+  snapshot without mixing rates from different references.
+
 ### 2026-11-27 - Currency conversion in Settings
 
 - Added Convert amounts mode to the existing Settings currency rows. Entering an amount in any currency updates the
@@ -910,6 +943,14 @@ Before treating any feature as complete, ask Codex:
   live conversion; Edit rates still manages saved reference rates.
 - Retained the shared conversion math used by Settings and transaction currency estimates.
 - **Verification:** JavaScript syntax and diff checks passed; browser navigation remains unverified.
+
+### 2026-11-27 - Remove unused currencies
+
+- Added Remove actions to unused currencies in Settings → Edit rates. EUR, the reporting currency and currencies used
+  by active or archived accounts are protected regardless of account balances.
+- Removal deletes the saved reference rate and manual override marker while leaving transaction records and the cached
+  provider rate list unchanged.
+- **Verification:** JavaScript syntax and diff checks passed; browser behavior remains unverified.
 
 ### 2026-11-27 - Release 1.5.0
 

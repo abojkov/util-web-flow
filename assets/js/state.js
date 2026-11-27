@@ -279,15 +279,26 @@ const categoryLabel = (categoryId, subcategoryId) => {
     s = subcat(categoryId, subcategoryId)
   return [c?.name, s?.name].filter(Boolean).join(' / ') || t('common.other')
 }
-const defaultRates = { EUR: 1 }
+function rateAnchorCurrency() {
+  // Missing anchor metadata means the existing saved rates use the legacy EUR reference.
+  return getSetting('exchangeRateBaseCurrency', 'EUR')
+}
 
 function exchangeRates() {
-  const rates = { ...defaultRates, ...getSetting('exchangeRates', {}) }
+  const anchor = rateAnchorCurrency()
+  const rates = { ...getSetting('exchangeRates', {}) }
+  if (!Number.isFinite(rates[anchor]) || rates[anchor] <= 0) rates[anchor] = 1
   // Older accounts may rely on starter rates that were never saved to Settings.
-  const legacyRates = { USD: 1.09, GBP: 0.86, MKD: 61.5, CHF: 0.94, SEK: 11.2 }
+  const legacyRates = { EUR: 1, USD: 1.09, GBP: 0.86, MKD: 61.5, CHF: 0.94, SEK: 11.2 }
+  const anchorLegacyRate = legacyRates[anchor]
   for (const currency of usedCurrencies()) {
-    if (!Object.hasOwn(rates, currency) && Object.hasOwn(legacyRates, currency))
-      rates[currency] = legacyRates[currency]
+    if (
+      !Object.hasOwn(rates, currency) &&
+      Object.hasOwn(legacyRates, currency) &&
+      Number.isFinite(anchorLegacyRate) &&
+      anchorLegacyRate > 0
+    )
+      rates[currency] = legacyRates[currency] / anchorLegacyRate
   }
   return rates
 }
@@ -359,7 +370,6 @@ function rateSnapshotForCurrencies(currencies, sourceRates = exchangeRates()) {
   for (const currency of new Set(currencies.filter(Boolean))) {
     if (sourceRates[currency]) snapshot[currency] = sourceRates[currency]
   }
-  snapshot.EUR = sourceRates.EUR || 1
   return snapshot
 }
 
