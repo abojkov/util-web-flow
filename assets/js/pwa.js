@@ -2,7 +2,7 @@
 const serviceWorkerUrl = new URL('../../service-worker.js', document.currentScript.src)
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register(serviceWorkerUrl).catch(error => {
+    navigator.serviceWorker.register(serviceWorkerUrl, { updateViaCache: 'none' }).catch(error => {
       console.warn('Flow offline support could not be enabled.', error)
     })
   })

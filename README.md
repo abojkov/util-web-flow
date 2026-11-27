@@ -208,11 +208,15 @@ category/subcategory where applicable, payee, description, optional attachment r
 - Transaction account selectors initially show only the selected account name in a compact field; currency remains
   visible on the expanded account buttons. Tapping the field expands compact square buttons (72px minimum, 6px grid
   spacing) listing all active accounts in the configured order, with account name, currency and a blue selected state.
-  Selecting an account updates the field, collapses the buttons and returns focus to the field. Reopen it to change the
-  selection; Escape within the buttons collapses the picker. Account fields share the standard selectors’ SVG arrow and
+  Selecting an account updates the field and collapses the buttons. In income and expense forms focus then moves to the
+  category picker; elsewhere the account field keeps focus. Reopen it to change the selection; Escape within the buttons
+  collapses the picker. Account fields share the standard selectors’ SVG arrow and
   the normal fields’ blue focus border and soft shadow, including while expanded. Both source and transfer destination
   use the same picker; buttons support keyboard focus and expose selection with `aria-pressed`. Archived accounts remain
   excluded.
+- In income and expense forms, choosing an account opens the category picker and focuses its first choice. Choosing a
+  category or subcategory moves focus to Payee. In split mode, account selection opens the first split category picker
+  and choosing a split category moves focus to that split's amount.
 - Transaction forms show Date & time first, then Amount, followed by Account. They use one native “Date & time”
   (`datetime-local`) input, initialized from the saved local date/time or the current local date/time for new records.
   Copy options retain their original/current date-time behavior.
@@ -541,6 +545,10 @@ recurrence identifiers. Maintain a schema version and incremental, non-destructi
   offline to use the cached files and on-device IndexedDB data. Currency-rate synchronization still needs internet and
   retains cached rates when unavailable. Service workers cannot run under `file://`; direct file opening remains
   available but does not provide PWA offline caching. Browser installation and cache behavior vary by platform.
+- When online, the service worker fetches the latest app files and refreshes its cache. When offline, it serves the
+  last cached files. If a new service worker takes control before the user interacts with the page, the app reloads
+  with the new version. If interaction has started, the update loads on the next launch. Updating app-file caches does
+  not clear IndexedDB financial data.
 - DM Sans and Plus Jakarta Sans are bundled locally under the SIL Open Font License and cached with the PWA app shell,
   preserving the app typography offline.
 - A successful save must mean data was committed to durable browser storage, not just added to an in-memory array.
@@ -792,6 +800,15 @@ inspect and test the implementation before changing a feature to `Implemented`.
 - Changing the amount or either account updates rate visibility and the preview.
 - Empty, zero, negative or nonfinite cross-currency rates cannot be saved.
 
+### Transaction entry focus checks
+
+- In new and edited income/expense transactions, choose an account and verify the category picker opens with its first
+  choice focused.
+- Choose a parent category or subcategory and verify focus moves to Payee.
+- Enable split categories, choose an account and verify the first split category picker opens. Choosing a category moves
+  focus to its amount field.
+- Verify changing transaction type rebuilds its category choices without retaining stale focus behavior.
+
 ### Account visibility checks
 
 - Hide/show an account in its editor; confirm source/destination pickers, account filters and new recurring selectors
@@ -918,6 +935,23 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-11-27 - Release 1.5.2
+
+- Bumped `APP_VERSION` to 1.5.2 for reliable online PWA updates with cached offline fallback.
+
+### 2026-11-27 - Update PWA files when online
+
+- App-file requests now use network-first caching with the last cached file as an offline fallback.
+- Updated service worker cache handling and registration to check for the latest worker. The app reloads on worker
+  takeover before interaction begins; active sessions are left alone and receive the update on their next launch.
+- Service worker cache cleanup removes only cached app files. It does not clear IndexedDB accounts, transactions or
+  settings.
+
+### 2026-11-27 - Focus transaction entry flow
+
+- Selecting an account in an income or expense form opens and focuses the category picker. Selecting a category or
+  subcategory moves focus to Payee. Split category choices move focus to their amount field.
 
 ### 2026-11-27 - Release 1.5.1
 

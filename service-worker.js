@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flow-shell-v2'
+const CACHE_NAME = 'flow-shell-v3'
 const APP_SHELL = [
   './',
   './index.html',
@@ -22,9 +22,21 @@ const APP_SHELL = [
   './assets/locales/mk.js',
 ]
 
+async function cacheSuccessfulResponse(request, response) {
+  if (!response.ok) return
+  try {
+    await caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()))
+  } catch (error) {
+    console.warn('Flow could not refresh an offline app file.', error)
+  }
+}
+
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE_NAME)
+      .then(cache => cache.addAll(APP_SHELL.map(path => new Request(path, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
   )
 })
 
@@ -46,11 +58,9 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-cache' })
         .then(async response => {
-          if (response.ok) {
-            await caches.open(CACHE_NAME).then(cache => cache.put('./index.html', response.clone()))
-          }
+          await cacheSuccessfulResponse('./index.html', response)
           return response
         })
         .catch(async () => (await caches.match(request)) || (await caches.match('./index.html')))
@@ -59,15 +69,15 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached
-      return fetch(request).then(response => {
-        if (response.ok) {
-          const copy = response.clone()
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy))
-        }
+    fetch(request, { cache: 'no-cache' })
+      .then(async response => {
+        await cacheSuccessfulResponse(request, response)
         return response
       })
-    })
+      .catch(async () => {
+        const cached = await caches.match(request)
+        if (cached) return cached
+        throw new Error('The requested app file is unavailable offline.')
+      })
   )
 })

@@ -14,6 +14,19 @@
       content="Track accounts, income, expenses and budgets with Flow. Your financial records stay on your device."
     />
     <link rel="canonical" href="https://flow.aboykov.com/" />
+    <script>
+      if ('serviceWorker' in navigator) {
+        let hasUserInput = false
+        for (const eventName of ['pointerdown', 'keydown', 'input'])
+          document.addEventListener(eventName, () => (hasUserInput = true), {
+            capture: true,
+            once: true,
+          })
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!hasUserInput) window.location.reload()
+        })
+      }
+    </script>
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Flow" />

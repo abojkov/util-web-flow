@@ -264,7 +264,7 @@ function categoryPicker(id, type, categoryId = '', subcategoryId = '', name = ''
   }</div></div>`
 }
 
-function bindCategoryPicker(id) {
+function bindCategoryPicker(id, { onSelect } = {}) {
   const input = $('#' + id),
     picker = $('#' + id + '-picker'),
     toggle = $('#' + id + '-toggle')
@@ -306,7 +306,8 @@ function bindCategoryPicker(id) {
           .querySelectorAll('[data-category-choice]')
           .forEach(choice => choice.setAttribute('aria-pressed', String(choice === button)))
         setExpanded(false)
-        toggle.focus()
+        if (onSelect) onSelect(selected)
+        else toggle.focus()
       })
   )
 }
@@ -474,6 +475,20 @@ function transactionModal(tx, initial = 'expense', options = {}) {
       snapshot[selected.currency] = rateValue
     return snapshot
   }
+  const openNextCategoryPicker = () => {
+    if (chosen === 'transfer') return
+    const splitMode = $('#enable-splits')?.checked
+    const toggle = splitMode
+      ? document.querySelector('#split-rows .account-picker-toggle')
+      : $('#tx-category-toggle')
+    if (!toggle) return
+    const picker = document.getElementById(toggle.getAttribute('aria-controls'))
+    if (!picker) return
+    picker.hidden = false
+    toggle.setAttribute('aria-expanded', 'true')
+    const firstChoice = picker.querySelector('[data-category-choice]')
+    ;(firstChoice || toggle).focus({ preventScroll: true })
+  }
   const updateConversionPreview = event => {
     const selected = account($('#tx-account')?.value)
     const value = amount($('#tx-amount')?.value)
@@ -601,7 +616,9 @@ function transactionModal(tx, initial = 'expense', options = {}) {
       $('#tx-received').oninput = updateConversionPreview
     }
     if (chosen !== 'transfer') {
-      bindCategoryPicker('tx-category')
+      bindCategoryPicker('tx-category', {
+        onSelect: () => $('#tx-payee')?.focus({ preventScroll: true }),
+      })
       const toggle = $('#enable-splits'),
         container = $('#split-fields')
       const draw = () => {
@@ -650,7 +667,9 @@ function transactionModal(tx, initial = 'expense', options = {}) {
               syncSplitRemoveButtons()
             }
             $('#split-rows').append(el)
-            bindCategoryPicker(pickerId)
+            bindCategoryPicker(pickerId, {
+              onSelect: () => el.querySelector('.split-amount')?.focus({ preventScroll: true }),
+            })
             bindModalNumberInputs()
             syncSplitRemoveButtons()
           }
@@ -687,7 +706,10 @@ function transactionModal(tx, initial = 'expense', options = {}) {
   })
   $('#copy-tx')?.addEventListener('click', () => copyTransactionDateChoice(tx))
   $('#tx-amount')?.addEventListener('input', updateConversionPreview)
-  $('#tx-account')?.addEventListener('change', updateConversionPreview)
+  $('#tx-account')?.addEventListener('change', () => {
+    updateConversionPreview()
+    openNextCategoryPicker()
+  })
   bindAccountPicker('tx-account')
   $('#tx-rate')?.addEventListener('input', updateConversionPreview)
   updateConversionPreview()
