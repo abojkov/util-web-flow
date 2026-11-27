@@ -545,6 +545,10 @@ recurrence identifiers. Maintain a schema version and incremental, non-destructi
   offline to use the cached files and on-device IndexedDB data. Currency-rate synchronization still needs internet and
   retains cached rates when unavailable. Service workers cannot run under `file://`; direct file opening remains
   available but does not provide PWA offline caching. Browser installation and cache behavior vary by platform.
+- When online, the service worker fetches the latest app files and refreshes its cache. When offline, it serves the
+  last cached files. If a new service worker takes control before the user interacts with the page, the app reloads
+  with the new version. If interaction has started, the update loads on the next launch. Updating app-file caches does
+  not clear IndexedDB financial data.
 - DM Sans and Plus Jakarta Sans are bundled locally under the SIL Open Font License and cached with the PWA app shell,
   preserving the app typography offline.
 - A successful save must mean data was committed to durable browser storage, not just added to an in-memory array.
@@ -931,6 +935,18 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-11-27 - Release 1.5.2
+
+- Bumped `APP_VERSION` to 1.5.2 for reliable online PWA updates with cached offline fallback.
+
+### 2026-11-27 - Update PWA files when online
+
+- App-file requests now use network-first caching with the last cached file as an offline fallback.
+- Updated service worker cache handling and registration to check for the latest worker. The app reloads on worker
+  takeover before interaction begins; active sessions are left alone and receive the update on their next launch.
+- Service worker cache cleanup removes only cached app files. It does not clear IndexedDB accounts, transactions or
+  settings.
 
 ### 2026-11-27 - Focus transaction entry flow
 
