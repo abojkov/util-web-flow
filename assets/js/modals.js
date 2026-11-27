@@ -1632,7 +1632,7 @@ function settingsModal() {
           ${currencyRateModeButton('rates')}
         </div>
         <p class="form-hint currency-mode-hint" id="currency-mode-hint">${escapeHtml(t(`settings.currencyConversion.hint.${currencySettingsMode}`))}</p>
-        <div class="settings-actions">
+        <div class="settings-actions" id="currency-sync-actions" ${currencySettingsMode === 'convert' ? 'hidden' : ''}>
           <button type="button" class="btn secondary" id="sync-currencies" ${currencySyncRequest ? 'disabled' : ''}>${escapeHtml(t('settings.currencySync.syncNow'))}</button>
           <button type="button" class="btn ghost" id="use-synced-rates">${escapeHtml(t('settings.currencySync.useSyncedRates'))}</button>
         </div>
@@ -1752,6 +1752,7 @@ function settingsModal() {
       const list = $('.settings-content .rate-list')
       list.innerHTML = currencySettingsRows()
       $('#save-rates-actions').hidden = currencySettingsMode === 'convert'
+      $('#currency-sync-actions').hidden = currencySettingsMode === 'convert'
       $('#currency-mode-hint').textContent = t(`settings.currencyConversion.hint.${currencySettingsMode}`)
       document.querySelectorAll('[data-currency-settings-mode]').forEach(modeButton => {
         const active = modeButton.dataset.currencySettingsMode === currencySettingsMode

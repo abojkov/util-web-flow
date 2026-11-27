@@ -328,7 +328,7 @@ category/subcategory where applicable, payee, description, optional attachment r
 - Settings currency rows have Convert amounts and Edit rates modes. In Convert amounts mode, type an amount in any
   currency field and all other fields show the equivalent using saved reference rates. These temporary amounts do not
   change saved rates or transactions. Edit rates mode keeps the existing manual rate workflow. Missing rates are shown
-  as unavailable.
+  as unavailable. Sync now and Use synced rates are shown only in Edit rates mode.
 - Changing the reporting currency is blocked when any existing transaction lacks a required historical rate for that
   target, including either side of a transfer. Existing snapshots are preserved rather than filled with fabricated
   historical rates. Legacy transactions without snapshots retain the existing configured-rate fallback.
@@ -741,7 +741,8 @@ inspect and test the implementation before changing a feature to `Implemented`.
 - Settings → Currency synchronization starts in Convert amounts mode. Typing in any currency row makes it the source
   amount and recalculates all other available currencies from saved rates. Amounts are temporary. Edit rates mode
   restores the existing editable units-per-EUR fields and Save rates workflow. A sync refresh recalculates conversion
-  amounts without replacing the source amount. Unsaved rate edits must be saved before switching to Convert amounts.
+  amounts without replacing the source amount. Sync now and Use synced rates appear only in Edit rates mode. Unsaved
+  rate edits must be saved before switching to Convert amounts.
 - With EUR, USD, GBP, CHF and MKD enabled, entering 5 in the EUR row updates the other four fields from saved rates.
 - Entering a value in another currency makes that field the source and recalculates the rest. Invalid or missing rates
   show unavailable values. Conversion inputs are never saved as exchange rates.
@@ -900,6 +901,7 @@ Before treating any feature as complete, ask Codex:
   other rows using saved reference rates.
 - Kept manual reference-rate editing in Edit rates mode. Conversion amounts are temporary and do not affect saved
   rates or synchronization.
+- Sync now and Use synced rates are visible only while Edit rates is selected.
 - **Verification:** JavaScript syntax and diff checks passed; browser interaction remains unverified.
 
 ### 2026-11-27 - Remove More currency calculator
