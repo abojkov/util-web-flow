@@ -1,3 +1,7 @@
+let currencySettingsMode = 'convert'
+let settingsConversionSource = 'EUR'
+let settingsConversionAmount = 1
+
 function modal(title, body, { restoreView = null } = {}) {
   $('#modal-root').innerHTML =
     `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${title}</h2><button class="close" id="close-modal" aria-label="${escapeHtml(t('modals.close'))}">×</button></div><div class="modal-body">${body}</div></div></div>`
@@ -83,11 +87,67 @@ function currencyOptions(current) {
 
 function exchangeRateRow(currency) {
   const configured = exchangeRates()
-  return `<div class="rate-row" data-rate-currency="${currency}"><label><span>${currency}</span><small>1 EUR =</small><small data-currency-rate-source="${currency}">${currencyRateSource(currency)}</small></label><input class="rate-input" data-original-rate="${configured[currency] ?? ''}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`
+  return `<div class="rate-row" data-rate-currency="${currency}"><label><span>${currency}</span><small>1 EUR =</small><small data-currency-rate-source="${currency}">${currencyRateSource(currency)}</small></label><input class="rate-input" aria-label="${escapeHtml(t('settings.currencyConversion.rateInputLabel', { currency }))}" data-original-rate="${configured[currency] ?? ''}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`
 }
 
-function exchangeRateRows() {
-  return availableCurrencies().map(exchangeRateRow).join('')
+function currencyConversionRow(currency) {
+  const isSource = currency === settingsConversionSource
+  const rate = conversionRate(settingsConversionSource, currency)
+  const value =
+    rate === null
+      ? ''
+      : isSource
+        ? String(settingsConversionAmount)
+        : roundAmount(settingsConversionAmount * rate).toFixed(2)
+  return `<div class="rate-row conversion-row" data-rate-currency="${currency}"><label><span>${currency}</span><small data-conversion-label="${currency}">${isSource ? escapeHtml(t('settings.currencyConversion.enterAmountLabel')) : escapeHtml(t('settings.currencyConversion.convertedAmount'))}</small></label><input class="rate-input conversion-amount-input" aria-label="${escapeHtml(t('settings.currencyConversion.amountInCurrency', { currency }))}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" value="${escapeHtml(value)}" placeholder="${rate === null ? escapeHtml(t('settings.currencyConversion.unavailable')) : ''}"><b>${currency}</b></div>`
+}
+
+function currencyRateModeButton(mode) {
+  const active = currencySettingsMode === mode
+  return `<button type="button" class="btn ${active ? 'secondary' : 'ghost'}" data-currency-settings-mode="${mode}" aria-pressed="${active}">${escapeHtml(t(`settings.currencyConversion.mode.${mode}`))}</button>`
+}
+
+function currencySettingsRows() {
+  return availableCurrencies()
+    .map(currencySettingsMode === 'convert' ? currencyConversionRow : exchangeRateRow)
+    .join('')
+}
+
+function renderSettingsCurrencyConversion() {
+  if (currencySettingsMode !== 'convert') return
+  const list = $('.settings-content .rate-list')
+  if (!list) return
+  const sourceInput = list.querySelector(`.conversion-amount-input[name="${settingsConversionSource}"]`)
+  if (!sourceInput) return
+  const currentAmount = decimalValue(sourceInput.value)
+  if (!Number.isFinite(currentAmount)) {
+    for (const input of list.querySelectorAll('.conversion-amount-input')) {
+      if (input !== sourceInput) input.value = ''
+      const label = list.querySelector(`[data-conversion-label="${input.name}"]`)
+      if (label)
+        label.textContent = t(
+          input.name === settingsConversionSource
+            ? 'settings.currencyConversion.enterAmountLabel'
+            : 'settings.currencyConversion.convertedAmount'
+        )
+    }
+    return
+  }
+  settingsConversionAmount = currentAmount
+  for (const input of list.querySelectorAll('.conversion-amount-input')) {
+    if (input !== sourceInput) {
+      const rate = conversionRate(settingsConversionSource, input.name)
+      input.value = rate === null ? '' : roundAmount(settingsConversionAmount * rate).toFixed(2)
+      input.placeholder = rate === null ? t('settings.currencyConversion.unavailable') : ''
+    }
+    const label = list.querySelector(`[data-conversion-label="${input.name}"]`)
+    if (label)
+      label.textContent = t(
+        input.name === settingsConversionSource
+          ? 'settings.currencyConversion.enterAmountLabel'
+          : 'settings.currencyConversion.convertedAmount'
+      )
+  }
 }
 
 function payeeAutocompleteInput(value = '', id = 'payee-input') {
@@ -1654,27 +1714,34 @@ function refreshSettingsCurrencyControls({ savedCodes = [] } = {}) {
   const list = content.querySelector('.rate-list')
   for (const code of codes) {
     if (list.querySelector(`[data-rate-currency="${code}"]`)) continue
-    const nextRow = [...list.children].find(row => row.dataset.rateCurrency > code)
-    if (nextRow) nextRow.insertAdjacentHTML('beforebegin', exchangeRateRow(code))
-    else list.insertAdjacentHTML('beforeend', exchangeRateRow(code))
+    const row = currencySettingsMode === 'convert' ? currencyConversionRow(code) : exchangeRateRow(code)
+    const nextRow = [...list.children].find(item => item.dataset.rateCurrency > code)
+    if (nextRow) nextRow.insertAdjacentHTML('beforebegin', row)
+    else list.insertAdjacentHTML('beforeend', row)
   }
-  const rates = exchangeRates()
-  for (const input of list.querySelectorAll('.rate-input')) {
-    // Preserve dirty fields except those explicitly saved or reset by this action.
-    if (
-      savedCodes.includes(input.name) ||
-      decimalValue(input.value) === Number(input.dataset.originalRate)
-    ) {
-      const value = String(rates[input.name] ?? '')
-      if (input.value !== value) input.value = value
-      input.dataset.originalRate = value
+  if (currencySettingsMode === 'rates') {
+    const rates = exchangeRates()
+    for (const input of list.querySelectorAll('.rate-input')) {
+      // Preserve dirty fields except those explicitly saved or reset by this action.
+      if (
+        savedCodes.includes(input.name) ||
+        decimalValue(input.value) === Number(input.dataset.originalRate)
+      ) {
+        const value = String(rates[input.name] ?? '')
+        if (input.value !== value) input.value = value
+        input.dataset.originalRate = value
+      }
     }
   }
   bindModalNumberInputs()
+  renderSettingsCurrencyConversion()
   updateCurrencySyncStatus()
 }
 
 function settingsModal() {
+  currencySettingsMode = 'convert'
+  settingsConversionSource = base()
+  settingsConversionAmount = 1
   const previousBody = $('.modal-body')
   const restoreView = previousBody?.querySelector?.('.settings-content')
     ? { scrollTop: previousBody.scrollTop, focusId: document.activeElement?.id }
@@ -1698,13 +1765,18 @@ function settingsModal() {
           <label><input type="checkbox" id="sync-on-startup" ${getSetting('syncCurrenciesOnStartup', true) ? 'checked' : ''}> ${escapeHtml(t('settings.currencySync.syncOnStartup'))}</label>
           <p class="form-hint" id="currency-sync-status" role="status">${escapeHtml(currencySyncStatus())}</p>
         </div>
+        <div class="settings-actions currency-mode-actions">
+          ${currencyRateModeButton('convert')}
+          ${currencyRateModeButton('rates')}
+        </div>
+        <p class="form-hint currency-mode-hint" id="currency-mode-hint">${escapeHtml(t(`settings.currencyConversion.hint.${currencySettingsMode}`))}</p>
         <div class="settings-actions">
           <button type="button" class="btn secondary" id="sync-currencies" ${currencySyncRequest ? 'disabled' : ''}>${escapeHtml(t('settings.currencySync.syncNow'))}</button>
           <button type="button" class="btn ghost" id="use-synced-rates">${escapeHtml(t('settings.currencySync.useSyncedRates'))}</button>
         </div>
         <form id="rates-form" class="settings-section-form">
-          <div class="rate-list">${exchangeRateRows()}</div>
-          <div class="settings-actions">
+          <div class="rate-list">${currencySettingsRows()}</div>
+          <div class="settings-actions" id="save-rates-actions" ${currencySettingsMode === 'convert' ? 'hidden' : ''}>
             <button class="btn secondary" type="submit" id="save-rates">${escapeHtml(t('settings.currencySync.saveRates'))}</button>
           </div>
         </form>
@@ -1782,6 +1854,65 @@ function settingsModal() {
       toast(t('toasts.timeFormatFailed'))
     }
   }
+  document.querySelectorAll('.conversion-amount-input').forEach(input => {
+    input.addEventListener('focus', () => {
+      settingsConversionSource = input.name
+      const value = decimalValue(input.value)
+      if (Number.isFinite(value)) settingsConversionAmount = value
+      renderSettingsCurrencyConversion()
+    })
+    input.addEventListener('input', () => {
+      settingsConversionSource = input.name
+      renderSettingsCurrencyConversion()
+    })
+  })
+  document.querySelectorAll('[data-currency-settings-mode]').forEach(button => {
+    button.onclick = () => {
+      const nextMode = button.dataset.currencySettingsMode
+      if (
+        currencySettingsMode === 'rates' &&
+        nextMode === 'convert' &&
+        [...$('.settings-content .rate-list').querySelectorAll('.rate-input')].some(
+          input =>
+            input.dataset.originalRate === ''
+              ? input.value.trim() !== ''
+              : decimalValue(input.value) !== Number(input.dataset.originalRate)
+        )
+      )
+        return toast(t('settings.currencyConversion.saveOrDiscardRates'))
+      currencySettingsMode = nextMode
+      if (currencySettingsMode === 'convert') {
+        settingsConversionSource = availableCurrencies().includes(settingsConversionSource)
+          ? settingsConversionSource
+          : base()
+        settingsConversionAmount = 1
+      }
+      const list = $('.settings-content .rate-list')
+      list.innerHTML = currencySettingsRows()
+      $('#save-rates-actions').hidden = currencySettingsMode === 'convert'
+      $('#currency-mode-hint').textContent = t(`settings.currencyConversion.hint.${currencySettingsMode}`)
+      document.querySelectorAll('[data-currency-settings-mode]').forEach(modeButton => {
+        const active = modeButton.dataset.currencySettingsMode === currencySettingsMode
+        modeButton.classList.toggle('secondary', active)
+        modeButton.classList.toggle('ghost', !active)
+        modeButton.setAttribute('aria-pressed', String(active))
+      })
+      bindModalNumberInputs()
+      list.querySelectorAll('.conversion-amount-input').forEach(input => {
+        input.addEventListener('focus', () => {
+          settingsConversionSource = input.name
+          const value = decimalValue(input.value)
+          if (Number.isFinite(value)) settingsConversionAmount = value
+          renderSettingsCurrencyConversion()
+        })
+        input.addEventListener('input', () => {
+          settingsConversionSource = input.name
+          renderSettingsCurrencyConversion()
+        })
+      })
+      renderSettingsCurrencyConversion()
+    }
+  })
   updateAddCurrencyOptions()
   $('#add-currency-form').onsubmit = async e => {
     e.preventDefault()
@@ -1855,6 +1986,7 @@ function settingsModal() {
   }
   $('#rates-form').onsubmit = async e => {
     e.preventDefault()
+    if (currencySettingsMode !== 'rates') return
     const next = { ...exchangeRates() }
     const manual = new Set(manualCurrencyCodes())
     for (const input of e.target.querySelectorAll('.rate-input')) {

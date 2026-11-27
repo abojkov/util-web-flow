@@ -325,6 +325,10 @@ category/subcategory where applicable, payee, description, optional attachment r
   action.
 - EUR remains fixed at 1. Save rates retains entered rate precision, including values smaller than one millionth. Use
   synced rates applies cached provider rates to supported currencies; manual rate editing remains available.
+- Settings currency rows have Convert amounts and Edit rates modes. In Convert amounts mode, type an amount in any
+  currency field and all other fields show the equivalent using saved reference rates. These temporary amounts do not
+  change saved rates or transactions. Edit rates mode keeps the existing manual rate workflow. Missing rates are shown
+  as unavailable.
 - Changing the reporting currency is blocked when any existing transaction lacks a required historical rate for that
   target, including either side of a transfer. Existing snapshots are preserved rather than filled with fabricated
   historical rates. Legacy transactions without snapshots retain the existing configured-rate fallback.
@@ -737,7 +741,7 @@ inspect and test the implementation before changing a feature to `Implemented`.
   move.
 - Cross-type destinations are not offered. Cancel leaves records unchanged.
 
-### Currency calculator checks
+### Currency conversion checks
 
 - With only the base currency enabled, More → Currency calculator shows the empty state and Open settings reaches
   Settings & backup.
@@ -746,6 +750,13 @@ inspect and test the implementation before changing a feature to `Implemented`.
 - Changing the other currency recalculates from the active amount field and remembers the selection for the session.
 - Missing or nonpositive rates show an unavailable message and do not invent a converted amount.
 - The calculator never creates transactions or changes stored rates.
+- Settings → Currency synchronization starts in Convert amounts mode. Typing in any currency row makes it the source
+  amount and recalculates all other available currencies from saved rates. Amounts are temporary. Edit rates mode
+  restores the existing editable units-per-EUR fields and Save rates workflow. A sync refresh recalculates conversion
+  amounts without replacing the source amount. Unsaved rate edits must be saved before switching to Convert amounts.
+- With EUR, USD, GBP, CHF and MKD enabled, entering 5 in the EUR row updates the other four fields from saved rates.
+- Entering a value in another currency makes that field the source and recalculates the rest. Invalid or missing rates
+  show unavailable values. Conversion inputs are never saved as exchange rates.
 
 ### Reset data checks
 
@@ -894,6 +905,14 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-11-27 - Currency conversion in Settings
+
+- Added Convert amounts mode to the existing Settings currency rows. Entering an amount in any currency updates the
+  other rows using saved reference rates.
+- Kept manual reference-rate editing in Edit rates mode. Conversion amounts are temporary and do not affect saved
+  rates or synchronization.
+- **Verification:** JavaScript syntax and diff checks passed; browser interaction remains unverified.
 
 ### 2026-11-27 - Release 1.5.0
 
