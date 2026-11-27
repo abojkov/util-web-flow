@@ -1,5 +1,5 @@
 // Update this value when releasing a new app version.
-const APP_VERSION = '1.5.0'
+const APP_VERSION = '1.5.1'
 
 const $ = s => document.querySelector(s),
   uid = () => crypto.randomUUID(),
@@ -46,9 +46,6 @@ const icons = {
   settings: appIcon(
     '<g transform="translate(2.5 0)"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g>',
     { className: 'app-icon settings-icon' }
-  ),
-  calculator: appIcon(
-    '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/><path d="M8 16h.01"/><path d="M12 16h.01"/><path d="M16 16h.01"/>'
   ),
   play: appIcon('<path d="m8 5 11 7-11 7V5z" fill="currentColor" stroke="none"/>', {
     size: 16,
@@ -282,15 +279,26 @@ const categoryLabel = (categoryId, subcategoryId) => {
     s = subcat(categoryId, subcategoryId)
   return [c?.name, s?.name].filter(Boolean).join(' / ') || t('common.other')
 }
-const defaultRates = { EUR: 1 }
+function rateAnchorCurrency() {
+  // Missing anchor metadata means the existing saved rates use the legacy EUR reference.
+  return getSetting('exchangeRateBaseCurrency', 'EUR')
+}
 
 function exchangeRates() {
-  const rates = { ...defaultRates, ...getSetting('exchangeRates', {}) }
+  const anchor = rateAnchorCurrency()
+  const rates = { ...getSetting('exchangeRates', {}) }
+  if (!Number.isFinite(rates[anchor]) || rates[anchor] <= 0) rates[anchor] = 1
   // Older accounts may rely on starter rates that were never saved to Settings.
-  const legacyRates = { USD: 1.09, GBP: 0.86, MKD: 61.5, CHF: 0.94, SEK: 11.2 }
+  const legacyRates = { EUR: 1, USD: 1.09, GBP: 0.86, MKD: 61.5, CHF: 0.94, SEK: 11.2 }
+  const anchorLegacyRate = legacyRates[anchor]
   for (const currency of usedCurrencies()) {
-    if (!Object.hasOwn(rates, currency) && Object.hasOwn(legacyRates, currency))
-      rates[currency] = legacyRates[currency]
+    if (
+      !Object.hasOwn(rates, currency) &&
+      Object.hasOwn(legacyRates, currency) &&
+      Number.isFinite(anchorLegacyRate) &&
+      anchorLegacyRate > 0
+    )
+      rates[currency] = legacyRates[currency] / anchorLegacyRate
   }
   return rates
 }
@@ -362,7 +370,6 @@ function rateSnapshotForCurrencies(currencies, sourceRates = exchangeRates()) {
   for (const currency of new Set(currencies.filter(Boolean))) {
     if (sourceRates[currency]) snapshot[currency] = sourceRates[currency]
   }
-  snapshot.EUR = sourceRates.EUR || 1
   return snapshot
 }
 
@@ -401,19 +408,6 @@ function conversionRate(fromCurrency, toCurrency = base()) {
     from = rates[fromCurrency],
     to = rates[toCurrency]
   return from && to ? to / from : null
-}
-
-function conversionNote(value, fromCurrency, toCurrency = base()) {
-  const rate = conversionRate(fromCurrency, toCurrency)
-  if (!rate)
-    return t('currency.conversion.noRate', { from: fromCurrency, to: toCurrency })
-  return t('currency.conversion.estimate', {
-    fromAmount: money(value, fromCurrency),
-    toAmount: money(value * rate, toCurrency),
-    from: fromCurrency,
-    to: toCurrency,
-    rate: rate.toFixed(4),
-  })
 }
 
 function conversionNoteWithRates(

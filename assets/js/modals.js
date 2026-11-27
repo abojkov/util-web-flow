@@ -1,3 +1,7 @@
+let currencySettingsMode = 'convert'
+let settingsConversionSource = 'EUR'
+let settingsConversionAmount = 1
+
 function modal(title, body, { restoreView = null } = {}) {
   $('#modal-root').innerHTML =
     `<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${title}</h2><button class="close" id="close-modal" aria-label="${escapeHtml(t('modals.close'))}">×</button></div><div class="modal-body">${body}</div></div></div>`
@@ -81,13 +85,90 @@ function currencyOptions(current) {
     .join('')
 }
 
-function exchangeRateRow(currency) {
-  const configured = exchangeRates()
-  return `<div class="rate-row" data-rate-currency="${currency}"><label><span>${currency}</span><small>1 EUR =</small><small data-currency-rate-source="${currency}">${currencyRateSource(currency)}</small></label><input class="rate-input" data-original-rate="${configured[currency] ?? ''}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" value="${configured[currency] ?? ''}" ${currency === 'EUR' ? 'readonly' : ''}><b>${currency}</b></div>`
+function currencyRateActions(currency) {
+  const removable =
+    currency !== rateAnchorCurrency() &&
+    currency !== base() &&
+    !state.accounts.some(account => account.currency === currency)
+  const removeButton = removable
+    ? `<button type="button" class="mini-btn danger" id="remove-currency-${currency}" data-remove-currency="${currency}" aria-label="${escapeHtml(t('settings.currencyRemoval.removeLabel', { currency }))}" title="${escapeHtml(t('settings.currencyRemoval.removeLabel', { currency }))}">×</button>`
+    : ''
+  return `<div class="rate-row-actions"><b>${currency}</b>${removeButton}</div>`
 }
 
-function exchangeRateRows() {
-  return availableCurrencies().map(exchangeRateRow).join('')
+function exchangeRateRow(currency) {
+  const configured = exchangeRates()
+  const anchor = rateAnchorCurrency()
+  return `<div class="rate-row rate-management-row" data-rate-currency="${currency}"><label><span>${currency}</span><small>${escapeHtml(t('settings.currencySync.oneBaseEquals', { currency: anchor }))}</small><small data-currency-rate-source="${currency}">${currencyRateSource(currency)}</small></label><input class="rate-input" aria-label="${escapeHtml(t('settings.currencyConversion.rateInputLabel', { currency, anchor }))}" data-original-rate="${configured[currency] ?? ''}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" value="${configured[currency] ?? ''}" ${currency === anchor ? 'readonly' : ''}>${currencyRateActions(currency)}</div>`
+}
+
+function currencyConversionRow(currency) {
+  const isSource = currency === settingsConversionSource
+  const rate = conversionRate(settingsConversionSource, currency)
+  const value =
+    rate === null
+      ? ''
+      : isSource
+        ? String(settingsConversionAmount)
+        : roundAmount(settingsConversionAmount * rate).toFixed(2)
+  return `<div class="rate-row conversion-row" data-rate-currency="${currency}"><label><span>${currency}</span><small data-conversion-label="${currency}">${isSource ? escapeHtml(t('settings.currencyConversion.enterAmountLabel')) : escapeHtml(t('settings.currencyConversion.convertedAmount'))}</small></label><input class="rate-input conversion-amount-input" aria-label="${escapeHtml(t('settings.currencyConversion.amountInCurrency', { currency }))}" name="${currency}" type="text" inputmode="decimal" data-decimal-input pattern="${DECIMAL_INPUT_PATTERN}" value="${escapeHtml(value)}" placeholder="${rate === null ? escapeHtml(t('settings.currencyConversion.unavailable')) : ''}"><b>${currency}</b></div>`
+}
+
+function currencyRateModeButton(mode) {
+  const active = currencySettingsMode === mode
+  return `<button type="button" class="btn ${active ? 'secondary' : 'ghost'}" data-currency-settings-mode="${mode}" aria-pressed="${active}">${escapeHtml(t(`settings.currencyConversion.mode.${mode}`))}</button>`
+}
+
+function currencySettingsRows() {
+  return availableCurrencies()
+    .map(currencySettingsMode === 'convert' ? currencyConversionRow : exchangeRateRow)
+    .join('')
+}
+
+function currencyRatesHaveUnsavedChanges() {
+  const list = $('.settings-content .rate-list')
+  return [...(list?.querySelectorAll('.rate-input') || [])].some(input =>
+    input.dataset.originalRate === ''
+      ? input.value.trim() !== ''
+      : decimalValue(input.value) !== Number(input.dataset.originalRate)
+  )
+}
+
+function renderSettingsCurrencyConversion() {
+  if (currencySettingsMode !== 'convert') return
+  const list = $('.settings-content .rate-list')
+  if (!list) return
+  const sourceInput = list.querySelector(`.conversion-amount-input[name="${settingsConversionSource}"]`)
+  if (!sourceInput) return
+  const currentAmount = decimalValue(sourceInput.value)
+  if (!Number.isFinite(currentAmount)) {
+    for (const input of list.querySelectorAll('.conversion-amount-input')) {
+      if (input !== sourceInput) input.value = ''
+      const label = list.querySelector(`[data-conversion-label="${input.name}"]`)
+      if (label)
+        label.textContent = t(
+          input.name === settingsConversionSource
+            ? 'settings.currencyConversion.enterAmountLabel'
+            : 'settings.currencyConversion.convertedAmount'
+        )
+    }
+    return
+  }
+  settingsConversionAmount = currentAmount
+  for (const input of list.querySelectorAll('.conversion-amount-input')) {
+    if (input !== sourceInput) {
+      const rate = conversionRate(settingsConversionSource, input.name)
+      input.value = rate === null ? '' : roundAmount(settingsConversionAmount * rate).toFixed(2)
+      input.placeholder = rate === null ? t('settings.currencyConversion.unavailable') : ''
+    }
+    const label = list.querySelector(`[data-conversion-label="${input.name}"]`)
+    if (label)
+      label.textContent = t(
+        input.name === settingsConversionSource
+          ? 'settings.currencyConversion.enterAmountLabel'
+          : 'settings.currencyConversion.convertedAmount'
+      )
+  }
 }
 
 function payeeAutocompleteInput(value = '', id = 'payee-input') {
@@ -485,10 +566,11 @@ function transactionModal(tx, initial = 'expense', options = {}) {
         rateInput.value = snapshot[selected.currency] || exchangeRates()[selected.currency] || ''
         lastRateCurrency = selected.currency
       }
-      rateLabel.textContent = t('modals.transaction.exchangeRateEur', {
+      rateLabel.textContent = t('modals.transaction.exchangeRateBase', {
         currency: selected.currency,
+        anchor: rateAnchorCurrency(),
       })
-      rateBox.hidden = selected.currency === 'EUR'
+      rateBox.hidden = selected.currency === rateAnchorCurrency()
     }
     if (!box || !selected || !value || selected.currency === base()) {
       if (box) box.hidden = true
@@ -1182,144 +1264,6 @@ function categoryEdit(c, initialType = 'expense') {
   }
 }
 
-let lastCalculatorCurrency = ''
-
-function calculatorCurrencies() {
-  return availableCurrencies().filter(code => code !== base())
-}
-
-function formatCalculatorAmount(value) {
-  if (!Number.isFinite(value)) return ''
-  return new Intl.NumberFormat('en-GB', {
-    useGrouping: false,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(roundAmount(value))
-}
-
-function currencyCalculatorModal() {
-  const baseCurrency = base()
-  const others = calculatorCurrencies()
-  if (!others.length) {
-    modal(
-      t('modals.calculator.title'),
-      `<div class="currency-calculator">${empty(
-        t('modals.calculator.empty.title'),
-        t('modals.calculator.empty.desc'),
-        icons.calculator
-      )}<div class="modal-footer"><button type="button" class="btn secondary" id="calculator-open-settings">${escapeHtml(t('modals.calculator.openSettings'))}</button></div></div>`
-    )
-    $('#calculator-open-settings').onclick = settingsModal
-    return
-  }
-  const selected =
-    others.includes(lastCalculatorCurrency) ? lastCalculatorCurrency : others[0]
-  lastCalculatorCurrency = selected
-  modal(
-    t('modals.calculator.title'),
-    `<div class="currency-calculator">
-      <p class="form-hint">${escapeHtml(t('modals.calculator.hint'))}</p>
-      <div class="calc-side">
-        <div class="calc-side-meta">
-          <label for="calc-base-amount">${escapeHtml(t('modals.calculator.baseAmount'))}</label>
-          <span class="calc-currency-code">${escapeHtml(baseCurrency)}</span>
-        </div>
-        <input id="calc-base-amount" class="calc-amount-input" type="text" inputmode="decimal" data-decimal-input pattern="${POSITIVE_DECIMAL_INPUT_PATTERN}" placeholder="0.00" value="1.00" autocomplete="off">
-      </div>
-      <div class="calc-rate-card" id="calc-rate" role="status"></div>
-      <div class="calc-side">
-        <div class="calc-side-meta">
-          <label for="calc-other-amount">${escapeHtml(t('modals.calculator.otherAmount'))}</label>
-          <select id="calc-currency" class="calc-currency-code calc-currency-select" aria-label="${escapeHtml(t('modals.calculator.currency'))}">${others
-            .map(
-              code =>
-                `<option value="${escapeHtml(code)}" ${code === selected ? 'selected' : ''}>${escapeHtml(code)}</option>`
-            )
-            .join('')}</select>
-        </div>
-        <input id="calc-other-amount" class="calc-amount-input" type="text" inputmode="decimal" data-decimal-input pattern="${POSITIVE_DECIMAL_INPUT_PATTERN}" placeholder="0.00" autocomplete="off">
-      </div>
-      <p class="notice">${escapeHtml(t('modals.calculator.notice'))}</p>
-    </div>`
-  )
-  const baseInput = $('#calc-base-amount')
-  const otherInput = $('#calc-other-amount')
-  const currencySelect = $('#calc-currency')
-  const rateCard = $('#calc-rate')
-  let activeSide = 'base'
-
-  const updateRateCard = () => {
-    const other = currencySelect.value
-    const rate = conversionRate(baseCurrency, other)
-    if (!rate) {
-      rateCard.textContent = t('currency.conversion.noRate', {
-        from: baseCurrency,
-        to: other,
-      })
-      rateCard.classList.add('is-missing')
-      return null
-    }
-    rateCard.classList.remove('is-missing')
-    rateCard.textContent = t('modals.calculator.rate', {
-      base: baseCurrency,
-      other,
-      rate: formatTransferRate(rate),
-      source: currencyRateSource(other),
-    })
-    return rate
-  }
-
-  const syncFromBase = () => {
-    const rate = updateRateCard()
-    const raw = baseInput.value.trim()
-    if (!raw) {
-      otherInput.value = ''
-      return
-    }
-    const value = amount(raw)
-    if (!Number.isFinite(value) || value < 0 || !rate) {
-      if (!rate) otherInput.value = ''
-      return
-    }
-    otherInput.value = formatCalculatorAmount(value * rate)
-  }
-
-  const syncFromOther = () => {
-    const rate = updateRateCard()
-    const raw = otherInput.value.trim()
-    if (!raw) {
-      baseInput.value = ''
-      return
-    }
-    const value = amount(raw)
-    if (!Number.isFinite(value) || value < 0 || !rate) {
-      if (!rate) baseInput.value = ''
-      return
-    }
-    baseInput.value = formatCalculatorAmount(value / rate)
-  }
-
-  const refresh = () => {
-    if (activeSide === 'other') syncFromOther()
-    else syncFromBase()
-  }
-
-  baseInput.addEventListener('input', () => {
-    activeSide = 'base'
-    syncFromBase()
-  })
-  otherInput.addEventListener('input', () => {
-    activeSide = 'other'
-    syncFromOther()
-  })
-  currencySelect.addEventListener('change', () => {
-    lastCalculatorCurrency = currencySelect.value
-    refresh()
-  })
-  bindModalNumberInputs()
-  syncFromBase()
-}
-
 function budgetsModal() {
   const items = orderedBudgets(state.budgets.filter(b => b.month === state.month))
   modal(
@@ -1640,7 +1584,7 @@ function reportingCurrencyNotice() {
   return t('settings.reportingNotice', { base: base() })
 }
 
-function refreshSettingsCurrencyControls({ savedCodes = [] } = {}) {
+function refreshSettingsCurrencyControls({ savedCodes = [], refreshCurrencyRemovalStatus = false } = {}) {
   const content = $('.settings-content')
   if (!content?.querySelector) return
   const codes = availableCurrencies()
@@ -1652,33 +1596,60 @@ function refreshSettingsCurrencyControls({ savedCodes = [] } = {}) {
   }
   content.querySelector('#base-currency-notice').textContent = reportingCurrencyNotice()
   const list = content.querySelector('.rate-list')
+  for (const row of [...list.children])
+    if (!codes.includes(row.dataset.rateCurrency)) row.remove()
   for (const code of codes) {
     if (list.querySelector(`[data-rate-currency="${code}"]`)) continue
-    const nextRow = [...list.children].find(row => row.dataset.rateCurrency > code)
-    if (nextRow) nextRow.insertAdjacentHTML('beforebegin', exchangeRateRow(code))
-    else list.insertAdjacentHTML('beforeend', exchangeRateRow(code))
+    const row = currencySettingsMode === 'convert' ? currencyConversionRow(code) : exchangeRateRow(code)
+    const nextRow = [...list.children].find(item => item.dataset.rateCurrency > code)
+    if (nextRow) nextRow.insertAdjacentHTML('beforebegin', row)
+    else list.insertAdjacentHTML('beforeend', row)
   }
-  const rates = exchangeRates()
-  for (const input of list.querySelectorAll('.rate-input')) {
-    // Preserve dirty fields except those explicitly saved or reset by this action.
-    if (
-      savedCodes.includes(input.name) ||
-      decimalValue(input.value) === Number(input.dataset.originalRate)
-    ) {
-      const value = String(rates[input.name] ?? '')
-      if (input.value !== value) input.value = value
-      input.dataset.originalRate = value
+  if (currencySettingsMode === 'rates') {
+    const rates = exchangeRates()
+    const anchor = rateAnchorCurrency()
+    for (const row of list.children) {
+      const hint = row.querySelector('label small')
+      if (hint) hint.textContent = t('settings.currencySync.oneBaseEquals', { currency: anchor })
+      const input = row.querySelector('.rate-input')
+      if (input) input.readOnly = input.name === anchor
     }
+    for (const input of list.querySelectorAll('.rate-input')) {
+      // Preserve dirty fields except those explicitly saved or reset by this action.
+      if (
+        savedCodes.includes(input.name) ||
+        decimalValue(input.value) === Number(input.dataset.originalRate)
+      ) {
+        const value = String(rates[input.name] ?? '')
+        if (input.value !== value) input.value = value
+        input.dataset.originalRate = value
+      }
+    }
+    if (refreshCurrencyRemovalStatus)
+      for (const row of list.children) {
+        const actions = row.querySelector('.rate-row-actions')
+        if (actions) actions.outerHTML = currencyRateActions(row.dataset.rateCurrency)
+      }
   }
   bindModalNumberInputs()
+  renderSettingsCurrencyConversion()
   updateCurrencySyncStatus()
 }
 
-function settingsModal() {
+function settingsModal(restoreViewOverride = null) {
+  currencySettingsMode = restoreViewOverride?.currencySettingsMode || 'convert'
+  const restoredSource = restoreViewOverride?.settingsConversionSource
+  const canRestoreSource = availableCurrencies().includes(restoredSource)
+  settingsConversionSource = canRestoreSource ? restoredSource : base()
+  settingsConversionAmount = canRestoreSource && Number.isFinite(restoreViewOverride?.settingsConversionAmount)
+    ? restoreViewOverride.settingsConversionAmount
+    : 1
   const previousBody = $('.modal-body')
-  const restoreView = previousBody?.querySelector?.('.settings-content')
-    ? { scrollTop: previousBody.scrollTop, focusId: document.activeElement?.id }
-    : null
+  const restoreView =
+    restoreViewOverride ||
+    (previousBody?.querySelector?.('.settings-content')
+      ? { scrollTop: previousBody.scrollTop, focusId: document.activeElement?.id }
+      : null)
   modal(
     t('settings.title'),
     `<div class="settings-content">
@@ -1698,13 +1669,18 @@ function settingsModal() {
           <label><input type="checkbox" id="sync-on-startup" ${getSetting('syncCurrenciesOnStartup', true) ? 'checked' : ''}> ${escapeHtml(t('settings.currencySync.syncOnStartup'))}</label>
           <p class="form-hint" id="currency-sync-status" role="status">${escapeHtml(currencySyncStatus())}</p>
         </div>
-        <div class="settings-actions">
+        <div class="settings-actions currency-mode-actions">
+          ${currencyRateModeButton('convert')}
+          ${currencyRateModeButton('rates')}
+        </div>
+        <p class="form-hint currency-mode-hint" id="currency-mode-hint">${escapeHtml(t(`settings.currencyConversion.hint.${currencySettingsMode}`, { currency: rateAnchorCurrency() }))}</p>
+        <div class="settings-actions" id="currency-sync-actions" ${currencySettingsMode === 'convert' ? 'hidden' : ''}>
           <button type="button" class="btn secondary" id="sync-currencies" ${currencySyncRequest ? 'disabled' : ''}>${escapeHtml(t('settings.currencySync.syncNow'))}</button>
           <button type="button" class="btn ghost" id="use-synced-rates">${escapeHtml(t('settings.currencySync.useSyncedRates'))}</button>
         </div>
         <form id="rates-form" class="settings-section-form">
-          <div class="rate-list">${exchangeRateRows()}</div>
-          <div class="settings-actions">
+          <div class="rate-list">${currencySettingsRows()}</div>
+          <div class="settings-actions" id="save-rates-actions" ${currencySettingsMode === 'convert' ? 'hidden' : ''}>
             <button class="btn secondary" type="submit" id="save-rates">${escapeHtml(t('settings.currencySync.saveRates'))}</button>
           </div>
         </form>
@@ -1721,7 +1697,7 @@ function settingsModal() {
             <select id="new-currency-code" name="code" required></select>
           </div>
           <div class="field">
-            <label for="new-currency-rate">${escapeHtml(t('settings.addCurrency.unitsPerEur'))}</label>
+            <label for="new-currency-rate">${escapeHtml(t('settings.addCurrency.unitsPerAnchor', { anchor: rateAnchorCurrency() }))}</label>
             <input id="new-currency-rate" name="rate" type="text" inputmode="decimal" data-decimal-input pattern="${POSITIVE_DECIMAL_INPUT_PATTERN}" placeholder="${escapeHtml(t('settings.addCurrency.ratePlaceholder'))}">
           </div>
         </div>
@@ -1782,15 +1758,68 @@ function settingsModal() {
       toast(t('toasts.timeFormatFailed'))
     }
   }
+  document.querySelectorAll('.conversion-amount-input').forEach(input => {
+    input.addEventListener('focus', () => {
+      settingsConversionSource = input.name
+      const value = decimalValue(input.value)
+      if (Number.isFinite(value)) settingsConversionAmount = value
+      renderSettingsCurrencyConversion()
+    })
+    input.addEventListener('input', () => {
+      settingsConversionSource = input.name
+      renderSettingsCurrencyConversion()
+    })
+  })
+  document.querySelectorAll('[data-currency-settings-mode]').forEach(button => {
+    button.onclick = () => {
+      const nextMode = button.dataset.currencySettingsMode
+      if (currencySettingsMode === 'rates' && nextMode === 'convert' && currencyRatesHaveUnsavedChanges())
+        return toast(t('settings.currencyConversion.saveOrDiscardRates'))
+      currencySettingsMode = nextMode
+      if (currencySettingsMode === 'convert') {
+        settingsConversionSource = availableCurrencies().includes(settingsConversionSource)
+          ? settingsConversionSource
+          : base()
+        settingsConversionAmount = 1
+      }
+      const list = $('.settings-content .rate-list')
+      list.innerHTML = currencySettingsRows()
+      $('#save-rates-actions').hidden = currencySettingsMode === 'convert'
+      $('#currency-sync-actions').hidden = currencySettingsMode === 'convert'
+      $('#currency-mode-hint').textContent = t(`settings.currencyConversion.hint.${currencySettingsMode}`, { currency: rateAnchorCurrency() })
+      document.querySelectorAll('[data-currency-settings-mode]').forEach(modeButton => {
+        const active = modeButton.dataset.currencySettingsMode === currencySettingsMode
+        modeButton.classList.toggle('secondary', active)
+        modeButton.classList.toggle('ghost', !active)
+        modeButton.setAttribute('aria-pressed', String(active))
+      })
+      bindModalNumberInputs()
+      list.querySelectorAll('.conversion-amount-input').forEach(input => {
+        input.addEventListener('focus', () => {
+          settingsConversionSource = input.name
+          const value = decimalValue(input.value)
+          if (Number.isFinite(value)) settingsConversionAmount = value
+          renderSettingsCurrencyConversion()
+        })
+        input.addEventListener('input', () => {
+          settingsConversionSource = input.name
+          renderSettingsCurrencyConversion()
+        })
+      })
+      renderSettingsCurrencyConversion()
+    }
+  })
   updateAddCurrencyOptions()
   $('#add-currency-form').onsubmit = async e => {
     e.preventDefault()
     const form = e.target
     const code = form.elements.code.value.trim().toUpperCase()
     const manualRate = form.elements.rate.value.trim() !== ''
+    const anchor = rateAnchorCurrency()
+    const syncedRates = getSetting('currencySync', {}).rates || {}
     const rate = manualRate
       ? decimalValue(form.elements.rate.value)
-      : getSetting('currencySync', {}).rates?.[code]
+      : syncedRates[code] / syncedRates[anchor]
     if (!syncedCurrenciesToAdd().includes(code))
       return toast(t('toasts.chooseSyncedCurrency'))
     if (!Number.isFinite(rate) || rate <= 0)
@@ -1800,7 +1829,7 @@ function settingsModal() {
     button.disabled = true
     try {
       await saveCurrencySettings({
-        exchangeRates: { ...exchangeRates(), [code]: rate },
+        exchangeRates: { ...exchangeRates(), [code]: rate, [anchor]: 1 },
         manualCurrencyCodes: [
           ...new Set([...manualCurrencyCodes(), ...(manualRate ? [code] : [])]),
         ],
@@ -1818,6 +1847,68 @@ function settingsModal() {
     }
   }
   $('#sync-currencies').onclick = syncCurrencyRates
+  $('.rate-list').addEventListener('click', event => {
+    const button = event.target.closest('[data-remove-currency]')
+    if (!button) return
+    const currency = button.dataset.removeCurrency
+    if (
+      currency === rateAnchorCurrency() ||
+      currency === base() ||
+      state.accounts.some(account => account.currency === currency)
+    )
+      return
+    if (currencySyncRequest) return toast(t('settings.currencyRemoval.waitForSync'))
+    if (currencyRatesHaveUnsavedChanges()) return toast(t('settings.currencyRemoval.saveRatesFirst'))
+    const body = $('.modal-body')
+    const restoreView = {
+      scrollTop: body.scrollTop,
+      focusId: button.id,
+      currencySettingsMode,
+      settingsConversionSource,
+      settingsConversionAmount,
+    }
+    confirmAction({
+      title: t('settings.currencyRemoval.confirmTitle'),
+      message: t('settings.currencyRemoval.confirmMessage', { currency }),
+      confirmText: t('settings.currencyRemoval.confirmButton'),
+      onCancel: () => settingsModal(restoreView),
+      onConfirm: async () => {
+        if (
+          currency === rateAnchorCurrency() ||
+          currency === base() ||
+          state.accounts.some(account => account.currency === currency)
+        ) {
+          closeModal()
+          settingsModal(restoreView)
+          return
+        }
+        if (currencySyncRequest) {
+          closeModal()
+          settingsModal(restoreView)
+          toast(t('settings.currencyRemoval.waitForSync'))
+          return
+        }
+        const rates = { ...exchangeRates() }
+        delete rates[currency]
+        const manual = manualCurrencyCodes().filter(code => code !== currency)
+        try {
+          await saveCurrencySettings({ exchangeRates: rates, manualCurrencyCodes: manual })
+          if (settingsConversionSource === currency) {
+            settingsConversionSource = base()
+            settingsConversionAmount = 1
+          }
+          closeModal()
+          settingsModal(restoreView)
+          toast(t('settings.currencyRemoval.success', { currency }))
+        } catch (error) {
+          console.error(error)
+          closeModal()
+          settingsModal(restoreView)
+          toast(t('settings.currencyRemoval.failed', { currency }))
+        }
+      },
+    })
+  })
   $('#sync-on-startup').onchange = async e => {
     try {
       await saveCurrencySettings({ syncCurrenciesOnStartup: e.target.checked })
@@ -1831,7 +1922,12 @@ function settingsModal() {
     if (!cached) return toast(t('toasts.syncFirstForAutoRates'))
     const next = { ...exchangeRates() }
     const manual = manualCurrencyCodes().filter(code => !cached[code])
-    for (const code of Object.keys(next)) if (cached[code]) next[code] = cached[code]
+    const anchor = rateAnchorCurrency()
+    if (!Number.isFinite(cached[anchor]) || cached[anchor] <= 0)
+      return toast(t('toasts.syncFirstForAutoRates'))
+    for (const code of Object.keys(next))
+      if (cached[code]) next[code] = cached[code] / cached[anchor]
+    next[anchor] = 1
     try {
       await saveCurrencySettings({ exchangeRates: next, manualCurrencyCodes: manual })
       render()
@@ -1849,12 +1945,29 @@ function settingsModal() {
       e.target.value = base()
       return toast(t('toasts.reportingCurrencyBlocked'))
     }
-    await saveCurrencySettings({ baseCurrency: e.target.value })
+    const newBase = e.target.value
+    const oldRates = exchangeRates()
+    const baseRate = oldRates[newBase]
+    const nextRates = Object.fromEntries(
+      Object.entries(oldRates)
+        .filter(([, rate]) => Number.isFinite(rate) && rate > 0)
+        .map(([code, rate]) => [code, rate / baseRate])
+    )
+    nextRates[newBase] = 1
+    await saveCurrencySettings({
+      baseCurrency: newBase,
+      exchangeRateBaseCurrency: newBase,
+      exchangeRates: nextRates,
+    })
     render()
-    refreshSettingsCurrencyControls()
+    refreshSettingsCurrencyControls({
+      savedCodes: Object.keys(nextRates),
+      refreshCurrencyRemovalStatus: true,
+    })
   }
   $('#rates-form').onsubmit = async e => {
     e.preventDefault()
+    if (currencySettingsMode !== 'rates') return
     const next = { ...exchangeRates() }
     const manual = new Set(manualCurrencyCodes())
     for (const input of e.target.querySelectorAll('.rate-input')) {
@@ -1866,7 +1979,7 @@ function settingsModal() {
         next[input.name] = value
       }
     }
-    next.EUR = 1
+    next[rateAnchorCurrency()] = 1
     await saveCurrencySettings({ exchangeRates: next, manualCurrencyCodes: [...manual] })
     render()
     refreshSettingsCurrencyControls({
@@ -1885,10 +1998,9 @@ function settingsModal() {
         to = exportedAccounts[t.toAccountId]
       return {
         ...t,
-        exchangeRates: rateSnapshotForCurrencies([from?.currency, to?.currency, base()], {
-          ...exportedRates,
-          ...(t.exchangeRates || {}),
-        }),
+        exchangeRates: t.exchangeRates
+          ? { ...t.exchangeRates }
+          : rateSnapshotForCurrencies([from?.currency, to?.currency, base()], exportedRates),
       }
     })
     download(
@@ -1968,6 +2080,8 @@ function settingsModal() {
           cancelCurrencySync()
           await replaceAll(data)
           closeModal()
+          await reload()
+          await ensureRateAnchorCurrency()
           await reload()
           toast(t('toasts.backupRestored'))
         },
