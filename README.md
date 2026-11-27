@@ -208,11 +208,15 @@ category/subcategory where applicable, payee, description, optional attachment r
 - Transaction account selectors initially show only the selected account name in a compact field; currency remains
   visible on the expanded account buttons. Tapping the field expands compact square buttons (72px minimum, 6px grid
   spacing) listing all active accounts in the configured order, with account name, currency and a blue selected state.
-  Selecting an account updates the field, collapses the buttons and returns focus to the field. Reopen it to change the
-  selection; Escape within the buttons collapses the picker. Account fields share the standard selectors’ SVG arrow and
+  Selecting an account updates the field and collapses the buttons. In income and expense forms focus then moves to the
+  category picker; elsewhere the account field keeps focus. Reopen it to change the selection; Escape within the buttons
+  collapses the picker. Account fields share the standard selectors’ SVG arrow and
   the normal fields’ blue focus border and soft shadow, including while expanded. Both source and transfer destination
   use the same picker; buttons support keyboard focus and expose selection with `aria-pressed`. Archived accounts remain
   excluded.
+- In income and expense forms, choosing an account opens the category picker and focuses its first choice. Choosing a
+  category or subcategory moves focus to Payee. In split mode, account selection opens the first split category picker
+  and choosing a split category moves focus to that split's amount.
 - Transaction forms show Date & time first, then Amount, followed by Account. They use one native “Date & time”
   (`datetime-local`) input, initialized from the saved local date/time or the current local date/time for new records.
   Copy options retain their original/current date-time behavior.
@@ -792,6 +796,15 @@ inspect and test the implementation before changing a feature to `Implemented`.
 - Changing the amount or either account updates rate visibility and the preview.
 - Empty, zero, negative or nonfinite cross-currency rates cannot be saved.
 
+### Transaction entry focus checks
+
+- In new and edited income/expense transactions, choose an account and verify the category picker opens with its first
+  choice focused.
+- Choose a parent category or subcategory and verify focus moves to Payee.
+- Enable split categories, choose an account and verify the first split category picker opens. Choosing a category moves
+  focus to its amount field.
+- Verify changing transaction type rebuilds its category choices without retaining stale focus behavior.
+
 ### Account visibility checks
 
 - Hide/show an account in its editor; confirm source/destination pickers, account filters and new recurring selectors
@@ -918,6 +931,11 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-11-27 - Focus transaction entry flow
+
+- Selecting an account in an income or expense form opens and focuses the category picker. Selecting a category or
+  subcategory moves focus to Payee. Split category choices move focus to their amount field.
 
 ### 2026-11-27 - Release 1.5.1
 
