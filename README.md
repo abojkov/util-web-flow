@@ -523,9 +523,17 @@ recurrence identifiers. Maintain a schema version and incremental, non-destructi
   `t('dotted.key', { placeholders })` with English fallback when a key is missing. Add a new language by copying
   `en.js`, translating values and registering the file in `index.html`.
 - Separate database operations, financial domain logic, UI rendering and event handling into maintainable files.
-- Keep all assets local. The only runtime network request is optional currency-rate synchronization.
+- Keep core app assets and font files local. The only external runtime request is optional currency-rate synchronization;
+  the PWA service worker fetches and caches same-origin app files.
 - **Browser limitation:** `file://` origin behavior and IndexedDB persistence vary across browsers; detect failures and
   never claim guaranteed persistence without testing the target browser.
+- **Installable offline app:** On HTTPS hosting, `manifest.webmanifest` and `service-worker.js` let supported browsers
+  install Flow and cache the local app shell after its first successful online visit. Reopen the installed app while
+  offline to use the cached files and on-device IndexedDB data. Currency-rate synchronization still needs internet and
+  retains cached rates when unavailable. Service workers cannot run under `file://`; direct file opening remains
+  available but does not provide PWA offline caching. Browser installation and cache behavior vary by platform.
+- DM Sans and Plus Jakarta Sans are bundled locally under the SIL Open Font License and cached with the PWA app shell,
+  preserving the app typography offline.
 - A successful save must mean data was committed to durable browser storage, not just added to an in-memory array.
 
 Suggested organization (adapt to the actual repository):
@@ -886,6 +894,15 @@ Before treating any feature as complete, ask Codex:
 - Should a forgotten PIN allow reset without deleting data, given that the PIN is not encryption?
 
 ## Change log
+
+### 2026-11-27 - Release 1.5.0
+
+- Added installable offline app support for HTTPS deployments, including a web app manifest, app icons and a service
+  worker that caches the local app shell.
+- Bundled DM Sans and Plus Jakarta Sans locally so the existing typography is available offline.
+- Bumped `APP_VERSION` to 1.5.0.
+- **Verification:** syntax and asset-reference checks; browser installation and offline behavior still require a deployed
+  HTTPS visit and target-device verification.
 
 ### 2026-11-19 - Stable mobile transaction description
 
