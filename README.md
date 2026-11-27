@@ -919,6 +919,10 @@ Before treating any feature as complete, ask Codex:
 
 ## Change log
 
+### 2026-11-27 - Release 1.5.1
+
+- Bumped `APP_VERSION` to 1.5.1 for currency rates anchored to the selected reporting currency and removable unused EUR.
+
 ### 2026-11-27 - Use the reporting currency as the rate reference
 
 - Settings rate values now use the selected reporting currency as their reference. Changing the reporting currency
